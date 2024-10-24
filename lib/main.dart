@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:verein_app/screens/documents_screen.dart';
 import 'package:verein_app/screens/functions_screen.dart';
 import 'package:verein_app/screens/game_results.dart';
 import 'package:verein_app/screens/more_screen.dart';
@@ -23,7 +24,10 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.white),
       ),
       home: const MyHomePage(),
-      routes: {GameResults.routename: (ctx) => const GameResults()},
+      routes: {
+        GameResults.routename: (ctx) => GameResults(),
+        DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+      },
     );
   }
 }

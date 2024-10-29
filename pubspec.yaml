@@ -38,6 +38,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.2
   url_launcher: ^6.3.1
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
@@ -69,11 +70,9 @@ flutter:
     - assets/images/Beitritterklärung_Hauptverein.png
     - assets/images/Beitragsordnung.png
     - assets/images/Beitritterklärung_Abteilung_Tennis.png
-    - assets/pdfs/Beitragsordnung.pdf
-    - assets/pdfs/Beitrittserklärung Abteilung Tennis.pdf
-    - assets/pdfs/Beitrittserklärung Hauptverein.pdf
-    - assets/pdfs/Vereinssatzung.pdf
-
+    - assets/images/Man_icon.png
+    - assets/images/Man_Woman_icon.png
+    - assets/images/Woman_icon.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

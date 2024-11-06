@@ -3,20 +3,27 @@ import 'package:flutter/material.dart';
 class VereinAppbar extends AppBar {
   VereinAppbar({super.key});
 
-  @override
-  Widget? get leading => Padding(
-        padding: const EdgeInsets.all(3),
-        child: Image.asset("assets/images/Vereinslogo.png"),
-      );
+  // @override
+  // Widget? get leading =>
 
   @override
-  List<Widget>? get actions => const [
-        Padding(
+  List<Widget>? get actions => [
+        // const SizedBox(width: 15,),
+        const Padding(
           padding: EdgeInsets.only(right: 10),
           child: Text(
             "TeG Altmühlgrund",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           ),
         ),
       ];
+
+  @override
+  Widget? get flexibleSpace => Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 5),
+        child: Image.asset(
+          "assets/images/Vereinslogo.png",
+          alignment: Alignment.center,
+        ),
+      );
 }

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/functions_screen.dart';
-import 'package:verein_app/screens/game_results.dart';
-import 'package:verein_app/screens/more_screen.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import 'package:provider/provider.dart';
+import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/screens/auth_screen.dart';
+import 'package:verein_app/screens/trainers_screen.dart';
+import "./providers/game_results_provider.dart";
+import './screens/documents_screen.dart';
+import './screens/functions_screen.dart';
+import './screens/game_results_screen.dart';
+import './screens/more_screen.dart';
+import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 
 void main() {
@@ -14,16 +20,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "TSV Weidenbach",
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-        appBarTheme: const AppBarTheme(
-            backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-            foregroundColor: Colors.white),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(
+          value: GameResultsProvider(),
+        ),
+        ChangeNotifierProvider.value(
+          value: AuthProvider(),
+        )
+      ],
+      child: MaterialApp(
+        title: "TSV Weidenbach",
+        theme: ThemeData(
+          scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+          appBarTheme: const AppBarTheme(
+              backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+              foregroundColor: Colors.white),
+        ),
+        home: const MyHomePage(),
+        routes: {
+          GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+          DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+          TrainersScreen.routename: (ctx) => const TrainersScreen(),
+          AuthScreen.routeName: (ctx) => const AuthScreen(),
+        },
       ),
-      home: const MyHomePage(),
-      routes: {GameResults.routename: (ctx) => const GameResults()},
     );
   }
 }

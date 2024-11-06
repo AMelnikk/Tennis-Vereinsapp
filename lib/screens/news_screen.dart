@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:verein_app/data/dummy_data.dart';
-import 'package:verein_app/widgets/news_tile.dart';
+import '../data/dummy_data.dart';
+import '../widgets/news_tile.dart';
 
 class NewsScreen extends StatelessWidget {
   const NewsScreen({super.key});

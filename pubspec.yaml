@@ -37,6 +37,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   http: ^1.2.2
+  url_launcher: ^6.3.1
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +66,18 @@ flutter:
   assets:
     - assets/images/Vereinslogo.png
     - assets/images/news_image.jpg
+    - assets/images/Vereinssatzung.png
+    - assets/images/Beitritterklärung_Hauptverein.png
+    - assets/images/Beitragsordnung.png
+    - assets/images/Beitritterklärung_Abteilung_Tennis.png
+    - assets/images/Man_icon.png
+    - assets/images/Man_Woman_icon.png
+    - assets/images/Woman_icon.png
+    - assets/images/Natali_Gumbrecht_Trainer.jpg
+    - assets/images/Oliver_Ströbel_Trainer.jpg
+    - assets/images/Spielergebnisse.jpg
+    - assets/images/Dokumentenbox.jpg
+    - assets/images/Trainer.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

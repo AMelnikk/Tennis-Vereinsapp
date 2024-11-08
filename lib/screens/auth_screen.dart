@@ -39,7 +39,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 20),
-                    child: Text(authMode == AuthMode.signIn ? "Anmeldung" : "Registration", style: const TextStyle(fontSize: 20),),
+                    child: Text(
+                      authMode == AuthMode.signIn
+                          ? "Anmeldung"
+                          : "Registration",
+                      style: const TextStyle(fontSize: 20, color: Colors.white),
+                    ),
                   )
                 ],
               ),

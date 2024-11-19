@@ -40,7 +40,7 @@ class DocumentTile extends StatelessWidget {
                 textAlign: TextAlign.left,
                 style: const TextStyle(fontSize: 14),
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:verein_app/screens/auth_screen.dart';
+import 'package:verein_app/screens/fotogalerie_screen.dart';
 import 'package:verein_app/screens/trainers_screen.dart';
 import '../screens/documents_screen.dart';
 import './game_results_screen.dart';
@@ -47,7 +48,9 @@ class FunctionsScreen extends StatelessWidget {
                     }), // Done
                 FunctionTile(
                     image: Image.asset("assets/images/Spielergebnisse.jpg"),
-                    onTap: () {}), //Fotogalerie
+                    onTap: () {
+                      Navigator.of(context).pushNamed(FotogalerieScreen.routename);
+                    }), //Fotogalerie
                 //Datenbank + Möglichkeit Fotos hochzuladen
                 //Nur mit Anmeldung
                 FunctionTile(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/providers/photo_provider.dart';
 import 'package:verein_app/screens/auth_screen.dart';
+import 'package:verein_app/screens/fotogalerie_screen.dart';
 import 'package:verein_app/screens/trainers_screen.dart';
 import "./providers/game_results_provider.dart";
 import './screens/documents_screen.dart';
@@ -27,6 +29,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider.value(
           value: AuthProvider(),
+        ),
+        ChangeNotifierProvider.value(
+          value: PhotoProvider(),
         )
       ],
       child: MaterialApp(
@@ -43,6 +48,7 @@ class MyApp extends StatelessWidget {
           DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
           TrainersScreen.routename: (ctx) => const TrainersScreen(),
           AuthScreen.routeName: (ctx) => const AuthScreen(),
+          FotogalerieScreen.routename: (ctx) => const FotogalerieScreen(),
         },
       ),
     );

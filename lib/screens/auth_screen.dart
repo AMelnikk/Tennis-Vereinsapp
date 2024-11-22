@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/verein_appbar.dart';
+import '../models/http_exception.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -11,47 +12,108 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-enum AuthMode { signIn, signUp }
-
 class _AuthScreenState extends State<AuthScreen> {
-  var authMode = AuthMode.signIn;
+  var _isLoading = false;
+  final email = TextEditingController();
+  final password = TextEditingController();
 
-  Future<void> signup() async {
-    await Provider.of<AuthProvider>(context, listen: false)
-        .signup("fagerst9@gmail.com", "1412412214");
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Es ist ein Fehler aufgetreten"),
+        content: Text(message),
+        actions: [
+          TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"))
+        ],
+      ),
+    );
+  }
+
+  Future<void> signIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await Provider.of<AuthProvider>(context, listen: false)
+          .signIn(email.text, password.text);
+    } on HttpException catch (error) {
+      var errorMessage = "Sie können nicht authentifiziert werden";
+      if (error.toString().contains("INVALID_EMAIL")) {
+        errorMessage = "Email ist falsch";
+      } else if (error.toString().contains("INVALID_LOGIN_CREDENTIALS")) {
+        errorMessage = "Email oder Passwort sind falsch";
+      }
+      _showErrorDialog(errorMessage);
+    } catch (error) {
+      const errorMessage =
+          "Sie können nicht authentifiziert werden. Bitte versuchen sie es später";
+      _showErrorDialog(errorMessage);
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: VereinAppbar(),
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(color: Colors.white10),
-          ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(color: Colors.lightBlue),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Text(
-                      authMode == AuthMode.signIn
-                          ? "Anmeldung"
-                          : "Registration",
-                      style: const TextStyle(fontSize: 20, color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(color: Colors.white10),
+                ),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(color: Colors.grey),
+                  child: Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: Text(
+                          "Anmeldung",
+                          style: TextStyle(fontSize: 20, color: Colors.white),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 10),
+                        child: TextFormField(
+                          controller: email,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(labelText: "Email"),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 10),
+                        child: TextFormField(
+                          controller: password,
+                          style: const TextStyle(color: Colors.white),
+                          decoration:
+                              const InputDecoration(labelText: "Passwort"),
+                        ),
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            signIn();
+                            setState(() {});
+                          },
+                          child: const Text("anmelden"))
+                    ],
+                  ),
+                ),
+              ],
             ),
-          )
-        ],
-      ),
     );
   }
 }

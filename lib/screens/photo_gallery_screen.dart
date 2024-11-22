@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/Photo.dart';
-import 'package:verein_app/providers/photo_provider.dart';
-import 'package:verein_app/widgets/photo_widget.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import '../models/Photo.dart';
+import '../providers/photo_provider.dart';
+import '../widgets/photo_widget.dart';
+import '../widgets/verein_appbar.dart';
 
-class FotogalerieScreen extends StatefulWidget {
-  const FotogalerieScreen({super.key});
+class PhotoGalleryScreen extends StatefulWidget {
+  const PhotoGalleryScreen({super.key});
   static const routename = "/fotogalerie";
 
   @override
-  State<FotogalerieScreen> createState() => _FotogalerieScreenState();
+  State<PhotoGalleryScreen> createState() => _PhotoGalleryScreenState();
 }
 
-class _FotogalerieScreenState extends State<FotogalerieScreen> {
+class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   var _isLoading = true;
   late final List<Photo> loadedData;
 
@@ -58,19 +58,30 @@ class _FotogalerieScreenState extends State<FotogalerieScreen> {
       appBar: VereinAppbar(),
       body: _isLoading
           ? const CircularProgressIndicator()
-          : CustomScrollView(
-              slivers: [
-                SliverGrid(
+          : Padding(
+              padding: const EdgeInsets.all(10),
+              child: CustomScrollView(
+                slivers: [
+                  const SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 10,
+                    ),
+                  ),
+                  SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10),
-                    delegate: SliverChildListDelegate(loadedData
-                        .map((item) => PhotoWidget(
-                            title: item.title, photoData: item.imageData))
-                        .toList()))
-              ],
+                    delegate: SliverChildListDelegate(
+                      loadedData
+                          .map((item) => PhotoWidget(
+                              title: item.title, photoData: item.imageData))
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }

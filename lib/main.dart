@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/providers/photo_provider.dart';
-import 'package:verein_app/screens/auth_screen.dart';
-import 'package:verein_app/screens/fotogalerie_screen.dart';
-import 'package:verein_app/screens/trainers_screen.dart';
+import 'package:verein_app/screens/place_booking_screen.dart';
+import './providers/auth_provider.dart';
+import './providers/photo_provider.dart';
+import './screens/auth_screen.dart';
+import './screens/photo_gallery_screen.dart';
+import './screens/trainers_screen.dart';
 import "./providers/game_results_provider.dart";
 import './screens/documents_screen.dart';
 import './screens/functions_screen.dart';
@@ -34,22 +35,27 @@ class MyApp extends StatelessWidget {
           value: PhotoProvider(),
         )
       ],
-      child: MaterialApp(
-        title: "TSV Weidenbach",
-        theme: ThemeData(
-          scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-          appBarTheme: const AppBarTheme(
-              backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-              foregroundColor: Colors.white),
+      child: Consumer<AuthProvider>(
+        builder: (ctx, authProvider, _) => MaterialApp(
+          title: "TSV Weidenbach",
+          theme: ThemeData(
+            scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+            appBarTheme: const AppBarTheme(
+                backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+                foregroundColor: Colors.white),
+          ),
+          home: const MyHomePage(),
+          routes: {
+            GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+            DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+            TrainersScreen.routename: (ctx) => const TrainersScreen(),
+            AuthScreen.routeName: (ctx) => const AuthScreen(),
+            PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
+            PlaceBookingScreen.routename: (ctx) => authProvider.isAuth
+                ? const PlaceBookingScreen()
+                : const AuthScreen(),
+          },
         ),
-        home: const MyHomePage(),
-        routes: {
-          GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
-          DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
-          TrainersScreen.routename: (ctx) => const TrainersScreen(),
-          AuthScreen.routeName: (ctx) => const AuthScreen(),
-          FotogalerieScreen.routename: (ctx) => const FotogalerieScreen(),
-        },
       ),
     );
   }

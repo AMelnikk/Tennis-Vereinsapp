@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/auth_screen.dart';
-import 'package:verein_app/screens/fotogalerie_screen.dart';
-import 'package:verein_app/screens/trainers_screen.dart';
-import '../screens/documents_screen.dart';
+import './place_booking_screen.dart';
+import './photo_gallery_screen.dart';
+import './trainers_screen.dart';
+import './documents_screen.dart';
 import './game_results_screen.dart';
 import '../widgets/function_tile.dart';
 
@@ -49,14 +49,14 @@ class FunctionsScreen extends StatelessWidget {
                 FunctionTile(
                     image: Image.asset("assets/images/Spielergebnisse.jpg"),
                     onTap: () {
-                      Navigator.of(context).pushNamed(FotogalerieScreen.routename);
+                      Navigator.of(context).pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
                 //Datenbank + Möglichkeit Fotos hochzuladen
                 //Nur mit Anmeldung
                 FunctionTile(
                   image: Image.asset("assets/images/Spielergebnisse.jpg"),
                   onTap: () {
-                    Navigator.of(context).pushNamed(AuthScreen.routeName);
+                    Navigator.of(context).pushNamed(PlaceBookingScreen.routename);
                   },
                 ), // Platzbuchung
                 // Verbindund zu Website der Platzbuchung und app

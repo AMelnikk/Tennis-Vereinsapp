@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 class PhotoWidget extends StatelessWidget {
@@ -10,6 +9,23 @@ class PhotoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(child: Column(children: [Image.memory(photoData), Text(title)],));
+    return Column(
+      children: [
+        Image.memory(
+          photoData,
+          height: 150,
+          width: 150,
+        ),
+        const SizedBox(
+          height: 5,
+        ),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 15),
+          ),
+        ),
+      ],
+    );
   }
 }

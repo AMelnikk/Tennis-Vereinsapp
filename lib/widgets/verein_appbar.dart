@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 class VereinAppbar extends AppBar {
   VereinAppbar({super.key});
 
-  // @override
-  // Widget? get leading =>
-
   @override
   List<Widget>? get actions => [
         // const SizedBox(width: 15,),

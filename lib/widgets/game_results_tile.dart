@@ -29,6 +29,7 @@ class GameResultsTile extends StatelessWidget {
         onTap: () {
           launchUrl(
             Uri.parse(url),
+            mode: LaunchMode.inAppBrowserView
           );
         },
         child: Row(

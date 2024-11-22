@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import '../widgets/verein_appbar.dart';
 
 class TrainersScreen extends StatelessWidget {
   const TrainersScreen({super.key});

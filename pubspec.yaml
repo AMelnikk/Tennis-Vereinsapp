@@ -39,6 +39,8 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.1
   provider: ^6.1.2
+  image_picker: ^1.1.2
+  flutter_image_converter: ^0.4.1
 
 
 dev_dependencies:
@@ -79,6 +81,7 @@ flutter:
     - assets/images/Spielergebnisse.jpg
     - assets/images/Dokumentenbox.jpg
     - assets/images/Trainer.jpg
+    - assets/images/Fotogalerie.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

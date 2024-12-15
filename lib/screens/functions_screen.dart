@@ -47,7 +47,7 @@ class FunctionsScreen extends StatelessWidget {
                       Navigator.of(context).pushNamed(TrainersScreen.routename);
                     }), // Done
                 FunctionTile(
-                    image: Image.asset("assets/images/Spielergebnisse.jpg"),
+                    image: Image.asset("assets/images/Fotogalerie.jpg"),
                     onTap: () {
                       Navigator.of(context).pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie

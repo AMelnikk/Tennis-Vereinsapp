@@ -5,14 +5,14 @@ class NewsOverviewScreen extends StatelessWidget {
     super.key,
     required this.image,
     required this.date,
-    required this.text,
+    required this.body,
     required this.title,
   });
 
   final Image image;
   final String title;
   final String date;
-  final String text;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class NewsOverviewScreen extends StatelessWidget {
           child: Text(title),
         ),
         SliverToBoxAdapter(
-          child: Text(text),
+          child: Text(body),
         ),
       ],
     );

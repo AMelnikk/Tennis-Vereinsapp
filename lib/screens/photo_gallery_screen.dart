@@ -18,11 +18,15 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   late final List<Photo> loadedData;
 
   Future<void> getData() async {
-    loadedData =
-        await Provider.of<PhotoProvider>(context, listen: false).getData();
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      loadedData =
+          await Provider.of<PhotoProvider>(context, listen: false).getData();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (error) {
+      print(error);
+    }
   }
 
   // Future<Uint8List> getBytesFromPhoto() async {
@@ -57,7 +61,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     return Scaffold(
       appBar: VereinAppbar(),
       body: _isLoading
-          ? const CircularProgressIndicator()
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(10),
               child: CustomScrollView(

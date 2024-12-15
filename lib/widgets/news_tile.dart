@@ -1,15 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 class NewsTile extends StatelessWidget {
-  const NewsTile({super.key, required this.title, required this.date});
+  const NewsTile(
+      {super.key, required this.title, required this.date, this.base64image});
 
+  final String? base64image;
   final String date;
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: (){},
+      onTap: () {},
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -54,14 +58,16 @@ class NewsTile extends StatelessWidget {
                 ),
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(5),
-                  bottomRight: Radius.circular(5),
-                ),
-                child: Image.asset(
-                  "assets/images/news_image.jpg",
-                ),
-              ),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(5),
+                    bottomRight: Radius.circular(5),
+                  ),
+                  child: base64image != null
+                      ? Image.memory(
+                          base64Decode(base64image as String),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
             ),
           ],
         ),

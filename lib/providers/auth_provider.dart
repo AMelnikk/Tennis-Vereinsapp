@@ -18,6 +18,10 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  String? get userId{
+    return _userId;
+  }
+
   bool get isAuth {
     return token != null;
   }
@@ -54,9 +58,6 @@ class AuthProvider with ChangeNotifier {
           body: json.encode(
             {"email": email, "password": password, "returnSecureToken": true},
           ),
-        );
-        print(
-          json.decode(response.body),
         );
         final responseData = json.decode(response.body);
         if (responseData["error"] != null) {

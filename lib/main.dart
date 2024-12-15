@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/place_booking_screen.dart';
+import './providers/news_provider.dart';
+import './screens/add_photo_screen.dart';
+import './screens/add_news_screen.dart';
+import './screens/admin_screen.dart';
+import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
 import './screens/auth_screen.dart';
@@ -23,38 +27,44 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(
-          value: GameResultsProvider(),
-        ),
-        ChangeNotifierProvider.value(
-          value: AuthProvider(),
-        ),
-        ChangeNotifierProvider.value(
-          value: PhotoProvider(),
-        )
-      ],
-      child: Consumer<AuthProvider>(
-        builder: (ctx, authProvider, _) => MaterialApp(
-          title: "TSV Weidenbach",
-          theme: ThemeData(
-            scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-            appBarTheme: const AppBarTheme(
-                backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-                foregroundColor: Colors.white),
+    return ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
+      builder: (context, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+            value: GameResultsProvider(),
           ),
-          home: const MyHomePage(),
-          routes: {
-            GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
-            DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
-            TrainersScreen.routename: (ctx) => const TrainersScreen(),
-            AuthScreen.routeName: (ctx) => const AuthScreen(),
-            PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
-            PlaceBookingScreen.routename: (ctx) => authProvider.isAuth
-                ? const PlaceBookingScreen()
-                : const AuthScreen(),
-          },
+          ChangeNotifierProvider.value(
+            value: PhotoProvider(Provider.of<AuthProvider>(context).token),
+          ),
+          ChangeNotifierProvider.value(
+            value: NewsProvider(Provider.of<AuthProvider>(context).token),
+          )
+        ],
+        child: Consumer<AuthProvider>(
+          builder: (ctx, authProvider, _) => MaterialApp(
+            title: "TSV Weidenbach",
+            theme: ThemeData(
+              scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+              appBarTheme: const AppBarTheme(
+                  backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+                  foregroundColor: Colors.white),
+            ),
+            home: const MyHomePage(),
+            routes: {
+              GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+              DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+              TrainersScreen.routename: (ctx) => const TrainersScreen(),
+              AuthScreen.routeName: (ctx) => const AuthScreen(),
+              PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
+              PlaceBookingScreen.routename: (ctx) => authProvider.isAuth
+                  ? const PlaceBookingScreen()
+                  : const AuthScreen(),
+              AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
+              AdminScreen.routename: (ctx) => const AdminScreen(),
+              AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
+            },
+          ),
         ),
       ),
     );

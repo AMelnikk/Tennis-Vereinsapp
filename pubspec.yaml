@@ -39,6 +39,10 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.1
   provider: ^6.1.2
+  image_picker: ^1.1.2
+  flutter_image_converter: ^0.4.1
+  photo_view: ^0.15.0
+
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +77,16 @@ flutter:
     - assets/images/Man_icon.png
     - assets/images/Man_Woman_icon.png
     - assets/images/Woman_icon.png
+    - assets/images/Natali_Gumbrecht_Trainer.jpg
+    - assets/images/Oliver_Ströbel_Trainer.jpg
+    - assets/images/Spielergebnisse.jpg
+    - assets/images/Dokumentenbox.jpg
+    - assets/images/Trainer.jpg
+    - assets/images/Fotogalerie.jpg
+    - assets/images/Anmelden.png
+    - assets/images/Impressum.png
+    - assets/images/Admin-Funktionen.png
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

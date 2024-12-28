@@ -1,15 +1,33 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:verein_app/screens/news_overview_screen.dart';
 
 class NewsTile extends StatelessWidget {
-  const NewsTile({super.key, required this.title, required this.date});
+  const NewsTile(
+      {super.key,
+      required this.title,
+      required this.date,
+      required this.body,
+      this.base64image});
 
+  final String? base64image;
   final String date;
   final String title;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: (){},
+      onTap: () {
+        Navigator.of(context)
+            .pushNamed(NewsOverviewScreen.routename, arguments: {
+          "date": date,
+          "title": title,
+          "body": body,
+          "imageData": base64image,
+        });
+      },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -34,11 +52,11 @@ class NewsTile extends StatelessWidget {
                     ),
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 25),
+                      style: const TextStyle(fontSize: 22),
                       overflow: TextOverflow.visible,
                     ),
                     const SizedBox(
-                      height: 5,
+                      height: 0.1,
                     )
                   ],
                 ),
@@ -54,14 +72,16 @@ class NewsTile extends StatelessWidget {
                 ),
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(5),
-                  bottomRight: Radius.circular(5),
-                ),
-                child: Image.asset(
-                  "assets/images/news_image.jpg",
-                ),
-              ),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(5),
+                    bottomRight: Radius.circular(5),
+                  ),
+                  child: base64image != null
+                      ? Image.memory(
+                          base64Decode(base64image as String),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
             ),
           ],
         ),

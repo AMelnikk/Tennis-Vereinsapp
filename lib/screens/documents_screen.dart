@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/widgets/document_tile.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import '../widgets/document_tile.dart';
+import '../widgets/verein_appbar.dart';
 
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
-  static const routename = "documents-screen/";
+  static const routename = "/documents-screen";
 
   @override
   State<DocumentsScreen> createState() => _DocumentsScreenState();
@@ -14,11 +14,11 @@ class DocumentsScreen extends StatefulWidget {
 class _DocumentsScreenState extends State<DocumentsScreen> {
   Future<void> _loadUrlPdf(String url) async {
     Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    // if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      throw "Something went wrong";
-    }
+    // } else {
+    //   print(object);
+    // }
   }
 
   @override

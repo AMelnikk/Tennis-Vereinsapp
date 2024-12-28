@@ -1,13 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/documents_screen.dart';
-import 'package:verein_app/screens/functions_screen.dart';
-import 'package:verein_app/screens/game_results.dart';
-import 'package:verein_app/screens/more_screen.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import './screens/impressum_screen.dart';
+import './screens/news_overview_screen.dart';
+import './providers/news_provider.dart';
+import './screens/add_photo_screen.dart';
+import './screens/add_news_screen.dart';
+import './screens/admin_screen.dart';
+import './screens/place_booking_screen.dart';
+import './providers/auth_provider.dart';
+import './providers/photo_provider.dart';
+import './screens/auth_screen.dart';
+import './screens/photo_gallery_screen.dart';
+import './screens/trainers_screen.dart';
+import "./providers/game_results_provider.dart";
+import './screens/documents_screen.dart';
+import './screens/functions_screen.dart';
+import './screens/game_results_screen.dart';
+import './screens/more_screen.dart';
+import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
+    (_) {
+      runApp(const MyApp());
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -15,19 +35,48 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "TSV Weidenbach",
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-        appBarTheme: const AppBarTheme(
-            backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-            foregroundColor: Colors.white),
+    return ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
+      builder: (context, _) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+            value: GameResultsProvider(),
+          ),
+          ChangeNotifierProvider.value(
+            value: PhotoProvider(Provider.of<AuthProvider>(context).token),
+          ),
+          ChangeNotifierProvider.value(
+            value: NewsProvider(Provider.of<AuthProvider>(context).token),
+          )
+        ],
+        child: Consumer<AuthProvider>(
+          builder: (ctx, authProvider, _) => MaterialApp(
+            title: "TSV Weidenbach",
+            theme: ThemeData(
+              scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+              appBarTheme: const AppBarTheme(
+                  backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+                  foregroundColor: Colors.white),
+            ),
+            home: const MyHomePage(),
+            routes: {
+              GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+              DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+              TrainersScreen.routename: (ctx) => const TrainersScreen(),
+              AuthScreen.routeName: (ctx) => const AuthScreen(),
+              PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
+              PlaceBookingScreen.routename: (ctx) => authProvider.isAuth
+                  ? const PlaceBookingScreen()
+                  : const AuthScreen(),
+              AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
+              AdminScreen.routename: (ctx) => const AdminScreen(),
+              AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
+              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
+              ImpressumScreen.routename : (ctx) => const ImpressumScreen(),
+            },
+          ),
+        ),
       ),
-      home: const MyHomePage(),
-      routes: {
-        GameResults.routename: (ctx) => GameResults(),
-        DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
-      },
     );
   }
 }

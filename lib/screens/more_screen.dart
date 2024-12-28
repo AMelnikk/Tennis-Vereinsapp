@@ -1,14 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:verein_app/screens/auth_screen.dart';
+import 'package:verein_app/screens/impressum_screen.dart';
+import 'package:verein_app/widgets/more_tile.dart';
+import '../providers/auth_provider.dart';
+import '../screens/admin_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "More",
-        style: TextStyle(fontSize: 20),
+    return Padding(
+      padding: const EdgeInsets.all(25),
+      child: GridView(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 25,
+          mainAxisSpacing: 25,
+        ),
+        children: [
+          MoreTile(
+            navigateTo: ImpressumScreen.routename,
+            assetImage: "assets/images/Impressum.png",
+          ),
+          if (Provider.of<AuthProvider>(context).isAuth == false)
+            MoreTile(
+              navigateTo: AuthScreen.routeName,
+              assetImage: "assets/images/Anmelden.png",
+            ),
+          if (Provider.of<AuthProvider>(context).userId ==
+              "UvqMZwTqpcYcLUIAe0qg90UNeUe2")
+            MoreTile(
+              navigateTo: AdminScreen.routename,
+              assetImage: "assets/images/Admin-Funktionen.png",
+            ),
+        ],
       ),
     );
   }

@@ -18,15 +18,20 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
   List<GameResult> gameResults = [];
 
   Future<void> getData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    gameResults = await Provider.of<GameResultsProvider>(context, listen: false)
-        .getData();
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      gameResults =
+          await Provider.of<GameResultsProvider>(context, listen: false)
+              .getData();
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (error) {
+      print(error);
+    }
   }
 
   @override

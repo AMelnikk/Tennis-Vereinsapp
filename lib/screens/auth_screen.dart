@@ -90,17 +90,23 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: TextFormField(
                           controller: email,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(labelText: "Email"),
+                          decoration: const InputDecoration(
+                            labelText: "Email",
+                            labelStyle: TextStyle(color: Colors.white70),
+                          ),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 30, vertical: 10),
                         child: TextFormField(
+                          obscureText: true,
                           controller: password,
                           style: const TextStyle(color: Colors.white),
-                          decoration:
-                              const InputDecoration(labelText: "Passwort"),
+                          decoration: const InputDecoration(
+                            labelText: "Passwort",
+                            labelStyle: TextStyle(color: Colors.white70),
+                          ),
                         ),
                       ),
                       ElevatedButton(

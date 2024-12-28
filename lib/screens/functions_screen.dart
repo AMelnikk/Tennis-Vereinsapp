@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import './place_booking_screen.dart';
+import 'package:verein_app/screens/place_booking_screen.dart';
+// import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';
 import './documents_screen.dart';
@@ -12,19 +13,19 @@ class FunctionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       child: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(
             child: SizedBox(
-              height: 10,
+              height: 15,
             ),
           ),
           SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
             ),
             delegate: SliverChildListDelegate(
               [
@@ -49,25 +50,27 @@ class FunctionsScreen extends StatelessWidget {
                 FunctionTile(
                     image: Image.asset("assets/images/Fotogalerie.jpg"),
                     onTap: () {
-                      Navigator.of(context).pushNamed(PhotoGalleryScreen.routename);
+                      Navigator.of(context)
+                          .pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
                 //Datenbank + Möglichkeit Fotos hochzuladen
                 //Nur mit Anmeldung
                 FunctionTile(
                   image: Image.asset("assets/images/Spielergebnisse.jpg"),
                   onTap: () {
-                    Navigator.of(context).pushNamed(PlaceBookingScreen.routename);
+                    Navigator.of(context)
+                        .pushNamed(PlaceBookingScreen.routename);
                   },
                 ), // Platzbuchung
-                // Verbindund zu Website der Platzbuchung und app
-                FunctionTile(
-                    image: Image.asset("assets/images/Spielergebnisse.jpg"),
-                    onTap: () {}), //Getränkeabrechnung
-                // auf einer Datenbank? speichern
-                FunctionTile(
-                    image: Image.asset("assets/images/Spielergebnisse.jpg"),
-                    onTap: () {}), //Termine
-                //Kalender mit auf Datenbank gespeicherten Terminen
+                // // Verbindund zu Website der Platzbuchung und app
+                // FunctionTile(
+                //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
+                //     onTap: () {}), //Getränkeabrechnung
+                // // auf einer Datenbank? speichern
+                // FunctionTile(
+                //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
+                //     onTap: () {}), //Termine
+                // //Kalender mit auf Datenbank gespeicherten Terminen
               ],
             ),
           ),

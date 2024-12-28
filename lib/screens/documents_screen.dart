@@ -14,11 +14,11 @@ class DocumentsScreen extends StatefulWidget {
 class _DocumentsScreenState extends State<DocumentsScreen> {
   Future<void> _loadUrlPdf(String url) async {
     Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    // if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      throw "Something went wrong";
-    }
+    // } else {
+    //   print(object);
+    // }
   }
 
   @override

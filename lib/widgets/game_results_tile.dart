@@ -41,7 +41,10 @@ class GameResultsTile extends StatelessWidget {
             const SizedBox(
               width: 10,
             ),
-            Text(name),
+            Expanded(child: Padding(
+              padding: const EdgeInsets.only(right: 5),
+              child: Text(name),
+            )),
           ],
         ),
       ),

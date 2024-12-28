@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import './screens/impressum_screen.dart';
+import './screens/news_overview_screen.dart';
 import './providers/news_provider.dart';
 import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
@@ -19,7 +22,12 @@ import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
+    (_) {
+      runApp(const MyApp());
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -63,6 +71,8 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
+              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
+              ImpressumScreen.routename : (ctx) => const ImpressumScreen(),
             },
           ),
         ),

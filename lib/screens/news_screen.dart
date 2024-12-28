@@ -11,16 +11,16 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> {
-  bool _isLoading = false;
+  bool _isLoading = true;
 
   Future<void> getData() async {
     try {
-      if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
-        setState(() {
-          _isLoading = true;
-        });
+      setState(() {
+        _isLoading = true;
+      });
 
-        await Provider.of<NewsProvider>(context, listen: false).getData();
+      await Provider.of<NewsProvider>(context, listen: false).getData();
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -31,30 +31,87 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    if (_isLoading) {
+      if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+        getData();
+      } else {
+        _isLoading = false;
+      }
+    }
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    getData();
     return _isLoading
         ? const Center(
             child: CircularProgressIndicator(),
           )
-        : CustomScrollView(
-            slivers: [
-              SliverList.builder(
-                itemCount: Provider.of<NewsProvider>(context).loadedNews.length,
-                itemBuilder: (ctx, index) => NewsTile(
-                  title: Provider.of<NewsProvider>(context)
-                      .loadedNews[index]
-                      .title,
-                  // title: "test",
-                  date:
-                      Provider.of<NewsProvider>(context).loadedNews[index].date,
-                  // date: DateFormat("dd.MM.yyyy").format(DateTime.now()),
-                  base64image: Provider.of<NewsProvider>(context)
-                      .loadedNews[index]
-                      .imageData,
+        : Provider.of<NewsProvider>(context).loadedNews.isEmpty
+            ? RefreshIndicator(
+                onRefresh: getData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height -
+                        AppBar().preferredSize.height -
+                        MediaQuery.of(context).padding.bottom -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).viewInsets.bottom -
+                        kBottomNavigationBarHeight,
+                    child: const Center(
+                      child: Text(
+                        "Es gibt noch nichts hier",
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          );
+              )
+            : RefreshIndicator(
+                onRefresh: getData,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverList.builder(
+                      itemCount:
+                          Provider.of<NewsProvider>(context).loadedNews.length,
+                      itemBuilder: (ctx, index) => NewsTile(
+                        title: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .title,
+                        // title: "test",
+                        date: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .date,
+                        // date: DateFormat("dd.MM.yyyy").format(DateTime.now()),
+                        body: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .body,
+                        base64image: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .imageData,
+                      ),
+                    ),
+                  ],
+                ),
+              );
   }
 }

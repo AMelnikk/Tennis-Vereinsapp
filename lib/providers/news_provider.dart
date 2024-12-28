@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_converter/flutter_image_converter.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:verein_app/models/news.dart';
+import '../models/news.dart';
 
 enum Tag { spieltreff, keinSpieltreff }
 
@@ -65,6 +65,9 @@ class NewsProvider with ChangeNotifier {
           },
         ),
       );
+      image = null;
+      title.text = "";
+      body.text = "";
       notifyListeners();
       return response.statusCode;
     } catch (error) {
@@ -73,10 +76,12 @@ class NewsProvider with ChangeNotifier {
   }
 
   Future<void> getData() async {
+    final cacheNews = loadedNews;
     var responce = await http.get(
       Uri.parse("https://db-teg-default-rtdb.firebaseio.com/News.json"),
     );
     try {
+      loadedNews = [];
       Map<String, dynamic> dbData = json.decode(responce.body);
       dbData.forEach(
         (key, value) {
@@ -94,6 +99,7 @@ class NewsProvider with ChangeNotifier {
       );
       notifyListeners();
     } catch (error) {
+      loadedNews = cacheNews;
       print(error);
     }
   }

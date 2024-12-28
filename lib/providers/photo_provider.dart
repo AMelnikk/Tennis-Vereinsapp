@@ -11,9 +11,9 @@ class PhotoProvider with ChangeNotifier {
   PhotoProvider(this.token);
 
   String? token;
-
   Image? image;
-  final title = TextEditingController();
+
+  List<Photo> loadedData = [];
 
   Future<void> pickImage() async {
     XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -25,7 +25,6 @@ class PhotoProvider with ChangeNotifier {
 
   Future<Uint8List?> getImageData(Image? image) async {
     Uint8List? imageData = await image?.uint8List;
-    print(imageData);
     return imageData;
   }
 
@@ -47,22 +46,25 @@ class PhotoProvider with ChangeNotifier {
         final response = await http.post(
           url,
           body: json.encode(
-            {"title": title.text, "imageData": base64Image},
+            {"imageData": base64Image},
           ),
         );
+        loadedData = [];
         notifyListeners();
         return response.statusCode;
       } else {
         throw const HttpException("Kein Foto gewählt");
       }
     } catch (error) {
-      rethrow;
+      print(error);
+      return 400;
     }
   }
 
-  Future<List<Photo>> getData() async {
-    final List<Photo> loadedData = [];
+  Future<void> getData() async {
+    final cachePhotos = loadedData;
     try {
+      loadedData = [];
       var responce = await http.get(
         Uri.parse(
             "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json/"),
@@ -73,42 +75,13 @@ class PhotoProvider with ChangeNotifier {
         (photoId, photoData) => loadedData.add(
           Photo(
               photoId: photoId,
-              title: photoData["title"],
-              imageData: base64Decode(photoData["imageData"])
-              // imageData: Uint8List.fromList(
-              //   (photoData["imageData"].cast<int>().toList()),
-              // ),
-              ),
+              imageData: base64Decode(photoData["imageData"])),
         ),
       );
-      print(responce.statusCode);
+      notifyListeners();
     } catch (e) {
-      print("An error occured");
+      loadedData = cachePhotos;
+      print(e);
     }
-    notifyListeners();
-    return loadedData;
   }
-
-//
-  // Future<Uint8List> getBytesFromPhoto() async {
-  //   return (await rootBundle.load("assets/images/Vereinslogo.png"))
-  //       .buffer
-  //       .asUint8List();
-  // }
-
-  // Future<void> postDbimage(
-  //     //Uint8List imageData,
-  //     String title,
-  //     String token) async {
-  //   final Uint8List imageData = await getBytesFromPhoto();
-
-  //   var responce = await http.post(
-  //     Uri.parse(
-  //         "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?auth=$token"),
-  //     body: json.encode(
-  //       {"title": title, "imageData": imageData},
-  //     ),
-  //   );
-  //   print(responce.statusCode);
-  // }
 }

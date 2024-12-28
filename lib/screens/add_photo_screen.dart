@@ -39,7 +39,6 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   void resetProvider(BuildContext context) {
     Provider.of<PhotoProvider>(context, listen: false).image = null;
-    Provider.of<PhotoProvider>(context, listen: false).title.text = "";
   }
 
   void showFehler(HttpException error) {
@@ -61,22 +60,24 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   }
 
   Future<void> postImage() async {
-    // try {
-      setState(() {
-        _isLoading = true;
-      });
-      var responseStatusCode =
-          await Provider.of<PhotoProvider>(context, listen: false).postImage();
-      resetProvider(context);
-      setState(() {
-        _isLoading = false;
-      });
-      showSnackBar(responseStatusCode);
-    // } on HttpException catch (error) {
-    //   showFehler(error);
-    // } catch (error) {
-    //   rethrow;
-    // }
+    try {
+    setState(() {
+      _isLoading = true;
+    });
+    var responseStatusCode =
+        await Provider.of<PhotoProvider>(context, listen: false).postImage();
+    resetProvider(context);
+    Provider.of<PhotoProvider>(context, listen: false).image = null;
+    setState(() {
+      _isLoading = false;
+    });
+    print(responseStatusCode);
+    showSnackBar(responseStatusCode);
+    } on HttpException catch (error) {
+      showFehler(error);
+    } catch (error) {
+      rethrow;
+    }
   }
 
   @override
@@ -96,45 +97,39 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 20),
                   ),
+                  
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: TextFormField(
-                      controller: Provider.of<PhotoProvider>(context).title,
-                      style: const TextStyle(color: Colors.grey),
-                      decoration: const InputDecoration(
-                        label: Text("title"),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        height: 100,
-                        width: 75,
-                        decoration: BoxDecoration(
-                          border: Border.all(),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 100,
+                          width: 75,
+                          decoration: BoxDecoration(
+                            border: Border.all(),
+                          ),
+                          child: Provider.of<PhotoProvider>(context).image ??
+                              const Text(
+                                "kein Foto gewählt",
+                                textAlign: TextAlign.center,
+                              ),
                         ),
-                        child: Provider.of<PhotoProvider>(context).image ??
-                            const Text(
-                              "kein Foto gewählt",
-                              textAlign: TextAlign.center,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Provider.of<PhotoProvider>(context, listen: false)
+                                  .pickImage();
+                            },
+                            icon: const Icon(Icons.photo),
+                            label: const Text(
+                              "Foto wählen",
+                              style: TextStyle(fontSize: 20),
                             ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Provider.of<PhotoProvider>(context, listen: false)
-                                .pickImage();
-                          },
-                          icon: const Icon(Icons.photo),
-                          label: const Text(
-                            "Foto wählen",
-                            style: TextStyle(fontSize: 20),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(

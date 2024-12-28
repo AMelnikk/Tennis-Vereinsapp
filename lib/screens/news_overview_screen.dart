@@ -1,36 +1,82 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:verein_app/widgets/verein_appbar.dart';
 
 class NewsOverviewScreen extends StatelessWidget {
-  const NewsOverviewScreen({
-    super.key,
-    required this.image,
-    required this.date,
-    required this.body,
-    required this.title,
-  });
+  static const routename = "/news-overview-screen";
 
-  final Image image;
-  final String title;
-  final String date;
-  final String body;
+  const NewsOverviewScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: image,
-        ),
-        SliverToBoxAdapter(
-          child: Text(date),
-        ),
-        SliverToBoxAdapter(
-          child: Text(title),
-        ),
-        SliverToBoxAdapter(
-          child: Text(body),
-        ),
-      ],
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map;
+
+    return Scaffold(
+      appBar: VereinAppbar(),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: SingleChildScrollView(
+            child: Container(
+          decoration: const BoxDecoration(color: Colors.white),
+          child: Column(
+            children: [
+              Container(
+                  child: (arguments["imageData"] != null
+                      ? Image.memory(
+                          base64Decode(arguments["imageData"] as String))
+                      : null),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    arguments["date"] as String,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    arguments["title"] as String,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    arguments["body"] as String,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        )
+
+            //   SliverToBoxAdapter(
+            //     child: Text(arguments["body"] as String),
+            //   ),
+            // ],
+            ),
+      ),
     );
   }
 }

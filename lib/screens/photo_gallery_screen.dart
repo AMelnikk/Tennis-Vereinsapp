@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
-import '../models/Photo.dart';
 import '../providers/photo_provider.dart';
-import '../widgets/photo_widget.dart';
 import '../widgets/verein_appbar.dart';
 
 class PhotoGalleryScreen extends StatefulWidget {
@@ -15,12 +14,13 @@ class PhotoGalleryScreen extends StatefulWidget {
 
 class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   var _isLoading = true;
-  late final List<Photo> loadedData;
 
   Future<void> getData() async {
     try {
-      loadedData =
-          await Provider.of<PhotoProvider>(context, listen: false).getData();
+      setState(() {
+        _isLoading = true;
+      });
+      await Provider.of<PhotoProvider>(context, listen: false).getData();
       setState(() {
         _isLoading = false;
       });
@@ -29,64 +29,97 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     }
   }
 
-  // Future<Uint8List> getBytesFromPhoto() async {
-  //   return (await rootBundle.load("assets/images/Vereinslogo.png"))
-  //       .buffer
-  //       .asUint8List();
-  // }
-
-  // Future<void> postDbimage(//Uint8List imageData,
-  // String title) async {
-  //   final Uint8List imageData = await getBytesFromPhoto();
-
-  //   var responce = await http.post(
-  //     Uri.parse("https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json/"),
-  //     body: json.encode(
-  //       {"title": title, "imageData": imageData},
-  //     ),
-  //   );
-  //   print(responce.statusCode);
-  // }
-
   @override
-  initState() {
-    //postDbimage("logo");
-    getData();
-
-    super.initState();
+  void didChangeDependencies() {
+    if (_isLoading) {
+      if (Provider.of<PhotoProvider>(context).loadedData.isEmpty) {
+        getData();
+      } else {
+        _isLoading = false;
+      }
+    }
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
+    final photoProvider = Provider.of<PhotoProvider>(context);
     return Scaffold(
       appBar: VereinAppbar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(10),
-              child: CustomScrollView(
-                slivers: [
-                  const SliverToBoxAdapter(
+          : photoProvider.loadedData.isEmpty
+              ? RefreshIndicator(
+                  onRefresh: getData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: SizedBox(
-                      height: 10,
+                      height: MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).viewInsets.bottom -
+                          MediaQuery.of(context).padding.top -
+                          MediaQuery.of(context).padding.bottom -
+                          AppBar().preferredSize.height,
+                      child: const Center(
+                        child: Text(
+                          "Es gibt noch nichts hier",
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
                     ),
                   ),
-                  SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10),
-                    delegate: SliverChildListDelegate(
-                      loadedData
-                          .map((item) => PhotoWidget(
-                              title: item.title, photoData: item.imageData))
-                          .toList(),
-                    ),
+                )
+              :
+              // child: CustomScrollView(
+              //   physics: const AlwaysScrollableScrollPhysics(),
+              //   slivers: [
+              //     const SliverToBoxAdapter(
+              //       // child: SizedBox(
+              //       //   height: 10,
+              //       // ),
+              //     ),
+              //     SliverGrid(
+              //       gridDelegate:
+              //           const SliverGridDelegateWithFixedCrossAxisCount(
+              //               crossAxisCount: 3,
+              //               crossAxisSpacing: 10,
+              //               mainAxisSpacing: 10),
+              //       delegate: SliverChildListDelegate(
+              //         photoProvider.loadedData
+              //             .map((item) =>
+              //                 PhotoWidget(photoData: item.imageData))
+              //             .toList(),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              PhotoViewGallery.builder(
+                  gaplessPlayback: true,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Color.fromRGBO(221, 221, 226, 1),
                   ),
-                ],
-              ),
-            ),
+                  // color: (Colors.black),
+                  scrollPhysics: const BouncingScrollPhysics(),
+                  itemCount: photoProvider.loadedData.length,
+                  builder: (context, index) {
+                    return PhotoViewGalleryPageOptions(
+                      imageProvider: MemoryImage(photoProvider
+                          .loadedData[
+                              photoProvider.loadedData.length - 1 - index]
+                          .imageData),
+                    );
+                  },
+                  // loadingBuilder: (context, event) => GridView.builder(
+                  //   gridDelegate:
+                  //       const SliverGridDelegateWithFixedCrossAxisCount(
+                  //           crossAxisCount: 3,
+                  //           crossAxisSpacing: 10,
+                  //           mainAxisSpacing: 10),
+                  //   itemCount: photoProvider.loadedData.length,
+                  //   itemBuilder: (context, index) => PhotoWidget(
+                  //       photoData:
+                  //           photoProvider.loadedData[index].imageData),
+                  // ),
+                ),
     );
   }
 }

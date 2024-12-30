@@ -85,7 +85,6 @@ class _NewsScreenState extends State<NewsScreen> {
                                 1 -
                                 index]
                             .title,
-                        // title: "test",
                         date: Provider.of<NewsProvider>(context)
                             .loadedNews[Provider.of<NewsProvider>(context)
                                     .loadedNews
@@ -93,7 +92,6 @@ class _NewsScreenState extends State<NewsScreen> {
                                 1 -
                                 index]
                             .date,
-                        // date: DateFormat("dd.MM.yyyy").format(DateTime.now()),
                         body: Provider.of<NewsProvider>(context)
                             .loadedNews[Provider.of<NewsProvider>(context)
                                     .loadedNews

@@ -26,7 +26,7 @@ class GameResultsProvider with ChangeNotifier {
         },
       );
     } catch (e) {
-      print("An error occured");
+      rethrow;
     }
     notifyListeners();
     return loadedData;

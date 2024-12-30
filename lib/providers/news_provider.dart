@@ -100,7 +100,6 @@ class NewsProvider with ChangeNotifier {
       notifyListeners();
     } catch (error) {
       loadedNews = cacheNews;
-      print(error);
     }
   }
 }

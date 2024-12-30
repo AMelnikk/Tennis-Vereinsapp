@@ -56,7 +56,6 @@ class PhotoProvider with ChangeNotifier {
         throw const HttpException("Kein Foto gewählt");
       }
     } catch (error) {
-      print(error);
       return 400;
     }
   }

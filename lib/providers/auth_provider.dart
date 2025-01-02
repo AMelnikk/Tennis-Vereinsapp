@@ -26,28 +26,6 @@ class AuthProvider with ChangeNotifier {
     return token != null;
   }
 
-  // Future<void> authentificate(
-  //   String email,
-  //   String password,
-  //   String method,
-  // ) async {
-  //   final dbUrl = Uri.parse(
-  //       "https://identitytoolkit.googleapis.com/v1/accounts:$method?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-  //   final response = await http.post(
-  //     dbUrl,
-  //     body: json.encode(
-  //       {"email": email, "password": password, "returnSecureToken": true},
-  //     ),
-  //   );
-  //   print(
-  //     json.decode(response.body),
-  //   );
-  // }
-
-  // Future<void> signup(String email, String password) async {
-  //   await authentificate(email, password, "signUp");
-  // }
-
   Future<void> signIn(String email, String password) async {
     {
       final dbUrl = Uri.parse(
@@ -60,7 +38,7 @@ class AuthProvider with ChangeNotifier {
           ),
         );
         final responseData = json.decode(response.body);
-        print(responseData);
+        // print(responseData);
         if (responseData["error"] != null) {
           throw HttpException(message: responseData["error"]["message"]);
         }
@@ -74,6 +52,7 @@ class AuthProvider with ChangeNotifier {
           ),
         );
         notifyListeners();
+        if (response.statusCode < 300){}
       } catch (error) {
         rethrow;
       }

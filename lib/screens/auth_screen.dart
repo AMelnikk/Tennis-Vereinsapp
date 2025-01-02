@@ -41,6 +41,10 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       await Provider.of<AuthProvider>(context, listen: false)
           .signIn(email.text, password.text);
+      Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {// Problem bei Platzbuchung
+        Navigator.of(context).pop();
+      }
     } on HttpException catch (error) {
       var errorMessage = "Sie können nicht authentifiziert werden";
       if (error.toString().contains("INVALID_EMAIL")) {
@@ -54,10 +58,11 @@ class _AuthScreenState extends State<AuthScreen> {
           "Sie können nicht authentifiziert werden. Bitte versuchen sie es später";
       _showErrorDialog(errorMessage);
     }
-
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -110,9 +115,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       ElevatedButton(
-                          onPressed: () {
-                            signIn();
-                            setState(() {});
+                          onPressed: () async {
+                            await signIn();
                           },
                           child: const Text("anmelden"))
                     ],

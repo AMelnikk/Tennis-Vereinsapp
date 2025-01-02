@@ -80,9 +80,10 @@ class NewsProvider with ChangeNotifier {
     var responce = await http.get(
       Uri.parse("https://db-teg-default-rtdb.firebaseio.com/News.json"),
     );
+    print(responce.statusCode);
     try {
       loadedNews = [];
-      Map<String, dynamic> dbData = json.decode(responce.body);
+      Map<String, dynamic> dbData = await json.decode(responce.body);
       dbData.forEach(
         (key, value) {
           loadedNews.add(
@@ -95,8 +96,10 @@ class NewsProvider with ChangeNotifier {
                   value["imageData"] == "null" ? null : value["imageData"],
             ),
           );
+          print(loadedNews);
         },
       );
+      
       notifyListeners();
     } catch (error) {
       loadedNews = cacheNews;

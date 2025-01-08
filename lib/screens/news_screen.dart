@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/news_provider.dart';
@@ -11,22 +12,37 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> {
+  bool _isFirstLoading = false;
   bool _isLoading = true;
 
   Future<void> getData() async {
     try {
+      // if (_isFirstLoading) {
+      //   setState(() {
+      //     _isFirstLoading = true;
+      //   });
+      //   await Provider.of<NewsProvider>(context, listen: false).getData();
+      //   if (mounted) {
+      //     setState(() {
+      //       _isFirstLoading = false;
+      //     });
+
+      //   } else if (_isLoading) {
       setState(() {
         _isLoading = true;
       });
-
       await Provider.of<NewsProvider>(context, listen: false).getData();
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+      // }
+      // }
     } catch (error) {
-      print(error);
+      if (kDebugMode) {
+        print(error);
+      }
     }
   }
 
@@ -34,17 +50,30 @@ class _NewsScreenState extends State<NewsScreen> {
   void didChangeDependencies() {
     if (_isLoading) {
       if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
-        getData();
+        if (mounted) {
+          setState(() {
+            _isFirstLoading = true;
+          });
+        }
+
+        getData().then((_) {
+          if (mounted) {
+            setState(() {
+              _isFirstLoading = false;
+            });
+          }
+        });
       } else {
         _isLoading = false;
       }
     }
+
     super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _isLoading
+    return _isFirstLoading
         ? const Center(
             child: CircularProgressIndicator(),
           )
@@ -69,49 +98,80 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                 ),
               )
-            : RefreshIndicator(
-                onRefresh: getData,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverList.builder(
-                      itemCount:
-                          Provider.of<NewsProvider>(context).loadedNews.length,
-                      itemBuilder: (ctx, index) => NewsTile(
-                        title: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .title,
-                        // title: "test",
-                        date: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .date,
-                        // date: DateFormat("dd.MM.yyyy").format(DateTime.now()),
-                        body: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .body,
-                        base64image: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .imageData,
-                      ),
+            : CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverList.builder(
+                    itemCount:
+                        Provider.of<NewsProvider>(context).loadedNews.length,
+                    itemBuilder: (ctx, index) => NewsTile(
+                      id: Provider.of<NewsProvider>(context)
+                          .loadedNews[Provider.of<NewsProvider>(context)
+                                  .loadedNews
+                                  .length -
+                              1 -
+                              index]
+                          .id,
+                      title: Provider.of<NewsProvider>(context)
+                          .loadedNews[Provider.of<NewsProvider>(context)
+                                  .loadedNews
+                                  .length -
+                              1 -
+                              index]
+                          .title,
+                      date: Provider.of<NewsProvider>(context)
+                          .loadedNews[Provider.of<NewsProvider>(context)
+                                  .loadedNews
+                                  .length -
+                              1 -
+                              index]
+                          .date,
+                      body: Provider.of<NewsProvider>(context)
+                          .loadedNews[Provider.of<NewsProvider>(context)
+                                  .loadedNews
+                                  .length -
+                              1 -
+                              index]
+                          .body,
+                      base64image: Provider.of<NewsProvider>(context)
+                          .loadedNews[Provider.of<NewsProvider>(context)
+                                  .loadedNews
+                                  .length -
+                              1 -
+                              index]
+                          .imageData,
                     ),
-                  ],
-                ),
+                  ),
+                  if (_isLoading)
+                    const SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 50,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    )
+                  else if ((Provider.of<NewsProvider>(context).hasMore))
+                    SliverToBoxAdapter(
+                      child: GestureDetector(
+                        onTap: getData,
+                        child: const SizedBox(
+                          height: 50,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(Icons.pending_rounded),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Text("mehr anzeigen"),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                ],
               );
   }
 }

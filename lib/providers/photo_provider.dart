@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_image_converter/flutter_image_converter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/Photo.dart';
@@ -28,9 +29,9 @@ class PhotoProvider with ChangeNotifier {
     return imageData;
   }
 
-  // Future<void> delete()async {
+  // Future<void> delete() async {
   //   final url = Uri.parse(
-  //       "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie/-OCxHGaDBUvVfXFiPTO5.json?auth=$token");
+  //       "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie/-OFg-OEhRjRqqwSF08Q6.json?auth=$token");
   //   final responce = await http.delete(url);
   //   print(responce.statusCode);
   //   print(responce.body);
@@ -42,7 +43,21 @@ class PhotoProvider with ChangeNotifier {
         "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?auth=$token");
     try {
       if (imageData != null) {
-        final base64Image = base64Encode(imageData.cast<int>().toList());
+        // final base64Image = base64Encode(imageData.cast<int>().toList());
+        final image = await FlutterImageCompress.compressWithList(
+          imageData,
+          minHeight: 1080,
+          minWidth: 1080,
+          quality: 80,
+          format: CompressFormat.webp,
+        );
+        final base64Image = base64Encode(image.cast<int>().toList());
+        final previousBase64Image = base64Encode(imageData.cast<int>().toList());
+        print(previousBase64Image.length);
+        print(base64Image.length);
+
+        print("\n${imageData.length}");
+        print(image.length);
         final response = await http.post(
           url,
           body: json.encode(
@@ -73,14 +88,19 @@ class PhotoProvider with ChangeNotifier {
       photoData.forEach(
         (photoId, photoData) => loadedData.add(
           Photo(
-              photoId: photoId,
-              imageData: base64Decode(photoData["imageData"])),
+            photoId: photoId,
+            imageData: base64Decode(
+              photoData["imageData"],
+            ),
+          ),
         ),
       );
       notifyListeners();
     } catch (e) {
       loadedData = cachePhotos;
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
 }

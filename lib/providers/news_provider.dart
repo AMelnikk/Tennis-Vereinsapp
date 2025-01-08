@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_converter/flutter_image_converter.dart';
 import 'package:http/http.dart' as http;
@@ -21,6 +23,8 @@ class NewsProvider with ChangeNotifier {
   var newsTag = Tag.keinSpieltreff;
   final title = TextEditingController();
   final body = TextEditingController();
+  String? _lastId;
+  bool hasMore = true;
 
   Future<void> pickImage() async {
     XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -51,7 +55,14 @@ class NewsProvider with ChangeNotifier {
         "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$token");
     try {
       if (imageData != null) {
-        base64Image = base64Encode(imageData.cast<int>().toList());
+        final image = await FlutterImageCompress.compressWithList(
+          imageData,
+          minHeight: 1080,
+          minWidth: 1080,
+          quality: 80,
+          format: CompressFormat.webp,
+        );
+        base64Image = base64Encode(image.cast<int>().toList());
       }
       final response = await http.post(
         url,
@@ -75,19 +86,38 @@ class NewsProvider with ChangeNotifier {
     }
   }
 
+  Future<void> deleteNews(String id) async {
+    print(id);
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$token");
+    final responce = await http.delete(url);
+    loadedNews.removeWhere((item) => item.id == id);
+    if (kDebugMode) {
+      print(responce.statusCode);
+    }
+    notifyListeners();
+  }
+
   Future<void> getData() async {
     final cacheNews = loadedNews;
-    var responce = await http.get(
-      Uri.parse("https://db-teg-default-rtdb.firebaseio.com/News.json"),
-    );
-    print(responce.statusCode);
+    if (!hasMore) {
+      return;
+    }
     try {
-      loadedNews = [];
+      String queryParams = _lastId == null
+          ? 'orderBy="%24key"&limitToLast=5'
+          : 'orderBy="%24key"&endAt="$_lastId"&limitToLast=6';
+      var responce = await http.get(
+        Uri.parse(
+            'https://db-teg-default-rtdb.firebaseio.com/News.json?$queryParams'),
+      );
+      List<News> loadedData = [];
       Map<String, dynamic> dbData = await json.decode(responce.body);
       dbData.forEach(
-        (key, value) {
-          loadedNews.add(
+        (id, value) {
+          loadedData.add(
             News(
+              id: id,
               title: value["title"] as String,
               body: value["body"] as String,
               date: value["date"] as String,
@@ -96,10 +126,22 @@ class NewsProvider with ChangeNotifier {
                   value["imageData"] == "null" ? null : value["imageData"],
             ),
           );
-          print(loadedNews);
         },
       );
-      
+      if (_lastId != null) {
+        loadedData.removeAt(loadedData.length - 1);
+      }
+      hasMore = dbData.length == 5;
+      _lastId = loadedData.isNotEmpty ? loadedData.first.id : null;
+      loadedNews.insertAll(0, loadedData);
+
+      // for(int i = 0; i < loadedData.length; i++){
+      //   print(loadedData[i].title);
+      // }
+      // print("\n");
+      // for(int i = 0; i < loadedNews.length; i++){
+      //   print(loadedNews[i].title);
+      // }
       notifyListeners();
     } catch (error) {
       loadedNews = cacheNews;

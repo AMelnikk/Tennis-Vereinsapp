@@ -6,11 +6,13 @@ import 'package:verein_app/screens/news_overview_screen.dart';
 class NewsTile extends StatelessWidget {
   const NewsTile(
       {super.key,
+      required this.id,
       required this.title,
       required this.date,
       required this.body,
       this.base64image});
 
+  final String id;
   final String? base64image;
   final String date;
   final String title;
@@ -22,6 +24,7 @@ class NewsTile extends StatelessWidget {
       onTap: () {
         Navigator.of(context)
             .pushNamed(NewsOverviewScreen.routename, arguments: {
+          "id": id,
           "date": date,
           "title": title,
           "body": body,

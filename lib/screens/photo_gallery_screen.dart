@@ -1,4 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_converter/flutter_image_converter.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:provider/provider.dart';
 import '../providers/photo_provider.dart';
@@ -14,6 +17,30 @@ class PhotoGalleryScreen extends StatefulWidget {
 
 class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   var _isLoading = true;
+
+  Uint8List? photo;
+
+  // Future<void> testConvert() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+
+  //   final list =
+  //       await Image.asset("assets/images/Oliver_Ströbel_Trainer.jpg").uint8List;
+  //   final result = await FlutterImageCompress.compressWithList(
+  //     list,
+  //     minHeight: 1080,
+  //     minWidth: 1080,
+  //     quality: 40,
+  //     format: CompressFormat.webp,
+  //   );
+  //   print(list.length);
+  //   print(result.length);
+  //   photo = result;
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  // }
 
   Future<void> getData() async {
     try {
@@ -40,6 +67,12 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     }
     super.didChangeDependencies();
   }
+
+  // @override
+  // void initState() {
+  //   testConvert();
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -68,36 +101,11 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                     ),
                   ),
                 )
-              :
-              // child: CustomScrollView(
-              //   physics: const AlwaysScrollableScrollPhysics(),
-              //   slivers: [
-              //     const SliverToBoxAdapter(
-              //       // child: SizedBox(
-              //       //   height: 10,
-              //       // ),
-              //     ),
-              //     SliverGrid(
-              //       gridDelegate:
-              //           const SliverGridDelegateWithFixedCrossAxisCount(
-              //               crossAxisCount: 3,
-              //               crossAxisSpacing: 10,
-              //               mainAxisSpacing: 10),
-              //       delegate: SliverChildListDelegate(
-              //         photoProvider.loadedData
-              //             .map((item) =>
-              //                 PhotoWidget(photoData: item.imageData))
-              //             .toList(),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              PhotoViewGallery.builder(
+              : PhotoViewGallery.builder(
                   gaplessPlayback: true,
                   backgroundDecoration: const BoxDecoration(
                     color: Color.fromRGBO(221, 221, 226, 1),
                   ),
-                  // color: (Colors.black),
                   scrollPhysics: const BouncingScrollPhysics(),
                   itemCount: photoProvider.loadedData.length,
                   builder: (context, index) {
@@ -108,18 +116,12 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                           .imageData),
                     );
                   },
-                  // loadingBuilder: (context, event) => GridView.builder(
-                  //   gridDelegate:
-                  //       const SliverGridDelegateWithFixedCrossAxisCount(
-                  //           crossAxisCount: 3,
-                  //           crossAxisSpacing: 10,
-                  //           mainAxisSpacing: 10),
-                  //   itemCount: photoProvider.loadedData.length,
-                  //   itemBuilder: (context, index) => PhotoWidget(
-                  //       photoData:
-                  //           photoProvider.loadedData[index].imageData),
-                  // ),
                 ),
+      // body: _isLoading
+      //     ? const Center(
+      //         child: CircularProgressIndicator(),
+      //       )
+      //     : Image.memory(photo as Uint8List),
     );
   }
 }

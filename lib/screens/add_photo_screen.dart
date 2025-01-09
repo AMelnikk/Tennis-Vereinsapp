@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/photo_provider.dart';
@@ -71,7 +72,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     setState(() {
       _isLoading = false;
     });
-    print(responseStatusCode);
+    if(kDebugMode) print(responseStatusCode);
     showSnackBar(responseStatusCode);
     } on HttpException catch (error) {
       showFehler(error);

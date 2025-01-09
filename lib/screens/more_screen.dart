@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/auth_screen.dart';
-import 'package:verein_app/screens/impressum_screen.dart';
-import 'package:verein_app/widgets/more_tile.dart';
+import './auth_screen.dart';
+import './impressum_screen.dart';
+import '../widgets/more_tile.dart';
 import '../providers/auth_provider.dart';
 import '../screens/admin_screen.dart';
 

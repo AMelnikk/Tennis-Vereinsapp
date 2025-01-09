@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/place_booking_screen.dart';
+import './place_booking_screen.dart';
 // import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';

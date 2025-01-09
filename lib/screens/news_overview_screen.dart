@@ -1,10 +1,9 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/providers/news_provider.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import '../providers/auth_provider.dart';
+import '../providers/news_provider.dart';
+import '../widgets/verein_appbar.dart';
 
 class NewsOverviewScreen extends StatelessWidget {
   static const routename = "/news-overview-screen";

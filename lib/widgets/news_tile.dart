@@ -1,7 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/news_overview_screen.dart';
+import '../screens/news_overview_screen.dart';
 
 class NewsTile extends StatelessWidget {
   const NewsTile(

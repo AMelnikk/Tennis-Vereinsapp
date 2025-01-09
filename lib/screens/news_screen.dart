@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/photo_provider.dart';
 import '../providers/news_provider.dart';
 import '../widgets/news_tile.dart';
 
@@ -17,17 +18,6 @@ class _NewsScreenState extends State<NewsScreen> {
 
   Future<void> getData() async {
     try {
-      // if (_isFirstLoading) {
-      //   setState(() {
-      //     _isFirstLoading = true;
-      //   });
-      //   await Provider.of<NewsProvider>(context, listen: false).getData();
-      //   if (mounted) {
-      //     setState(() {
-      //       _isFirstLoading = false;
-      //     });
-
-      //   } else if (_isLoading) {
       setState(() {
         _isLoading = true;
       });
@@ -37,8 +27,6 @@ class _NewsScreenState extends State<NewsScreen> {
           _isLoading = false;
         });
       }
-      // }
-      // }
     } catch (error) {
       if (kDebugMode) {
         print(error);
@@ -55,7 +43,7 @@ class _NewsScreenState extends State<NewsScreen> {
             _isFirstLoading = true;
           });
         }
-
+        Provider.of<PhotoProvider>(context).getData();
         getData().then((_) {
           if (mounted) {
             setState(() {

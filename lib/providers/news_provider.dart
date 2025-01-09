@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -87,14 +86,12 @@ class NewsProvider with ChangeNotifier {
   }
 
   Future<void> deleteNews(String id) async {
-    print(id);
+    if(kDebugMode) print(id);
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$token");
     final responce = await http.delete(url);
     loadedNews.removeWhere((item) => item.id == id);
-    if (kDebugMode) {
-      print(responce.statusCode);
-    }
+    if (kDebugMode) print(responce.statusCode);
     notifyListeners();
   }
 
@@ -134,14 +131,6 @@ class NewsProvider with ChangeNotifier {
       hasMore = dbData.length == 5;
       _lastId = loadedData.isNotEmpty ? loadedData.first.id : null;
       loadedNews.insertAll(0, loadedData);
-
-      // for(int i = 0; i < loadedData.length; i++){
-      //   print(loadedData[i].title);
-      // }
-      // print("\n");
-      // for(int i = 0; i < loadedNews.length; i++){
-      //   print(loadedNews[i].title);
-      // }
       notifyListeners();
     } catch (error) {
       loadedNews = cacheNews;

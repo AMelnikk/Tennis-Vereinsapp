@@ -13,6 +13,9 @@ class PhotoProvider with ChangeNotifier {
 
   String? token;
   Image? image;
+  bool isHttpProceeding = true;
+  String? lastId;
+  bool hasMore = true;
 
   List<Photo> loadedData = [];
 
@@ -52,12 +55,12 @@ class PhotoProvider with ChangeNotifier {
           format: CompressFormat.webp,
         );
         final base64Image = base64Encode(image.cast<int>().toList());
-        final previousBase64Image = base64Encode(imageData.cast<int>().toList());
-        print(previousBase64Image.length);
-        print(base64Image.length);
+        // final previousBase64Image = base64Encode(imageData.cast<int>().toList());
+        // print(previousBase64Image.length);
+        // print(base64Image.length);
 
-        print("\n${imageData.length}");
-        print(image.length);
+        // print("\n${imageData.length}");
+        // print(image.length);
         final response = await http.post(
           url,
           body: json.encode(
@@ -71,22 +74,30 @@ class PhotoProvider with ChangeNotifier {
         throw const HttpException("Kein Foto gewählt");
       }
     } catch (error) {
+      if (kDebugMode) print(error);
       return 400;
     }
   }
 
   Future<void> getData() async {
+    if (!hasMore) return;
     final cachePhotos = loadedData;
     try {
-      loadedData = [];
+      isHttpProceeding = true;
+      List<Photo> loadedNews = [];
+
+      String queryParams = lastId == null
+          ? 'orderBy="%24key"&limitToLast=5'
+          : 'orderBy="%24key"&endAt="$lastId"&limitToLast=6';
+
       var responce = await http.get(
         Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json/"),
+            "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?$queryParams"),
       );
       var photoData =
           await (json.decode(responce.body)) as Map<String, dynamic>;
       photoData.forEach(
-        (photoId, photoData) => loadedData.add(
+        (photoId, photoData) => loadedNews.add(
           Photo(
             photoId: photoId,
             imageData: base64Decode(
@@ -95,12 +106,20 @@ class PhotoProvider with ChangeNotifier {
           ),
         ),
       );
+      if (lastId != null) {
+        loadedNews.removeAt(loadedData.length - 1);
+      }
+      hasMore = loadedNews.length == 5;
+      lastId = loadedNews.isNotEmpty ? loadedNews.first.photoId : null;
+      loadedData.addAll(loadedNews);
+      isHttpProceeding = false;
       notifyListeners();
     } catch (e) {
       loadedData = cachePhotos;
       if (kDebugMode) {
         print(e);
       }
+      if (e.toString().contains("RangeError")) hasMore = false;
     }
   }
 }

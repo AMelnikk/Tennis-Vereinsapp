@@ -5,21 +5,8 @@ class VereinAppbar extends AppBar {
 
   @override
   List<Widget>? get actions => [
-        // const SizedBox(width: 15,),
         const Padding(
           padding: EdgeInsets.only(right: 10),
-
-          // child: LayoutBuilder(
-          //   builder: (context, constraints) {
-          //     double fontSize = constraints.maxWidth * 0.1;
-
-          //     return Text(
-          //       "TeG Altmühlgrund",
-          //       style: TextStyle(
-          //           fontSize: fontSize, fontWeight: FontWeight.w600),
-          //     );
-          //   },
-          // ),
 
           child: FittedBox(
             fit: BoxFit.fitWidth,

@@ -17,11 +17,11 @@ class _PlaceBookingScreenState extends State<PlaceBookingScreen> {
   @override
   didChangeDependencies() {
     Uri placeBookingLink = Provider.of<AuthProvider>(context)
-                .place_booking_link ==
+                .placeBookingLink ==
             null
         ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
         : Uri.parse(
-            Provider.of<AuthProvider>(context).place_booking_link as String);
+            Provider.of<AuthProvider>(context).placeBookingLink as String);
             print(placeBookingLink);
     launchUrl(placeBookingLink);
     Navigator.of(context).pop();

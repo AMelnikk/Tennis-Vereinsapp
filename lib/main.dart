@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/user_provider.dart';
-import 'package:verein_app/screens/add_user_screen.dart';
+import './providers/user_provider.dart';
+import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_overview_screen.dart';
 import './providers/news_provider.dart';

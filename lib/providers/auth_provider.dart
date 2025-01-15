@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import "package:http/http.dart" as http;
 import '../models/http_exception.dart';
 
@@ -7,7 +7,7 @@ class AuthProvider with ChangeNotifier {
   String? _token;
   DateTime? _expiryDate;
   String? _userId;
-  String? place_booking_link;
+  String? placeBookingLink;
 
   String? get token {
     if (_expiryDate != null &&
@@ -31,7 +31,7 @@ class AuthProvider with ChangeNotifier {
     {
       final dbUrl = Uri.parse(
           "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-      // try {
+      try {
       final response = await http.post(
         dbUrl,
         body: json.encode(
@@ -52,20 +52,20 @@ class AuthProvider with ChangeNotifier {
         ),
       );
 
-      var link_response = await http.get(Uri.parse(
+      var linkResponse = await http.get(Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));
       Map<String, dynamic>? placeBookingData =
-          await json.decode(link_response.body);
+          await json.decode(linkResponse.body);
       if (placeBookingData != null) {
-        place_booking_link = placeBookingData["platzbuchung_link"];
+        placeBookingLink = placeBookingData["platzbuchung_link"];
       }
-      print(place_booking_link);
+      if(kDebugMode) print(placeBookingLink);
 
       notifyListeners();
       if (response.statusCode < 300) {}
-      // } catch (error) {
-      //   rethrow;
-      // }
+      } catch (error) {
+        rethrow;
+      }
     }
   }
 }

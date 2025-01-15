@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/photo_provider.dart';
+import '../providers/photo_provider.dart';
 import '../providers/news_provider.dart';
 import '../widgets/news_tile.dart';
 

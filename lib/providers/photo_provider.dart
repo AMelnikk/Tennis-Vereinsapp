@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 class PhotoProvider with ChangeNotifier {
   PhotoProvider(this._token);
 
-  String? _token;
+  final String? _token;
   Image? image;
   bool isHttpProceeding = true;
   String? lastId;

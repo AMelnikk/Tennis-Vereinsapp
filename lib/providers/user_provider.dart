@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class UserProvider with ChangeNotifier {
   UserProvider(this._token);
 
-  String? _token;
+  final String? _token;
   var uid = TextEditingController();
   var platzbuchungLink = TextEditingController();
   var name = TextEditingController();
@@ -24,7 +24,7 @@ class UserProvider with ChangeNotifier {
           },
         ),
       );
-      print(response.statusCode);
+      if(kDebugMode) print(response.statusCode);
       return response.statusCode;
     } catch (error) {
       if (kDebugMode) print(error);

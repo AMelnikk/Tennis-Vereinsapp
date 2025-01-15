@@ -17,7 +17,7 @@ class NewsProvider with ChangeNotifier {
 
   NewsProvider(this._token);
 
-  String? _token;
+  final String? _token;
   Image? image;
   var newsTag = Tag.keinSpieltreff;
   final title = TextEditingController();

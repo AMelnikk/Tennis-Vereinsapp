@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import './place_booking_screen.dart';
-// import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';
 import './documents_screen.dart';
@@ -35,26 +34,24 @@ class FunctionsScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(GameResultsScreen.routename);
-                    }), // Done (Kann verbessert werden)
+                    }), // Spielergebnisse
                 FunctionTile(
                     image: Image.asset("assets/images/Dokumentenbox.jpg"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(DocumentsScreen.routename);
-                    }), // Done
+                    }), // Dokumentenbox
                 FunctionTile(
                     image: Image.asset("assets/images/Trainer.jpg"),
                     onTap: () {
                       Navigator.of(context).pushNamed(TrainersScreen.routename);
-                    }), // Done
+                    }), // Trainer
                 FunctionTile(
                     image: Image.asset("assets/images/Fotogalerie.jpg"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
-                //Datenbank + Möglichkeit Fotos hochzuladen
-                //Nur mit Anmeldung
                 FunctionTile(
                   image: Image.asset("assets/images/Platzbuchung.jpg"),
                   onTap: () {
@@ -62,7 +59,6 @@ class FunctionsScreen extends StatelessWidget {
                         .pushNamed(PlaceBookingScreen.routename);
                   },
                 ), // Platzbuchung
-                // // Verbindund zu Website der Platzbuchung und app
                 
                 // FunctionTile(
                 //     image: Image.asset("assets/images/Spielergebnisse.jpg"),

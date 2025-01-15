@@ -80,6 +80,7 @@ class PhotoProvider with ChangeNotifier {
   }
 
   Future<void> getData() async {
+    print("start");
     if (!hasMore) return;
     final cachePhotos = loadedData;
     try {
@@ -113,6 +114,7 @@ class PhotoProvider with ChangeNotifier {
       lastId = loadedNews.isNotEmpty ? loadedNews.first.photoId : null;
       loadedData.addAll(loadedNews);
       isHttpProceeding = false;
+      print("end");
       notifyListeners();
     } catch (e) {
       loadedData = cachePhotos;

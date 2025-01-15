@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_result.dart';
@@ -30,7 +31,7 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
         _isLoading = false;
       });
     } catch (error) {
-      print(error);
+      if(kDebugMode) print(error);
     }
   }
 

@@ -36,6 +36,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     if (Provider.of<PhotoProvider>(context).isHttpProceeding &&
         Provider.of<PhotoProvider>(context).lastId == null) {
       _isLoading = true;
+      getData();
     } else {
       _isLoading = false;
     }

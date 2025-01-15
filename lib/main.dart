@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_overview_screen.dart';
 import './providers/news_provider.dart';
@@ -47,7 +49,10 @@ class MyApp extends StatelessWidget {
           ),
           ChangeNotifierProvider.value(
             value: NewsProvider(Provider.of<AuthProvider>(context).token),
-          )
+          ),
+          ChangeNotifierProvider.value(
+            value: UserProvider(Provider.of<AuthProvider>(context).token),
+          ),
         ],
         child: Consumer<AuthProvider>(
           builder: (ctx, authProvider, _) => MaterialApp(
@@ -65,14 +70,13 @@ class MyApp extends StatelessWidget {
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
               AuthScreen.routeName: (ctx) => const AuthScreen(),
               PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
-              PlaceBookingScreen.routename: (ctx) => authProvider.isAuth
-                  ? const PlaceBookingScreen()
-                  : const AuthScreen(),
+              PlaceBookingScreen.routename: (ctx) => const PlaceBookingScreen(),
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
               NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
-              ImpressumScreen.routename : (ctx) => const ImpressumScreen(),
+              ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
+              AddUserScreen.routename: (ctx) => const AddUserScreen(),
             },
           ),
         ),

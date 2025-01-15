@@ -56,13 +56,14 @@ class FunctionsScreen extends StatelessWidget {
                 //Datenbank + Möglichkeit Fotos hochzuladen
                 //Nur mit Anmeldung
                 FunctionTile(
-                  image: Image.asset("assets/images/Spielergebnisse.jpg"),
+                  image: Image.asset("assets/images/Platzbuchung.jpg"),
                   onTap: () {
                     Navigator.of(context)
                         .pushNamed(PlaceBookingScreen.routename);
                   },
                 ), // Platzbuchung
                 // // Verbindund zu Website der Platzbuchung und app
+                
                 // FunctionTile(
                 //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
                 //     onTap: () {}), //Getränkeabrechnung

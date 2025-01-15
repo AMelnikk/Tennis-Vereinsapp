@@ -89,70 +89,72 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : Padding(
-              padding: const EdgeInsets.all(30),
-              child: Column(
-                children: [
-                  const Text(
-                    "Foto Hinzufügen",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          height: 100,
-                          width: 75,
-                          decoration: BoxDecoration(
-                            border: Border.all(),
+          : SingleChildScrollView(
+            child: Padding(
+                padding: const EdgeInsets.all(30),
+                child: Column(
+                  children: [
+                    const Text(
+                      "Foto Hinzufügen",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 100,
+                            width: 75,
+                            decoration: BoxDecoration(
+                              border: Border.all(),
+                            ),
+                            child: Provider.of<PhotoProvider>(context).image ??
+                                const Text(
+                                  "kein Foto gewählt",
+                                  textAlign: TextAlign.center,
+                                ),
                           ),
-                          child: Provider.of<PhotoProvider>(context).image ??
-                              const Text(
-                                "kein Foto gewählt",
-                                textAlign: TextAlign.center,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: TextButton.icon(
+                              onPressed: () {
+                                Provider.of<PhotoProvider>(context, listen: false)
+                                    .pickImage();
+                              },
+                              icon: const Icon(Icons.photo),
+                              label: const Text(
+                                "Foto wählen",
+                                style: TextStyle(fontSize: 20),
                               ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TextButton.icon(
-                            onPressed: () {
-                              Provider.of<PhotoProvider>(context, listen: false)
-                                  .pickImage();
-                            },
-                            icon: const Icon(Icons.photo),
-                            label: const Text(
-                              "Foto wählen",
-                              style: TextStyle(fontSize: 20),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 30),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        postImage();
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        width: double.infinity,
-                        height: 50,
-                        child: const Text(
-                          "Foto Hochladen",
-                          style: TextStyle(fontSize: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 30),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          postImage();
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          width: double.infinity,
+                          height: 50,
+                          child: const Text(
+                            "Foto Hochladen",
+                            style: TextStyle(fontSize: 20),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+          ),
     );
   }
 }

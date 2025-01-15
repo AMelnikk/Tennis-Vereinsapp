@@ -15,9 +15,9 @@ class NewsProvider with ChangeNotifier {
   // Map<String, dynamic>? loadedNews;
   List<News> loadedNews = [];
 
-  NewsProvider(this.token);
+  NewsProvider(this._token);
 
-  String? token;
+  String? _token;
   Image? image;
   var newsTag = Tag.keinSpieltreff;
   final title = TextEditingController();
@@ -51,7 +51,7 @@ class NewsProvider with ChangeNotifier {
     Uint8List? imageData = await getImageData(image);
     String base64Image = "null";
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$token");
+        "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$_token");
     try {
       if (imageData != null) {
         final image = await FlutterImageCompress.compressWithList(
@@ -88,7 +88,7 @@ class NewsProvider with ChangeNotifier {
   Future<void> deleteNews(String id) async {
     if(kDebugMode) print(id);
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$token");
+        "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$_token");
     final responce = await http.delete(url);
     loadedNews.removeWhere((item) => item.id == id);
     if (kDebugMode) print(responce.statusCode);

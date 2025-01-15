@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,13 +17,12 @@ class PlaceBookingScreen extends StatefulWidget {
 class _PlaceBookingScreenState extends State<PlaceBookingScreen> {
   @override
   didChangeDependencies() {
-    Uri placeBookingLink = Provider.of<AuthProvider>(context)
-                .placeBookingLink ==
-            null
-        ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
-        : Uri.parse(
-            Provider.of<AuthProvider>(context).placeBookingLink as String);
-            print(placeBookingLink);
+    Uri placeBookingLink =
+        Provider.of<AuthProvider>(context).placeBookingLink == null
+            ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
+            : Uri.parse(
+                Provider.of<AuthProvider>(context).placeBookingLink as String);
+    if (kDebugMode) print(placeBookingLink);
     launchUrl(placeBookingLink);
     Navigator.of(context).pop();
     super.didChangeDependencies();

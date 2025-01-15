@@ -10,12 +10,24 @@ class TrainersScreen extends StatefulWidget {
 }
 
 class _TrainersScreenState extends State<TrainersScreen> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    Future.delayed(const Duration(seconds: 1));
+    _isLoading = false;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: VereinAppbar(),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
               child: Column(
                 children: [
                   Padding(

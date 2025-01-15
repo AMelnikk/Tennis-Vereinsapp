@@ -9,9 +9,9 @@ import '../models/Photo.dart';
 import 'package:http/http.dart' as http;
 
 class PhotoProvider with ChangeNotifier {
-  PhotoProvider(this.token);
+  PhotoProvider(this._token);
 
-  String? token;
+  String? _token;
   Image? image;
   bool isHttpProceeding = true;
   String? lastId;
@@ -43,7 +43,7 @@ class PhotoProvider with ChangeNotifier {
   Future<int> postImage() async {
     Uint8List? imageData = await getImageData(image);
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?auth=$token");
+        "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?auth=$_token");
     try {
       if (imageData != null) {
         // final base64Image = base64Encode(imageData.cast<int>().toList());

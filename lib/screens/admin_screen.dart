@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/add_user_screen.dart';
 import './add_news_screen.dart';
 import './add_photo_screen.dart';
 import '../widgets/admin_function.dart';
@@ -25,7 +26,12 @@ class AdminScreen extends StatelessWidget {
                 function: () {
                   Navigator.of(context).pushNamed(AddPhotoScreen.routename);
                 },
-                text: "Fotos hinzufügen")
+                text: "Fotos hinzufügen"),
+            AdminFunction(
+                function: () {
+                  Navigator.of(context).pushNamed(AddUserScreen.routename);
+                },
+                text: "Nutzer hinzufügen"),
           ],
         ),
       ),

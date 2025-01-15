@@ -42,7 +42,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await Provider.of<AuthProvider>(context, listen: false)
           .signIn(email.text, password.text);
       Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {// Problem bei Platzbuchung
+      if (mounted) {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {

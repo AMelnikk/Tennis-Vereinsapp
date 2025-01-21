@@ -34,7 +34,7 @@ class _TrainersScreenState extends State<TrainersScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 50, vertical: 10),
                     child: Image.asset(
-                        "assets/images/Natali_Gumbrecht_Trainer.jpg"),
+                        "assets/images/Natali_Gumbrecht_Trainer.webp"),
                   ),
                   const Text(
                     "Natali Gumbrecht",
@@ -48,7 +48,7 @@ class _TrainersScreenState extends State<TrainersScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 50, vertical: 10),
                     child:
-                        Image.asset("assets/images/Oliver_Ströbel_Trainer.jpg"),
+                        Image.asset("assets/images/Oliver_Ströbel_Trainer.webp"),
                   ),
                   const Text(
                     "Oliver Ströbel",

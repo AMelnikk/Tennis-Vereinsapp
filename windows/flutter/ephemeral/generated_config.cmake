@@ -16,7 +16,6 @@ list(APPEND FLUTTER_TOOL_ENVIRONMENT
   "FLUTTER_EPHEMERAL_DIR=C:\\flutterProjects\\verein_app\\windows\\flutter\\ephemeral"
   "PROJECT_DIR=C:\\flutterProjects\\verein_app"
   "FLUTTER_TARGET=C:\\flutterProjects\\verein_app\\lib\\main.dart"
-  "DART_DEFINES=RkxVVFRFUl9XRUJfQ0FOVkFTS0lUX1VSTD1odHRwczovL3d3dy5nc3RhdGljLmNvbS9mbHV0dGVyLWNhbnZhc2tpdC9lZGQ4NTQ2MTE2NDU3YmRmMWM1YmRmYjEzZWNiOTQ2M2QyYmI1ZWQ0Lw=="
   "DART_OBFUSCATION=false"
   "TRACK_WIDGET_CREATION=true"
   "TREE_SHAKE_ICONS=false"

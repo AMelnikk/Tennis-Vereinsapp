@@ -18,24 +18,23 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   Uint8List? photo;
 
   Future<void> getData() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-      await Provider.of<PhotoProvider>(context, listen: false).getData();
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (error) {
-      if (kDebugMode) print(error);
-    }
+    // try {
+    setState(() {
+      _isLoading = true;
+    });
+    await Provider.of<PhotoProvider>(context, listen: false).getData();
+    setState(() {
+      _isLoading = false;
+    });
+    // } catch (error) {
+    //   if (kDebugMode) print(error);
+    // }
   }
 
   @override
   void didChangeDependencies() {
-    if (Provider.of<PhotoProvider>(context).isHttpProceeding &&
+    if (!Provider.of<PhotoProvider>(context).isHttpProceeding &&
         Provider.of<PhotoProvider>(context).lastId == null) {
-      _isLoading = true;
       getData();
     } else {
       _isLoading = false;
@@ -47,6 +46,8 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   Widget build(BuildContext context) {
     final photoProvider = Provider.of<PhotoProvider>(context);
     return Scaffold(
+      backgroundColor:
+          _isLoading ? Theme.of(context).scaffoldBackgroundColor : Colors.black,
       appBar: VereinAppbar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -73,7 +74,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
               : PhotoViewGallery.builder(
                   gaplessPlayback: true,
                   backgroundDecoration: const BoxDecoration(
-                    color: Color.fromRGBO(221, 221, 226, 1),
+                    color: Colors.black,
                   ),
                   scrollPhysics: const BouncingScrollPhysics(),
                   itemCount: photoProvider.loadedData.length,

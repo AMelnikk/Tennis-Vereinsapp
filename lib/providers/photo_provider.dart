@@ -13,7 +13,7 @@ class PhotoProvider with ChangeNotifier {
 
   final String? _token;
   Image? image;
-  bool isHttpProceeding = true;
+  bool isHttpProceeding = false;
   String? lastId;
   bool hasMore = true;
 
@@ -80,42 +80,52 @@ class PhotoProvider with ChangeNotifier {
   }
 
   Future<void> getData() async {
-    print("start");
     if (!hasMore) return;
     final cachePhotos = loadedData;
+    print("proceedeing");
     try {
-      isHttpProceeding = true;
-      List<Photo> loadedNews = [];
+    isHttpProceeding = true;
+    List<Photo> loadedNews = [];
 
-      String queryParams = lastId == null
-          ? 'orderBy="%24key"&limitToLast=5'
-          : 'orderBy="%24key"&endAt="$lastId"&limitToLast=6';
+    String queryParams = lastId == null
+        ? 'orderBy="%24key"&limitToLast=5'
+        : 'orderBy="%24key"&endAt="$lastId"&limitToLast=6';
 
-      var responce = await http.get(
-        Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?$queryParams"),
-      );
-      var photoData =
-          await (json.decode(responce.body)) as Map<String, dynamic>;
-      photoData.forEach(
-        (photoId, photoData) => loadedNews.add(
-          Photo(
-            photoId: photoId,
-            imageData: base64Decode(
-              photoData["imageData"],
-            ),
+    var responce = await http.get(
+      Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?$queryParams"),
+    );
+    var photoData = await (json.decode(responce.body)) as Map<String, dynamic>;
+    photoData.forEach(
+      (photoId, photoData) => loadedNews.add(
+        Photo(
+          photoId: photoId,
+          imageData: base64Decode(
+            photoData["imageData"],
           ),
         ),
-      );
-      if (lastId != null) {
-        loadedNews.removeAt(loadedData.length - 1);
+      ),
+    );
+    if (lastId != null) {
+      loadedNews.removeAt(loadedNews.length - 1);
+      if (loadedNews.isEmpty) {
+        hasMore = false;
+      } else {
+        hasMore = loadedNews.length == 5;
+        lastId = loadedNews.isNotEmpty ? loadedNews.first.photoId : null;
+        for (int i = loadedNews.length - 1; i >= 0; i--) {
+          loadedData.insert(0, loadedNews[i]);
+        }
       }
+    } else {
       hasMore = loadedNews.length == 5;
       lastId = loadedNews.isNotEmpty ? loadedNews.first.photoId : null;
-      loadedData.addAll(loadedNews);
-      isHttpProceeding = false;
-      print("end");
-      notifyListeners();
+      for (int i = loadedNews.length - 1; i >= 0; i--) {
+        loadedData.insert(0, loadedNews[i]);
+      }
+    }
+    isHttpProceeding = false;
+    notifyListeners();
     } catch (e) {
       loadedData = cachePhotos;
       if (kDebugMode) {

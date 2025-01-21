@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/screens/datenschutz_screen.dart';
 import './providers/user_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
@@ -77,6 +78,7 @@ class MyApp extends StatelessWidget {
               NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
+              DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
             },
           ),
         ),

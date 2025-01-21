@@ -12,30 +12,37 @@ import '../models/news.dart';
 enum Tag { spieltreff, keinSpieltreff }
 
 class NewsProvider with ChangeNotifier {
-  // Map<String, dynamic>? loadedNews;
-  List<News> loadedNews = [];
-
   NewsProvider(this._token);
 
+  List<News> loadedNews = [];
   final String? _token;
   Image? image;
   var newsTag = Tag.keinSpieltreff;
   final title = TextEditingController();
   final body = TextEditingController();
-  String? _lastId;
+  String? lastId;
   bool hasMore = true;
 
   Future<void> pickImage() async {
-    XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (file != null) {
-      image = Image.file(File(file.path));
+    try {
+      XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (file != null) {
+        image = Image.file(File(file.path));
+      }
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) print(e);
     }
-    notifyListeners();
   }
 
   Future<Uint8List?> getImageData(Image? image) async {
-    Uint8List? imageData = await image?.uint8List;
-    return imageData;
+    try {
+      Uint8List? imageData = await image?.uint8List;
+      return imageData;
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return null;
+    }
   }
 
   Future<int> postNews() async {
@@ -86,13 +93,17 @@ class NewsProvider with ChangeNotifier {
   }
 
   Future<void> deleteNews(String id) async {
-    if(kDebugMode) print(id);
-    final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$_token");
-    final responce = await http.delete(url);
-    loadedNews.removeWhere((item) => item.id == id);
-    if (kDebugMode) print(responce.statusCode);
-    notifyListeners();
+    try {
+      if (kDebugMode) print(id);
+      final url = Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$_token");
+      final responce = await http.delete(url);
+      loadedNews.removeWhere((item) => item.id == id);
+      if (kDebugMode) print(responce.statusCode);
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
   }
 
   Future<void> getData() async {
@@ -101,9 +112,9 @@ class NewsProvider with ChangeNotifier {
       return;
     }
     try {
-      String queryParams = _lastId == null
+      String queryParams = lastId == null
           ? 'orderBy="%24key"&limitToLast=5'
-          : 'orderBy="%24key"&endAt="$_lastId"&limitToLast=6';
+          : 'orderBy="%24key"&endAt="$lastId"&limitToLast=6';
       var responce = await http.get(
         Uri.parse(
             'https://db-teg-default-rtdb.firebaseio.com/News.json?$queryParams'),
@@ -125,11 +136,11 @@ class NewsProvider with ChangeNotifier {
           );
         },
       );
-      if (_lastId != null) {
+      if (lastId != null) {
         loadedData.removeAt(loadedData.length - 1);
       }
       hasMore = dbData.length == 5;
-      _lastId = loadedData.isNotEmpty ? loadedData.first.id : null;
+      lastId = loadedData.isNotEmpty ? loadedData.first.id : null;
       loadedNews.insertAll(0, loadedData);
       notifyListeners();
     } catch (error) {

@@ -10,10 +10,10 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   final String? _token;
 
   // Controllers for input fields
-  final TextEditingController _wasserController = TextEditingController();
-  final TextEditingController _softController = TextEditingController();
-  final TextEditingController _bierController = TextEditingController();
-  final TextEditingController _summeController = TextEditingController();
+  final TextEditingController   _anzWasser = = TextEditingController();
+  final TextEditingController _anzSoft = TextEditingController();
+  final TextEditingController _anzBier = TextEditingController();
+  final TextEditingController _summe = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
 
   // Getters for controllers to allow controlled access

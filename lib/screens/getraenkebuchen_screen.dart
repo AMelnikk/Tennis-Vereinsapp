@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 class GetraenkeBuchenScreen extends StatefulWidget {
-  GetraenkeBuchenScreen({super.key});
+  const GetraenkeBuchenScreen({super.key});
   static const routename = "/getraenkebuchen-screen";
 
   @override
@@ -14,20 +14,20 @@ class GetraenkeBuchenScreen extends StatefulWidget {
 }
 
 class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
-  int _anzWasser = 0;
-  int _anzSoft = 0;
-  int _anzBier = 0;
-  double _summe = 0;
   bool _isLoading = false;
 
+  // Methode zum Getränkebuchen
   Future<void> postGetraenke() async {
     try {
       setState(() {
         _isLoading = true;
       });
+
+      // Aufruf der Post-Methode im Provider
       int statusCode =
           await Provider.of<GetraenkeBuchenProvider>(context, listen: false)
               .postGetraenke();
+
       setState(() {
         _isLoading = false;
       });
@@ -46,25 +46,22 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
     }
   }
 
+  // Methode zum Anzeigen der SnackBar
   void showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, textAlign: TextAlign.center),
-        duration:
-            const Duration(seconds: 5), // Snackbar bleibt 5 Sekunden sichtbar
+        duration: const Duration(seconds: 5),
       ),
     );
   }
 
+  // Methode zum Zurücksetzen des Providers
   void resetProvider() {
-    setState(() {
-      _anzWasser = 0;
-      _anzSoft = 0;
-      _anzBier = 0;
-      _summe = 0;
-    });
+    Provider.of<GetraenkeBuchenProvider>(context, listen: false).resetData();
   }
 
+  // Widget zum Erstellen einer Getränkereihe
   Widget buildBeverageRow(String label, double price, int count,
       VoidCallback increment, VoidCallback decrement) {
     return Column(
@@ -99,6 +96,12 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<GetraenkeBuchenProvider>(context);
+    final anzWasser = provider.anzWasser;
+    final anzSoft = provider.anzSoft;
+    final anzBier = provider.anzBier;
+    final summe = provider.summe;
+
     return Scaffold(
       appBar: VereinAppbar(),
       body: Padding(
@@ -108,7 +111,7 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                "Getränke buchen: ${_summe.toStringAsFixed(2)} €",
+                "Getränke buchen: ${summe.toStringAsFixed(2)} €",
                 style:
                     const TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
@@ -117,49 +120,31 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
               buildBeverageRow(
                 "Wasser",
                 1.00,
-                _anzWasser,
-                () => setState(() {
-                  _anzWasser++;
-                  _summe += 1.00;
-                }),
-                () => setState(() {
-                  _anzWasser--;
-                  _summe -= 1.00;
-                }),
+                anzWasser,
+                () => provider.updateWasser(anzWasser + 1),
+                () => provider.updateWasser(anzWasser - 1),
               ),
               const SizedBox(height: 20),
               buildBeverageRow(
                 "Apfelschorle, Iso, Limo, Spezi",
                 1.50,
-                _anzSoft,
-                () => setState(() {
-                  _anzSoft++;
-                  _summe += 1.50;
-                }),
-                () => setState(() {
-                  _anzSoft--;
-                  _summe -= 1.50;
-                }),
+                anzSoft,
+                () => provider.updateSoft(anzSoft + 1),
+                () => provider.updateSoft(anzSoft - 1),
               ),
               const SizedBox(height: 20),
               buildBeverageRow(
                 "Weizen, Bier, Radler",
                 2.00,
-                _anzBier,
-                () => setState(() {
-                  _anzBier++;
-                  _summe += 2.00;
-                }),
-                () => setState(() {
-                  _anzBier--;
-                  _summe -= 2.00;
-                }),
+                anzBier,
+                () => provider.updateBier(anzBier + 1),
+                () => provider.updateBier(anzBier - 1),
               ),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: ElevatedButton(
-                  onPressed: _isLoading || _summe == 0 ? null : postGetraenke,
+                  onPressed: _isLoading || summe == 0 ? null : postGetraenke,
                   child: Container(
                     alignment: Alignment.center,
                     width: double.infinity,

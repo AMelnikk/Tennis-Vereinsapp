@@ -30,30 +30,30 @@ class FunctionsScreen extends StatelessWidget {
               [
                 //Ohne Anmeldung
                 FunctionTile(
-                    image: Image.asset("assets/images/Spielergebnisse.jpg"),
+                    image: Image.asset("assets/images/Spielergebnisse.webp"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(GameResultsScreen.routename);
                     }), // Spielergebnisse
                 FunctionTile(
-                    image: Image.asset("assets/images/Dokumentenbox.jpg"),
+                    image: Image.asset("assets/images/Dokumentenbox.webp"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(DocumentsScreen.routename);
                     }), // Dokumentenbox
                 FunctionTile(
-                    image: Image.asset("assets/images/Trainer.jpg"),
+                    image: Image.asset("assets/images/Trainer.webp"),
                     onTap: () {
                       Navigator.of(context).pushNamed(TrainersScreen.routename);
                     }), // Trainer
                 FunctionTile(
-                    image: Image.asset("assets/images/Fotogalerie.jpg"),
+                    image: Image.asset("assets/images/Fotogalerie.webp"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
                 FunctionTile(
-                  image: Image.asset("assets/images/Platzbuchung.jpg"),
+                  image: Image.asset("assets/images/Platzbuchung.webp"),
                   onTap: () {
                     Navigator.of(context)
                         .pushNamed(PlaceBookingScreen.routename);

@@ -25,10 +25,11 @@ class _AuthScreenState extends State<AuthScreen> {
         content: Text(message),
         actions: [
           TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("OK"))
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          )
         ],
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/photo_provider.dart';
 import '../providers/news_provider.dart';
 import '../widgets/news_tile.dart';
 
@@ -15,6 +14,26 @@ class NewsScreen extends StatefulWidget {
 class _NewsScreenState extends State<NewsScreen> {
   bool _isFirstLoading = false;
   bool _isLoading = true;
+
+  Future<void> refreshFunction() async {
+    Provider.of<NewsProvider>(context, listen: false).loadedNews = [];
+    Provider.of<NewsProvider>(context, listen: false).hasMore = true;
+    Provider.of<NewsProvider>(context, listen: false).lastId = null;
+    setState(() {
+      _isFirstLoading = true;
+      getData().then(
+        (_) {
+          if (mounted) {
+            setState(
+              () {
+                _isFirstLoading = false;
+              },
+            );
+          }
+        },
+      );
+    });
+  }
 
   Future<void> getData() async {
     try {
@@ -43,7 +62,6 @@ class _NewsScreenState extends State<NewsScreen> {
             _isFirstLoading = true;
           });
         }
-        Provider.of<PhotoProvider>(context).getData();
         getData().then((_) {
           if (mounted) {
             setState(() {
@@ -86,80 +104,83 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                 ),
               )
-            : CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverList.builder(
-                    itemCount:
-                        Provider.of<NewsProvider>(context).loadedNews.length,
-                    itemBuilder: (ctx, index) => NewsTile(
-                      id: Provider.of<NewsProvider>(context)
-                          .loadedNews[Provider.of<NewsProvider>(context)
-                                  .loadedNews
-                                  .length -
-                              1 -
-                              index]
-                          .id,
-                      title: Provider.of<NewsProvider>(context)
-                          .loadedNews[Provider.of<NewsProvider>(context)
-                                  .loadedNews
-                                  .length -
-                              1 -
-                              index]
-                          .title,
-                      date: Provider.of<NewsProvider>(context)
-                          .loadedNews[Provider.of<NewsProvider>(context)
-                                  .loadedNews
-                                  .length -
-                              1 -
-                              index]
-                          .date,
-                      body: Provider.of<NewsProvider>(context)
-                          .loadedNews[Provider.of<NewsProvider>(context)
-                                  .loadedNews
-                                  .length -
-                              1 -
-                              index]
-                          .body,
-                      base64image: Provider.of<NewsProvider>(context)
-                          .loadedNews[Provider.of<NewsProvider>(context)
-                                  .loadedNews
-                                  .length -
-                              1 -
-                              index]
-                          .imageData,
-                    ),
-                  ),
-                  if (_isLoading)
-                    const SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 50,
-                        child: Center(
-                          child: CircularProgressIndicator(),
-                        ),
+            : RefreshIndicator(
+                onRefresh: refreshFunction,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverList.builder(
+                      itemCount:
+                          Provider.of<NewsProvider>(context).loadedNews.length,
+                      itemBuilder: (ctx, index) => NewsTile(
+                        id: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .id,
+                        title: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .title,
+                        date: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .date,
+                        body: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .body,
+                        base64image: Provider.of<NewsProvider>(context)
+                            .loadedNews[Provider.of<NewsProvider>(context)
+                                    .loadedNews
+                                    .length -
+                                1 -
+                                index]
+                            .imageData,
                       ),
-                    )
-                  else if ((Provider.of<NewsProvider>(context).hasMore))
-                    SliverToBoxAdapter(
-                      child: GestureDetector(
-                        onTap: getData,
-                        child: const SizedBox(
+                    ),
+                    if (_isLoading)
+                      const SliverToBoxAdapter(
+                        child: SizedBox(
                           height: 50,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.pending_rounded),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Text("mehr anzeigen"),
-                            ],
+                          child: Center(
+                            child: CircularProgressIndicator(),
                           ),
                         ),
-                      ),
-                    )
-                ],
+                      )
+                    else if ((Provider.of<NewsProvider>(context).hasMore))
+                      SliverToBoxAdapter(
+                        child: GestureDetector(
+                          onTap: getData,
+                          child: const SizedBox(
+                            height: 50,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.pending_rounded),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                Text("mehr anzeigen"),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                  ],
+                ),
               );
   }
 }

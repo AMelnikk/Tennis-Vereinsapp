@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:verein_app/screens/getraenkeSummen_screen.dart';
+import 'package:verein_app/screens/getraenkedetails_screen.dart';
 import '../screens/add_user_screen.dart';
 import './add_news_screen.dart';
 import './add_photo_screen.dart';
@@ -32,6 +34,19 @@ class AdminScreen extends StatelessWidget {
                   Navigator.of(context).pushNamed(AddUserScreen.routename);
                 },
                 text: "Nutzer hinzufügen"),
+            AdminFunction(
+                function: () {
+                  Navigator.of(context)
+                      .pushNamed(GetraenkeBuchungenDetailsScreen.routeName);
+                },
+                text: "Alle Getränkebuchungen Details"),
+            AdminFunction(
+              function: () {
+                Navigator.of(context)
+                    .pushNamed(GetraenkeSummenScreen.routeName);
+              },
+              text: "Getränke Summen",
+            )
           ],
         ),
       ),

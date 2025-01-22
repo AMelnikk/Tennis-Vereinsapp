@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './datenschutz_screen.dart';
+import './getraenkebuchen_screen.dart';
 import './auth_screen.dart';
 import './impressum_screen.dart';
 import '../widgets/more_tile.dart';
@@ -27,7 +28,14 @@ class MoreScreen extends StatelessWidget {
           ),
           MoreTile(
               navigateTo: DatenschutzScreen.routename,
-              assetImage: "assets/images/Datenschutz.png"),
+              assetImage: "assets/images/Datenschutz.png"
+          ),
+
+          MoreTile(
+              navigateTo: GetraenkeBuchenScreen.routename,
+              assetImage: "assets/images/Datenschutz.png"
+          ),
+
           if (Provider.of<AuthProvider>(context).isAuth == false)
             MoreTile(
               navigateTo: AuthScreen.routeName,
@@ -39,6 +47,7 @@ class MoreScreen extends StatelessWidget {
               navigateTo: AdminScreen.routename,
               assetImage: "assets/images/Admin-Funktionen.png",
             ),
+
         ],
       ),
     );

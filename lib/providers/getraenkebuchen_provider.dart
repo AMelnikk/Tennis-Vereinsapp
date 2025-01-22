@@ -17,10 +17,10 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   final TextEditingController _usernameController = TextEditingController();
 
   // Getters for controllers to allow controlled access
-  TextEditingController get wasserController => _wasserController;
-  TextEditingController get softController => _softController;
-  TextEditingController get bierController => _bierController;
-  TextEditingController get summeController => _summeController;
+  TextEditingController get _anzWasser => _anzWasser;
+  TextEditingController get _anzSoft => _anzSoft;
+  TextEditingController get _anzBier => _anzBier;
+  TextEditingController get _summe => _summe;
   TextEditingController get usernameController => _usernameController;
 
   Future<int> postGetraenke() async {

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/getraenkebuchen_provider.dart';
-import 'package:verein_app/screens/datenschutz_screen.dart';
-import 'package:verein_app/screens/getraenkebuchen_screen.dart';
+import './screens/datenschutz_screen.dart';
 import './providers/user_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
@@ -56,10 +54,6 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider.value(
             value: UserProvider(Provider.of<AuthProvider>(context).token),
           ),
-          ChangeNotifierProvider.value(
-            value: GetraenkeBuchenProvider(
-                Provider.of<AuthProvider>(context).token),
-          ),
         ],
         child: Consumer<AuthProvider>(
           builder: (ctx, authProvider, _) => MaterialApp(
@@ -85,7 +79,6 @@ class MyApp extends StatelessWidget {
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
-              GetraenkeBuchenScreen.routename: (ctx) => GetraenkeBuchenScreen(),
             },
           ),
         ),

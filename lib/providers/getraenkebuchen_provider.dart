@@ -54,14 +54,14 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Absenden der Getränkedaten
   Future<int> postGetraenke() async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final date = DateTime.now().toIso8601String();
-    final username = 'Oli'; // Benutzername kann dynamisch gesetzt werden
+    const username = 'Oli'; // Benutzername kann dynamisch gesetzt werden
 
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/Getraenke_$timestamp.json?auth=$_token");
@@ -99,7 +99,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Abrufen aller Buchungen
   Future<List<Map<String, dynamic>>> getAllBuchungen() async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       throw Exception("Token fehlt");
     }
 
@@ -140,7 +140,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Aktualisieren des Bezahlt-Status einer Buchung
   Future<int> updateBezahlt(String buchungId, bool bezahlt) async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
@@ -170,7 +170,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Löschen einer Buchung
   Future<int> deleteBuchung(String buchungId) async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/getraenkebuchen_provider.dart';
 
 class GetraenkeSummenScreen extends StatefulWidget {
-  const GetraenkeSummenScreen({Key? key}) : super(key: key);
+  const GetraenkeSummenScreen({super.key});
   static const routeName = "/getraenkesummen-screen";
 
   @override
@@ -27,7 +27,7 @@ class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
     });
 
     final provider =
-    Provider.of<GetraenkeBuchenProvider>(context, listen: false);
+        Provider.of<GetraenkeBuchenProvider>(context, listen: false);
     try {
       final fetchedBuchungen = await provider.getAllBuchungen();
       double gesamtSumme = 0;
@@ -75,57 +75,57 @@ class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
       ),
       body: _isLoading
           ? const Center(
-        child: CircularProgressIndicator(),
-      )
+              child: CircularProgressIndicator(),
+            )
           : _userSummen.isEmpty
-          ? const Center(
-        child: Text(
-          "Keine Buchungen gefunden.",
-          style: TextStyle(fontSize: 18),
-        ),
-      )
-          : Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Gesamtsaldo aller Benutzer: ${_gesamtSumme.toStringAsFixed(2)} €',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: DataTable(
-                  columns: const [
-                    DataColumn(
-                      label: Text(
-                        "Benutzer",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+              ? const Center(
+                  child: Text(
+                    "Keine Buchungen gefunden.",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gesamtsaldo aller Benutzer: ${_gesamtSumme.toStringAsFixed(2)} €',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    DataColumn(
-                      label: Text(
-                        "Summe (€)",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: DataTable(
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  "Benutzer",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  "Summe (€)",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                            rows: sortedUserSummen.map((entry) {
+                              return DataRow(cells: [
+                                DataCell(Text(entry.key)),
+                                DataCell(Text(entry.value.toStringAsFixed(2))),
+                              ]);
+                            }).toList(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                  rows: sortedUserSummen.map((entry) {
-                    return DataRow(cells: [
-                      DataCell(Text(entry.key)),
-                      DataCell(Text(entry.value.toStringAsFixed(2))),
-                    ]);
-                  }).toList(),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

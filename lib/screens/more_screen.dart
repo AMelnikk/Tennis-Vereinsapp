@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/getraenkedetails_screen.dart';
 import './datenschutz_screen.dart';
 import './getraenkebuchen_screen.dart';
 import './auth_screen.dart';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:verein_app/screens/getraenkeSummen_screen.dart';
 import 'package:verein_app/screens/getraenkedetails_screen.dart';
+import 'package:verein_app/screens/add_mannschaft_screen.dart';
 import '../screens/add_user_screen.dart';
 import './add_news_screen.dart';
 import './add_photo_screen.dart';
@@ -29,6 +30,12 @@ class AdminScreen extends StatelessWidget {
                   Navigator.of(context).pushNamed(AddPhotoScreen.routename);
                 },
                 text: "Fotos hinzufügen"),
+            AdminFunction(
+              function: () {
+                Navigator.of(context).pushNamed(AddMannschaftScreen.routename);
+              },
+              text: "Mannschaft hinzufügen",
+            ),
             AdminFunction(
                 function: () {
                   Navigator.of(context).pushNamed(AddUserScreen.routename);

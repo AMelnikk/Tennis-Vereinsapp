@@ -4,7 +4,7 @@ import '../providers/getraenkebuchen_provider.dart';
 import 'package:intl/intl.dart'; // Für Datumsformatierung
 
 class GetraenkeBuchungenDetailsScreen extends StatefulWidget {
-  const GetraenkeBuchungenDetailsScreen({Key? key}) : super(key: key);
+  const GetraenkeBuchungenDetailsScreen({super.key});
   static const routeName = "/getraenkedetails-screen";
 
   @override
@@ -22,8 +22,8 @@ class _GetraenkeBuchungenDetailsScreenState
   String _selectedUser = "Alle";
   String _selectedYear = "Alle";
   bool _onlyUnpaid = false;
-  List<String> _users = ['Alle'];
-  List<String> _years = ['Alle'];
+  final List<String> _users = ['Alle'];
+  final List<String> _years = ['Alle'];
 
   @override
   void initState() {

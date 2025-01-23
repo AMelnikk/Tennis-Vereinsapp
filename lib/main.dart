@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:verein_app/providers/getraenkebuchen_provider.dart';
 import 'package:verein_app/screens/getraenkedetails_screen.dart';
 import 'package:verein_app/screens/getraenkesummen_screen.dart';
+import 'package:verein_app/screens/add_mannschaft_screen.dart';
 import './screens/datenschutz_screen.dart';
 import './screens/getraenkebuchen_screen.dart';
 import './providers/user_provider.dart';
@@ -27,9 +28,11 @@ import './screens/game_results_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
+import 'dart:html' as html;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
     (_) {
       runApp(const MyApp());
@@ -47,7 +50,8 @@ class MyApp extends StatelessWidget {
       builder: (context, _) => MultiProvider(
         providers: [
           ChangeNotifierProvider.value(
-            value: GameResultsProvider(),
+            value:
+                GameResultsProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
             value: PhotoProvider(Provider.of<AuthProvider>(context).token),
@@ -74,7 +78,7 @@ class MyApp extends StatelessWidget {
             ),
             home: const MyHomePage(),
             routes: {
-              GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+              //GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
               DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
               AuthScreen.routeName: (ctx) => const AuthScreen(),
@@ -87,10 +91,13 @@ class MyApp extends StatelessWidget {
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
-              GetraenkeBuchenScreen.routename: (ctx) => GetraenkeBuchenScreen(),
+              GetraenkeBuchenScreen.routename: (ctx) =>
+                  const GetraenkeBuchenScreen(),
               GetraenkeBuchungenDetailsScreen.routeName: (ctx) =>
-                  GetraenkeBuchungenDetailsScreen(),
-              GetraenkeSummenScreen.routeName: (ctx) => GetraenkeSummenScreen(),
+                  const GetraenkeBuchungenDetailsScreen(),
+              GetraenkeSummenScreen.routeName: (ctx) =>
+                  const GetraenkeSummenScreen(),
+              AddMannschaftScreen.routename: (ctx) => AddMannschaftScreen(),
             },
           ),
         ),

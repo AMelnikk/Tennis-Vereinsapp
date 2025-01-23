@@ -26,7 +26,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
     try {
       final provider =
           Provider.of<GetraenkeBuchenProvider>(context, listen: false);
-      final userId = 'Oli'; // Benutzer-ID anpassen
+      const userId = 'Oli'; // Benutzer-ID anpassen
       final allBuchungen = await provider.fetchUserBuchungen(userId);
 
       setState(() {

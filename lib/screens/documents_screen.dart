@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/pdf_screen.dart';
+import '../screens/pdf_screen.dart';
 import '../widgets/document_tile.dart';
 import '../widgets/verein_appbar.dart';
 

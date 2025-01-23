@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:verein_app/screens/getraenkebuchen_screen.dart';
 import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';
@@ -59,11 +61,23 @@ class FunctionsScreen extends StatelessWidget {
                         .pushNamed(PlaceBookingScreen.routename);
                   },
                 ), // Platzbuchung
-                
-                // FunctionTile(
-                //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
-                //     onTap: () {}), //Getränkeabrechnung
-                // // auf einer Datenbank? speichern
+                FunctionTile(
+                  image: Image.asset("assets/images/Getränkebuchung.webp"),
+                  onTap: () {
+                    Navigator.of(context)
+                        .pushNamed(GetraenkeBuchenScreen.routename);
+                  },
+                ), //Getränkeabrechnung
+                FunctionTile(
+                  image: Image.asset("assets/images/Online_shop.webp"),
+                  onTap: () {
+                    launchUrl(
+                      Uri.parse(
+                          "https://team.jako.com/de-de/team/teg_altmuehlgrund/"),
+                    );
+                  },
+                ), //Online Shop
+
                 // FunctionTile(
                 //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
                 //     onTap: () {}), //Termine

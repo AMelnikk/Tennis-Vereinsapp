@@ -82,7 +82,6 @@ class PhotoProvider with ChangeNotifier {
   Future<void> getData() async {
     if (!hasMore) return;
     final cachePhotos = loadedData;
-    print("proceedeing");
     try {
     isHttpProceeding = true;
     List<Photo> loadedNews = [];

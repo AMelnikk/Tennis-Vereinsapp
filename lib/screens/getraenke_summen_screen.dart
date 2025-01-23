@@ -1,15 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/getraenkebuchen_provider.dart';
-import 'package:intl/intl.dart';
 
 class GetraenkeSummenScreen extends StatefulWidget {
-  const GetraenkeSummenScreen({Key? key}) : super(key: key);
-  static const routeName = "/getraenkesummen-screen";
+  const GetraenkeSummenScreen({super.key});
+  static const routename = "/getraenkesummen-screen";
 
   @override
-  _GetraenkeSummenScreenState createState() => _GetraenkeSummenScreenState();
+  State<GetraenkeSummenScreen> createState() => _GetraenkeSummenScreenState();
 }
 
 class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
@@ -110,8 +108,8 @@ class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
                           final summe = entry.value;
 
                           // Nehme das Jahr aus dem ersten Buchungseintrag des Users
-                          final firstBuchung = _userSummen.entries
-                              .firstWhere((element) => element.key == username);
+                          // final firstBuchung = _userSummen.entries
+                          //     .firstWhere((element) => element.key == username);
 
                           final date = DateTime.now();
                           final year = date.year;

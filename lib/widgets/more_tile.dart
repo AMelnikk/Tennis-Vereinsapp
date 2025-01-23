@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class MoreTile extends StatelessWidget {
   MoreTile({
     super.key,
-    required this.navigateTo,
+    required this.function,
     required this.assetImage,
   });
 
   final _key = GlobalKey();
 
-  final String navigateTo;
+  final Function() function;
   final String assetImage;
 
   @override
@@ -18,9 +18,7 @@ class MoreTile extends StatelessWidget {
       key: _key,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).pushNamed(navigateTo);
-        },
+        onTap: function,
         borderRadius: BorderRadius.circular(20),
         child: Image.asset(
           assetImage,

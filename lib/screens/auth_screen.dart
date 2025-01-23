@@ -5,8 +5,10 @@ import '../widgets/verein_appbar.dart';
 import '../models/http_exception.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, required this.pop});
   static const routeName = "/auth-screen";
+
+  final bool pop;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -43,7 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await Provider.of<AuthProvider>(context, listen: false)
           .signIn(email.text, password.text);
       Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
+      if (mounted && widget.pop) {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {

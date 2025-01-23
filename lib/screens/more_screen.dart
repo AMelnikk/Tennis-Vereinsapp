@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './datenschutz_screen.dart';
-import './getraenkebuchen_screen.dart';
 import './auth_screen.dart';
 import './impressum_screen.dart';
 import '../widgets/more_tile.dart';
@@ -23,24 +22,33 @@ class MoreScreen extends StatelessWidget {
         ),
         children: [
           MoreTile(
-            navigateTo: ImpressumScreen.routename,
+            function: () {
+              Navigator.of(context).pushNamed(ImpressumScreen.routename);
+            },
             assetImage: "assets/images/Impressum.png",
           ),
           MoreTile(
-              navigateTo: DatenschutzScreen.routename,
-              assetImage: "assets/images/Datenschutz.png"),
-          MoreTile(
-              navigateTo: GetraenkeBuchenScreen.routename,
+              function: () {
+                Navigator.of(context).pushNamed(DatenschutzScreen.routename);
+              },
               assetImage: "assets/images/Datenschutz.png"),
           if (Provider.of<AuthProvider>(context).isAuth == false)
             MoreTile(
-              navigateTo: AuthScreen.routeName,
+              function: () {
+                Navigator.of(context).pushNamed(AuthScreen.routeName);
+              },
               assetImage: "assets/images/Anmelden.png",
             ),
+          if (Provider.of<AuthProvider>(context).isAuth)
+            MoreTile(
+                function: Provider.of<AuthProvider>(context).signOut,
+                assetImage: "assets/images/Abmelden.png"),
           if (Provider.of<AuthProvider>(context).userId ==
               "UvqMZwTqpcYcLUIAe0qg90UNeUe2")
             MoreTile(
-              navigateTo: AdminScreen.routename,
+              function: () {
+                Navigator.of(context).pushNamed(AdminScreen.routename);
+              },
               assetImage: "assets/images/Admin-Funktionen.png",
             ),
         ],

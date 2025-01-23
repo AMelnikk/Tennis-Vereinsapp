@@ -4,11 +4,11 @@ import '../providers/getraenkebuchen_provider.dart';
 import 'package:intl/intl.dart'; // Für Datumsformatierung
 
 class GetraenkeBuchungenDetailsScreen extends StatefulWidget {
-  const GetraenkeBuchungenDetailsScreen({Key? key}) : super(key: key);
-  static const routeName = "/getraenkedetails-screen";
+  const GetraenkeBuchungenDetailsScreen({super.key});
+  static const routename = "/getraenkedetails-screen";
 
   @override
-  _GetraenkeBuchungenDetailsScreenState createState() =>
+  State<GetraenkeBuchungenDetailsScreen> createState() =>
       _GetraenkeBuchungenDetailsScreenState();
 }
 

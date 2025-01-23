@@ -46,6 +46,7 @@ dependencies:
   pdfrx: ^1.0.101
   path_provider: ^2.1.5
   open_filex: ^4.6.0
+  flutter_secure_storage: ^9.2.4
 
 
 dev_dependencies:
@@ -96,6 +97,9 @@ flutter:
     - assets/pdfs/Beitragsordnung.pdf
     - assets/pdfs/Vereinssatzung.pdf
     - assets/images/Datenschutz.png
+    - assets/images/Getränkebuchung.webp
+    - assets/images/Online_shop.webp
+    - assets/images/Abmelden.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

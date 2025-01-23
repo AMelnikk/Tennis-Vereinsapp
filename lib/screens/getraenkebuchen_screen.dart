@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/providers/getraenkebuchen_provider.dart';
+import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/screens/auth_screen.dart';
+import '../providers/getraenkebuchen_provider.dart';
 import '../widgets/verein_appbar.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 class GetraenkeBuchenScreen extends StatefulWidget {
@@ -95,6 +95,14 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    if(!Provider.of<AuthProvider>(context).isAuth){
+      Navigator.of(context).pushNamed(AuthScreen.routeName);
+    }
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GetraenkeBuchenProvider>(context);
     final anzWasser = provider.anzWasser;
@@ -107,6 +115,7 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

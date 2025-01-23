@@ -54,7 +54,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Absenden der Getränkedaten
   Future<int> postGetraenke() async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
@@ -96,7 +96,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
   // Methode zum Abrufen aller Buchungen
   Future<List<Map<String, dynamic>>> getAllBuchungen() async {
-    if (_token == null || _token!.isEmpty) {
+    if (_token == null || _token.isEmpty) {
       throw Exception("Token fehlt");
     }
 

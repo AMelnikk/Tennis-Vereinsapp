@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
 import '../models/http_exception.dart';
 
 class AuthProvider with ChangeNotifier {
+  late final Map<String, String?> credentials;
+  final storage = const FlutterSecureStorage();
+
   String? _token;
   DateTime? _expiryDate;
   String? _userId;
@@ -32,40 +36,52 @@ class AuthProvider with ChangeNotifier {
       final dbUrl = Uri.parse(
           "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
       try {
-      final response = await http.post(
-        dbUrl,
-        body: json.encode(
-          {"email": email, "password": password, "returnSecureToken": true},
-        ),
-      );
-      final responseData = json.decode(response.body);
-      if (responseData["error"] != null) {
-        throw HttpException(message: responseData["error"]["message"]);
-      }
-      _token = responseData["idToken"];
-      _userId = responseData["localId"];
-      _expiryDate = DateTime.now().add(
-        Duration(
-          seconds: int.parse(
-            responseData["expiresIn"],
+        final response = await http.post(
+          dbUrl,
+          body: json.encode(
+            {"email": email, "password": password, "returnSecureToken": true},
           ),
-        ),
-      );
+        );
+        final responseData = json.decode(response.body);
+        if (responseData["error"] != null) {
+          throw HttpException(message: responseData["error"]["message"]);
+        }
+        _token = responseData["idToken"];
+        _userId = responseData["localId"];
+        _expiryDate = DateTime.now().add(
+          Duration(
+            seconds: int.parse(
+              responseData["expiresIn"],
+            ),
+          ),
+        );
+        storage.write(key: "email", value: email);
+        storage.write(key: "password", value: password);
 
-      var linkResponse = await http.get(Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));
-      Map<String, dynamic>? placeBookingData =
-          await json.decode(linkResponse.body);
-      if (placeBookingData != null) {
-        placeBookingLink = placeBookingData["platzbuchung_link"];
-      }
-      if(kDebugMode) print(placeBookingLink);
+        var linkResponse = await http.get(Uri.parse(
+            "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));
+        Map<String, dynamic>? placeBookingData =
+            await json.decode(linkResponse.body);
+        if (placeBookingData != null) {
+          placeBookingLink = placeBookingData["platzbuchung_link"];
+        }
+        if (kDebugMode) print(placeBookingLink);
 
-      notifyListeners();
-      if (response.statusCode < 300) {}
+        notifyListeners();
+        if (response.statusCode < 300) {}
       } catch (error) {
         rethrow;
       }
     }
+  }
+
+  void signOut() {
+    _token = null;
+    _expiryDate = null;
+    _userId = null;
+    placeBookingLink = null;
+    storage.delete(key: "email");
+    storage.delete(key: "password");
+    notifyListeners();
   }
 }

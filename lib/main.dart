@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/getraenkebuchen_provider.dart';
-import 'package:verein_app/screens/getraenkedetails_screen.dart';
-import 'package:verein_app/screens/getraenkesummen_screen.dart';
-import 'package:verein_app/screens/add_mannschaft_screen.dart';
+import './screens/getraenke_summen_screen.dart';
+import './providers/getraenkebuchen_provider.dart';
+import './screens/getraenkedetails_screen.dart';
 import './screens/datenschutz_screen.dart';
 import './screens/getraenkebuchen_screen.dart';
 import './providers/user_provider.dart';
@@ -28,11 +27,10 @@ import './screens/game_results_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
-import 'dart:html' as html;
+import "./screens/add_mannschaft_screen.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
     (_) {
       runApp(const MyApp());
@@ -78,10 +76,10 @@ class MyApp extends StatelessWidget {
             ),
             home: const MyHomePage(),
             routes: {
-              //GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+              GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
               DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
-              AuthScreen.routeName: (ctx) => const AuthScreen(),
+              AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
               PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
               PlaceBookingScreen.routename: (ctx) => const PlaceBookingScreen(),
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
@@ -92,12 +90,15 @@ class MyApp extends StatelessWidget {
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
               GetraenkeBuchenScreen.routename: (ctx) =>
-                  const GetraenkeBuchenScreen(),
-              GetraenkeBuchungenDetailsScreen.routeName: (ctx) =>
+                  Provider.of<AuthProvider>(context).isAuth
+                      ? const GetraenkeBuchenScreen()
+                      : const AuthScreen(pop: false),
+              GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
                   const GetraenkeBuchungenDetailsScreen(),
-              GetraenkeSummenScreen.routeName: (ctx) =>
+              GetraenkeSummenScreen.routename: (ctx) =>
                   const GetraenkeSummenScreen(),
-              AddMannschaftScreen.routename: (ctx) => AddMannschaftScreen(),
+              AddMannschaftScreen.routename: (ctx) =>
+                  const AddMannschaftScreen(),
             },
           ),
         ),
@@ -115,6 +116,54 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
+  bool _isLoading = true;
+  bool _firstLoading = true;
+
+  Future<void> getCredentialsAndLogin() async {
+    String? email;
+    String? password;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+    if (mounted) {
+      email = await Provider.of<AuthProvider>(context, listen: false)
+          .storage
+          .read(key: "email");
+    }
+    if (mounted) {
+      password = await Provider.of<AuthProvider>(context, listen: false)
+          .storage
+          .read(key: "password");
+    }
+    if (mounted) {
+      Provider.of<AuthProvider>(context, listen: false).credentials = {
+        "email": email,
+        "password": password
+      };
+    }
+    if (mounted) {
+      if (Provider.of<AuthProvider>(context, listen: false)
+                  .credentials["email"] !=
+              null &&
+          Provider.of<AuthProvider>(context, listen: false)
+                  .credentials["password"] !=
+              null) {
+        Provider.of<AuthProvider>(context, listen: false).signIn(
+            Provider.of<AuthProvider>(context, listen: false)
+                .credentials["email"] as String,
+            Provider.of<AuthProvider>(context, listen: false)
+                .credentials["password"] as String);
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Map<int, Widget> sites = {
     0: const NewsScreen(),
@@ -123,10 +172,23 @@ class _MyHomePageState extends State<MyHomePage> {
   };
 
   @override
+  void didChangeDependencies() {
+    if (_firstLoading) {
+      getCredentialsAndLogin();
+      _firstLoading = false;
+    }
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: VereinAppbar(),
-      body: sites[_selectedIndex],
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : sites[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         selectedItemColor: Colors.white,

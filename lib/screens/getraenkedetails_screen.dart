@@ -5,7 +5,7 @@ import 'package:intl/intl.dart'; // Für Datumsformatierung
 
 class GetraenkeBuchungenDetailsScreen extends StatefulWidget {
   const GetraenkeBuchungenDetailsScreen({super.key});
-  static const routeName = "/getraenkedetails-screen";
+  static const routename = "/getraenkedetails-screen";
 
   @override
   _GetraenkeBuchungenDetailsScreenState createState() =>

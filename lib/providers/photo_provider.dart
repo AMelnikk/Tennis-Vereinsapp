@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +23,7 @@ class PhotoProvider with ChangeNotifier {
   // Methode zum Auswählen mehrerer Bilder
   Future<void> pickImages() async {
     final picker = ImagePicker();
-    final List<XFile>? files = await picker
+    final List<XFile> files = await picker
         .pickMultiImage(); // Ermöglicht das Auswählen mehrerer Bilder
 
     if (files != null) {

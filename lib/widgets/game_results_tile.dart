@@ -1,19 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../models/game_result.dart';
 
 class GameResultsTile extends StatelessWidget {
-  const GameResultsTile({super.key, required this.name, required this.url});
+  const GameResultsTile({super.key, required this.gameResult});
 
-  final String name;
-  final String url;
+  final GameResult gameResult;
 
   Image teamIcon() {
-    if (name.startsWith("Damen")) {
+    if (gameResult.mannschaft.startsWith("Damen")) {
       return Image.asset("assets/images/Woman_icon.png");
-    } else if (name.startsWith("Bambini") || name.startsWith("Dunlop")) {
+    } else if (gameResult.mannschaft.startsWith("Bambini") ||
+        gameResult.mannschaft.startsWith("Dunlop")) {
       return Image.asset("assets/images/Man_Woman_icon.png");
     } else {
       return Image.asset("assets/images/Man_icon.png");
+    }
+  }
+
+  Future<void> _launchURL() async {
+    final Uri _url = Uri.parse(gameResult.url);
+    if (await canLaunchUrl(_url)) {
+      await launchUrl(_url, mode: LaunchMode.inAppBrowserView);
+    } else {
+      throw 'Could not launch ${gameResult.url}';
     }
   }
 
@@ -23,28 +33,32 @@ class GameResultsTile extends StatelessWidget {
       height: 80,
       margin: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(5)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(5),
+      ),
       child: InkWell(
         splashColor: Colors.grey,
-        onTap: () {
-          launchUrl(
-            Uri.parse(url),
-            mode: LaunchMode.inAppBrowserView
-          );
-        },
+        onTap: _launchURL, // Link öffnen
         child: Row(
           children: [
             Padding(
               padding: const EdgeInsets.all(10),
               child: teamIcon(),
             ),
-            const SizedBox(
-              width: 10,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Text(
+                  gameResult.mannschaft,
+                  style: TextStyle(
+                    color: Colors.blue, // Farbe für das "klickbare" Element
+                    decoration:
+                        TextDecoration.underline, // Optional: Unterstreichen
+                  ),
+                ),
+              ),
             ),
-            Expanded(child: Padding(
-              padding: const EdgeInsets.only(right: 5),
-              child: Text(name),
-            )),
           ],
         ),
       ),

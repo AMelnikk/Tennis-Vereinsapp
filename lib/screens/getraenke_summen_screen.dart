@@ -4,7 +4,7 @@ import '../providers/getraenkebuchen_provider.dart';
 
 class GetraenkeSummenScreen extends StatefulWidget {
   const GetraenkeSummenScreen({super.key});
-  static const routeName = "/getraenkesummen-screen";
+  static const routename = "/getraenkesummen-screen";
 
   @override
   _GetraenkeSummenScreenState createState() => _GetraenkeSummenScreenState();

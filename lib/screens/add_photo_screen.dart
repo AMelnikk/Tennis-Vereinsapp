@@ -20,7 +20,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     });
 
     try {
-      final statusCode = await Provider.of<PhotoProvider>(context, listen: false).postImages();
+      final statusCode =
+          await Provider.of<PhotoProvider>(context, listen: false).postImages();
       if (statusCode == 200) {
         showSnackBar("Erfolg! Die Bilder wurden hochgeladen");
       } else {
@@ -36,7 +37,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   }
 
   void showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -46,63 +48,70 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            children: [
-              const Text(
-                "Fotos Hinzufügen",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Row(
+              child: Padding(
+                padding: const EdgeInsets.all(30),
+                child: Column(
                   children: [
-                    // Anzeigen der ausgewählten Bilder
-                    Expanded(
-                      child: Column(
+                    const Text(
+                      "Fotos Hinzufügen",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Row(
                         children: [
-                          ...Provider.of<PhotoProvider>(context).images.map((image) {
-                            return Container(
-                              height: 100,
-                              width: 75,
-                              margin: const EdgeInsets.all(5),
-                              child: image,
-                            );
-                          }).toList(),
+                          // Anzeigen der ausgewählten Bilder
+                          Expanded(
+                            child: Column(
+                              children: [
+                                ...Provider.of<PhotoProvider>(context)
+                                    .images
+                                    .map((image) {
+                                  return Container(
+                                    height: 100,
+                                    width: 75,
+                                    margin: const EdgeInsets.all(5),
+                                    child: image,
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: TextButton.icon(
+                              onPressed: () {
+                                Provider.of<PhotoProvider>(context,
+                                        listen: false)
+                                    .pickImages();
+                              },
+                              icon: const Icon(Icons.photo),
+                              label: const Text("Bilder wählen",
+                                  style: TextStyle(fontSize: 20)),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Provider.of<PhotoProvider>(context, listen: false).pickImages();
-                        },
-                        icon: const Icon(Icons.photo),
-                        label: const Text("Bilder wählen", style: TextStyle(fontSize: 20)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 30),
+                      child: ElevatedButton(
+                        onPressed: postImages,
+                        child: Container(
+                          alignment: Alignment.center,
+                          width: double.infinity,
+                          height: 50,
+                          child: const Text("Bilder Hochladen",
+                              style: TextStyle(fontSize: 20)),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                child: ElevatedButton(
-                  onPressed: postImages,
-                  child: Container(
-                    alignment: Alignment.center,
-                    width: double.infinity,
-                    height: 50,
-                    child: const Text("Bilder Hochladen", style: TextStyle(fontSize: 20)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

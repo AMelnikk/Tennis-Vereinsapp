@@ -119,6 +119,20 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isLoading = true;
   bool _firstLoading = true;
 
+  Future<void> firstLoadNews() async {
+    if (mounted) {
+      setState(() {
+        Provider.of<NewsProvider>(context, listen: false).isNewsLoading = true;
+      });
+    }
+    await Provider.of<NewsProvider>(context).getData();
+    if (mounted) {
+      setState(() {
+        Provider.of<NewsProvider>(context, listen: false).isNewsLoading = false;
+      });
+    }
+  }
+
   Future<void> getCredentialsAndLogin() async {
     String? email;
     String? password;
@@ -177,6 +191,9 @@ class _MyHomePageState extends State<MyHomePage> {
       getCredentialsAndLogin();
       _firstLoading = false;
     }
+    if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+      firstLoadNews();
+    }
     super.didChangeDependencies();
   }
 
@@ -184,7 +201,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: VereinAppbar(),
-      body: _isLoading
+      body: _isLoading 
           ? const Center(
               child: CircularProgressIndicator(),
             )

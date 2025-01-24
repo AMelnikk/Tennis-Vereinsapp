@@ -7,15 +7,28 @@ class GameResultsTile extends StatelessWidget {
 
   final GameResult gameResult;
 
+  // Logik für die Hintergrundfarbe
+  Color? getBackgroundColor() {
+    const highlightedLeagues = ["Nordliga1", "Landesliga 1", "Landesliga 2"];
+    return highlightedLeagues.contains(gameResult.liga)
+        ? Colors.lightGreen[100] // Hellgrün für die hervorgehobenen Ligen
+        : null;
+  }
+
+  // Team-Icons je nach Mannschaft
   Image teamIcon() {
-    if (gameResult.mannschaft.startsWith("Damen")) {
-      return Image.asset("assets/images/Woman_icon.png");
-    } else if (gameResult.mannschaft.startsWith("Bambini") ||
-        gameResult.mannschaft.startsWith("Dunlop")) {
-      return Image.asset("assets/images/Man_Woman_icon.png");
-    } else {
-      return Image.asset("assets/images/Man_icon.png");
+    const iconMap = {
+      "Damen": "assets/images/Woman_icon.png",
+      "Bambini": "assets/images/Man_Woman_icon.png",
+      "Dunlop": "assets/images/Man_Woman_icon.png",
+    };
+
+    for (var key in iconMap.keys) {
+      if (gameResult.mannschaft.startsWith(key)) {
+        return Image.asset(iconMap[key]!, width: 40, height: 40);
+      }
     }
+    return Image.asset("assets/images/Man_icon.png", width: 40, height: 40);
   }
 
   Future<void> _launchURL() async {
@@ -24,43 +37,129 @@ class GameResultsTile extends StatelessWidget {
       await launchUrl(url, mode: LaunchMode.inAppBrowserView);
     } else {
       throw 'Could not launch ${gameResult.url}';
+
+  void _showSnackBar(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+      ),
+    );
+  }
+
+  Future<void> _launchURL(BuildContext context) async {
+    try {
+      final Uri url = Uri.parse(gameResult.url); // URL als Uri parsen
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, // Externer Browser
+        );
+      } else {
+        _showSnackBar(
+          context,
+          'Invalid URL: ${gameResult.url}',
+          Colors.redAccent,
+        );
+      }
+    } catch (e) {
+      print('Fehler beim Öffnen der URL: $e');
+      _showSnackBar(
+        context,
+        'Could not open the link.',
+        Colors.redAccent,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
       margin: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color:
+            getBackgroundColor(), // Hintergrundfarbe für hervorgehobene Ligen
         borderRadius: BorderRadius.circular(5),
       ),
-      child: InkWell(
-        splashColor: Colors.grey,
-        onTap: _launchURL, // Link öffnen
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: teamIcon(),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Teamname (verlinkt)
+          Expanded(
+            flex: 3,
+            child: InkWell(
+              onTap: () => _launchURL(context),
               child: Padding(
-                padding: const EdgeInsets.only(right: 5),
+                padding: const EdgeInsets.all(10),
                 child: Text(
                   gameResult.mannschaft,
-                  style: const TextStyle(
+                  style: const TextStyle
                     color: Colors.blue, // Farbe für das "klickbare" Element
                     decoration:
                         TextDecoration.underline, // Optional: Unterstreichen
+                    fontSize: 18, // Schriftgröße für den Teamnamen
+                    fontWeight: FontWeight.bold,
+                    color:
+                        Colors.black, // Keine Unterstreichung oder blaue Farbe
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          // Liga
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blueAccent,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                gameResult.liga,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          // Gruppe
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                gameResult.gruppe,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          // BTV-Symbol
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: IconButton(
+              icon: Image.asset(
+                'assets/images/BTV.jpg', // Dein benutzerdefiniertes Icon
+                width: 40, // Größe des Icons
+                height: 40,
+              ),
+              onPressed: () => _launchURL(context), // URL aufrufen bei Klick
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -44,7 +44,8 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   double _calculateOffenerSaldo() {
     return _buchungen
         .where((buchung) => !(buchung['bezahlt'] as bool? ?? false))
-        .fold(0.0, (sum, buchung) => sum + (buchung['summe'] as double));
+        .fold(
+            0.0, (sum, buchung) => sum + (buchung['summe'] as num).toDouble());
   }
 
   Future<void> postGetraenke() async {
@@ -106,7 +107,6 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              // Getränkereihen
               buildBeverageRow(
                 "Wasser",
                 1.00,
@@ -152,11 +152,11 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                         const SizedBox(height: 20),
                         ListView.builder(
                           shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
                           itemCount: _buchungen.length,
                           itemBuilder: (context, index) {
                             final buchung = _buchungen[index];
 
-                            // Formatierte Datumsausgabe
                             final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
                             final formattedDate = dateFormat.format(
                               DateTime.parse(buchung['date']),
@@ -179,11 +179,14 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      "Buchung vom $formattedDate",
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w500,
+                                    Expanded(
+                                      child: Text(
+                                        "Buchung vom",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     Text(
@@ -198,6 +201,13 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Text(
+                                      "$formattedDate",
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                     Text(
                                       "Wasser: ${buchung['anzWasser']}",
                                       style: const TextStyle(fontSize: 16),

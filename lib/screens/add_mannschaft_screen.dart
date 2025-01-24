@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/game_results_provider.dart';
 import '../models/game_result.dart';
 
@@ -107,7 +108,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
       _selectedSaison = entry.saison;
       _selectedMannschaft = entry.mannschaft;
       _selectedLiga = entry.liga;
-      _controllers['url']?.text = entry.url ?? '';
+      _controllers['url']?.text = entry.url;
       _controllers['gruppe']?.text = entry.gruppe;
       _controllers['matchbilanz']?.text = entry.matchbilanz;
       _controllers['satzbilanz']?.text = entry.satzbilanz;
@@ -133,15 +134,6 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     );
   }
 
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -320,66 +312,128 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SingleChildScrollView(
-        // Wrapper für das gesamte Layout
-        child: Column(
-          children: [
-            FutureBuilder<List<GameResult>>(
-              future: provider.getData(), // Daten abfragen
-              builder: (ctx, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator()); // Ladeindikator
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Fehler: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Keine Einträge vorhanden.'));
-                } else {
-                  final gameResults = snapshot.data!;
-                  return DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Saison')),
-                      DataColumn(label: Text('Mannschaft')),
-                      DataColumn(label: Text('Gruppe')),
-                      DataColumn(label: Text('Matchbilanz')),
-                      DataColumn(label: Text('Satzbilanz')),
-                      DataColumn(label: Text('Link')),
-                      DataColumn(label: Text('Aktionen')),
-                    ],
-                    rows: gameResults.map((entry) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(entry.saison)),
-                          DataCell(Text(entry.mannschaft)),
-                          DataCell(Text(entry.gruppe)),
-                          DataCell(Text(entry.matchbilanz)),
-                          DataCell(Text(entry.satzbilanz)),
-                          DataCell(Text(entry.url)),
-                          DataCell(
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => _editEntry(entry),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () {
-                                    provider.deleteGameResult(entry.id);
-                                  },
-                                ),
-                              ],
+        scrollDirection:
+            Axis.horizontal, // Horizontales Scrollen für kleine Geräte
+        child: FutureBuilder<List<GameResult>>(
+          future: provider.getData(), // Daten abrufen
+          builder: (ctx, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                  child: CircularProgressIndicator()); // Ladeindikator
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Fehler: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => provider.getData(), // Daten erneut laden
+                      child: const Text('Erneut versuchen'),
+                    ),
+                  ],
+                ),
+              );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('Keine Einträge vorhanden.'));
+            } else {
+              final gameResults = snapshot.data!;
+              return DataTable(
+                columns: const [
+                  DataColumn(label: Text('Saison')),
+                  DataColumn(label: Text('Mannschaft')),
+                  DataColumn(label: Text('Gruppe')),
+                  DataColumn(label: Text('Matchbilanz')),
+                  DataColumn(label: Text('Satzbilanz')),
+                  DataColumn(label: Text('Link')),
+                  DataColumn(label: Text('Aktionen')),
+                ],
+                rows: gameResults.map((entry) {
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(entry.saison)),
+                      DataCell(Text(entry.mannschaft)),
+                      DataCell(Text(entry.gruppe)),
+                      DataCell(Text(entry.matchbilanz)),
+                      DataCell(Text(entry.satzbilanz)),
+                      DataCell(
+                        GestureDetector(
+                          onTap: () => _launchURL(entry.url), // URL öffnen
+                          child: Text(
+                            'Link öffnen',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
                             ),
                           ),
-                        ],
-                      );
-                    }).toList(),
+                        ),
+                      ),
+                      DataCell(
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _editEntry(entry), // Bearbeiten
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                final confirmed =
+                                    await _showDeleteConfirmation(ctx);
+                                if (confirmed) {
+                                  provider
+                                      .deleteGameResult(entry.id); // Löschen
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Eintrag gelöscht.'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
-                }
-              },
-            ),
-          ],
+                }).toList(),
+              );
+            }
+          },
         ),
       ),
     );
+  }
+
+  Future<bool> _showDeleteConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Eintrag löschen'),
+            content: const Text('Möchten Sie diesen Eintrag wirklich löschen?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Abbrechen'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Löschen'),
+              ),
+            ],
+          ),
+        ) ??
+        false; // Default false, falls Dialog abgebrochen wird
+  }
+
+  void _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      print('Fehler: URL konnte nicht geöffnet werden: $url');
+    }
   }
 }

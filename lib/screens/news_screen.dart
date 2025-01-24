@@ -12,26 +12,19 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> {
-  bool _isFirstLoading = false;
-  bool _isLoading = true;
+  bool _isLoading = false;
+  bool _isRefreshLoading = false;
 
   Future<void> refreshFunction() async {
+    setState(() {
+      _isRefreshLoading = true;
+    });
     Provider.of<NewsProvider>(context, listen: false).loadedNews = [];
     Provider.of<NewsProvider>(context, listen: false).hasMore = true;
     Provider.of<NewsProvider>(context, listen: false).lastId = null;
+    await getData();
     setState(() {
-      _isFirstLoading = true;
-      getData().then(
-        (_) {
-          if (mounted) {
-            setState(
-              () {
-                _isFirstLoading = false;
-              },
-            );
-          }
-        },
-      );
+      _isRefreshLoading = false;
     });
   }
 
@@ -53,33 +46,33 @@ class _NewsScreenState extends State<NewsScreen> {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    if (_isLoading) {
-      if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isFirstLoading = true;
-          });
-        }
-        getData().then((_) {
-          if (mounted) {
-            setState(() {
-              _isFirstLoading = false;
-            });
-          }
-        });
-      } else {
-        _isLoading = false;
-      }
-    }
+  // @override
+  // void didChangeDependencies() {
+  //   if (_isLoading) {
+  //     if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+  //       // if (mounted) {
+  //       //   setState(() {
+  //       //     _isFirstLoading = true;
+  //       //   });
+  //       // }
+  //       // getData().then((_) {
+  //       //   if (mounted) {
+  //       //     setState(() {
+  //       //       _isFirstLoading = false;
+  //       //     });
+  //       //   }
+  //       // });
+  //     } else {
+  //       _isLoading = false;
+  //     }
+  //   }
 
-    super.didChangeDependencies();
-  }
+  //   super.didChangeDependencies();
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return _isFirstLoading
+    return _isRefreshLoading || Provider.of<NewsProvider>(context).isNewsLoading
         ? const Center(
             child: CircularProgressIndicator(),
           )

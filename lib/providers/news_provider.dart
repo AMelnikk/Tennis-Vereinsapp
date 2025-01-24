@@ -14,6 +14,7 @@ enum Tag { spieltreff, keinSpieltreff }
 class NewsProvider with ChangeNotifier {
   NewsProvider(this._token);
 
+  bool isNewsLoading = false;
   List<News> loadedNews = [];
   final String? _token;
   Image? image;

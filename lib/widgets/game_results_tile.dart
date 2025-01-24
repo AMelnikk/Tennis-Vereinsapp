@@ -31,13 +31,6 @@ class GameResultsTile extends StatelessWidget {
     return Image.asset("assets/images/Man_icon.png", width: 40, height: 40);
   }
 
-  Future<void> _launchURL() async {
-    final Uri url = Uri.parse(gameResult.url);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
-    } else {
-      throw 'Could not launch ${gameResult.url}';
-
   void _showSnackBar(BuildContext context, String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -94,10 +87,7 @@ class GameResultsTile extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 child: Text(
                   gameResult.mannschaft,
-                  style: const TextStyle
-                    color: Colors.blue, // Farbe für das "klickbare" Element
-                    decoration:
-                        TextDecoration.underline, // Optional: Unterstreichen
+                  style: const TextStyle(
                     fontSize: 18, // Schriftgröße für den Teamnamen
                     fontWeight: FontWeight.bold,
                     color:

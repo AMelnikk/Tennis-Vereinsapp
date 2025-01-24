@@ -11,7 +11,7 @@ class AddMannschaftScreen extends StatefulWidget {
   const AddMannschaftScreen({super.key});
 
   @override
-  _AddMannschaftScreenState createState() => _AddMannschaftScreenState();
+  State<AddMannschaftScreen> createState() => _AddMannschaftScreenState();
 }
 
 class _AddMannschaftScreenState extends State<AddMannschaftScreen> {

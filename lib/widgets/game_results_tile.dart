@@ -19,9 +19,9 @@ class GameResultsTile extends StatelessWidget {
   }
 
   Future<void> _launchURL() async {
-    final Uri _url = Uri.parse(gameResult.url);
-    if (await canLaunchUrl(_url)) {
-      await launchUrl(_url, mode: LaunchMode.inAppBrowserView);
+    final Uri url = Uri.parse(gameResult.url);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
     } else {
       throw 'Could not launch ${gameResult.url}';
     }
@@ -51,7 +51,7 @@ class GameResultsTile extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 5),
                 child: Text(
                   gameResult.mannschaft,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.blue, // Farbe für das "klickbare" Element
                     decoration:
                         TextDecoration.underline, // Optional: Unterstreichen

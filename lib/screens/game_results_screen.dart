@@ -31,7 +31,7 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
         _isLoading = false;
       });
     } catch (error) {
-      if(kDebugMode) print(error);
+      if (kDebugMode) print(error);
     }
   }
 
@@ -51,7 +51,8 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
               child: Column(
                 children: gameResults
                     .map(
-                      (el) => GameResultsTile(name: el.name, url: el.url),
+                      (el) => GameResultsTile(
+                          gameResult: el), // Pass 'gameResult' argument
                     )
                     .toList(),
               ),

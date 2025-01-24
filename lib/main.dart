@@ -27,6 +27,7 @@ import './screens/game_results_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
+import "./screens/add_mannschaft_screen.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,8 @@ class MyApp extends StatelessWidget {
       builder: (context, _) => MultiProvider(
         providers: [
           ChangeNotifierProvider.value(
-            value: GameResultsProvider(),
+            value:
+                GameResultsProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
             value: PhotoProvider(Provider.of<AuthProvider>(context).token),
@@ -95,6 +97,8 @@ class MyApp extends StatelessWidget {
                   const GetraenkeBuchungenDetailsScreen(),
               GetraenkeSummenScreen.routename: (ctx) =>
                   const GetraenkeSummenScreen(),
+              AddMannschaftScreen.routename: (ctx) =>
+                  const AddMannschaftScreen(),
             },
           ),
         ),

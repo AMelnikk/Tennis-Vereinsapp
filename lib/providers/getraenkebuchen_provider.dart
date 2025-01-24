@@ -7,7 +7,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   GetraenkeBuchenProvider(this._token);
 
   final String? _token;
-
+  String username = '';
   int _anzWasser = 0;
   int _anzSoft = 0;
   int _anzBier = 0;
@@ -61,7 +61,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final date = DateTime.now().toIso8601String();
-    final username = 'Oli'; // Benutzername kann dynamisch gesetzt werden
+    const username = 'Oli'; // Benutzername kann dynamisch gesetzt werden
 
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/Getraenke_$timestamp.json?auth=$_token");
@@ -77,9 +77,12 @@ class GetraenkeBuchenProvider with ChangeNotifier {
           'timestamp': timestamp,
           'date': date,
           'username': username,
+          'bezahlt': false, // Neu hinzugefügtes Feld
         }),
         headers: {'Content-Type': 'application/json'},
       );
+
+      resetData();
 
       if (kDebugMode) print("Response status: ${response.statusCode}");
       if (kDebugMode) print("Response body: ${response.body}");
@@ -108,8 +111,10 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>?;
+
         if (data == null) return [];
 
+        // Alle Buchungen werden zurückgegeben
         return data.entries.map((entry) {
           final buchung = entry.value as Map<String, dynamic>;
           return {
@@ -122,6 +127,68 @@ class GetraenkeBuchenProvider with ChangeNotifier {
       }
     } catch (error) {
       throw Exception("Fehler beim Abrufen der Buchungen: $error");
+    }
+  }
+
+  // Methode zum Abrufen der Buchungen für einen spezifischen Benutzer
+  Future<List<Map<String, dynamic>>> fetchUserBuchungen(String userId) async {
+    final allBuchungen = await getAllBuchungen();
+    return allBuchungen
+        .where((buchung) => buchung['username'] == userId)
+        .toList();
+  }
+
+  // Methode zum Aktualisieren des Bezahlt-Status einer Buchung
+  Future<int> updateBezahlt(String buchungId, bool bezahlt) async {
+    if (_token == null || _token.isEmpty) {
+      if (kDebugMode) print("Token fehlt");
+      return 400;
+    }
+
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/$buchungId.json?auth=$_token");
+
+    try {
+      final response = await http.patch(
+        url,
+        body: json.encode({
+          'bezahlt': bezahlt,
+        }),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return 200; // Erfolgreiche Aktualisierung
+      } else {
+        return response.statusCode;
+      }
+    } catch (error) {
+      if (kDebugMode) print("Fehler beim Aktualisieren des Status: $error");
+      return 400;
+    }
+  }
+
+  // Methode zum Löschen einer Buchung
+  Future<int> deleteBuchung(String buchungId) async {
+    if (_token == null || _token.isEmpty) {
+      if (kDebugMode) print("Token fehlt");
+      return 400;
+    }
+
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/$buchungId.json?auth=$_token");
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return 200; // Erfolgreiches Löschen
+      } else {
+        return response.statusCode;
+      }
+    } catch (error) {
+      if (kDebugMode) print("Fehler beim Löschen der Buchung: $error");
+      return 400;
     }
   }
 }

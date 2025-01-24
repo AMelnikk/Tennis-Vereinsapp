@@ -1,105 +1,84 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/screens/auth_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // Importiere das Paket für Datum-Formatierung
 import '../providers/getraenkebuchen_provider.dart';
 import '../widgets/verein_appbar.dart';
-import 'package:provider/provider.dart';
 
 class GetraenkeBuchenScreen extends StatefulWidget {
   const GetraenkeBuchenScreen({super.key});
   static const routename = "/getraenkebuchen-screen";
 
   @override
-  State<GetraenkeBuchenScreen> createState() => _GetraenkeBuchenState();
+  State<GetraenkeBuchenScreen> createState() => _GetraenkeBuchenScreenState();
 }
 
-class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
+class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   bool _isLoading = false;
+  List<Map<String, dynamic>> _buchungen = [];
 
-  // Methode zum Getränkebuchen
+  @override
+  void initState() {
+    super.initState();
+    fetchUserBuchungen();
+  }
+
+  Future<void> fetchUserBuchungen() async {
+    try {
+      final provider =
+          Provider.of<GetraenkeBuchenProvider>(context, listen: false);
+      const userId = 'Oli'; // Benutzer-ID anpassen
+      final allBuchungen = await provider.fetchUserBuchungen(userId);
+
+      setState(() {
+        _buchungen = allBuchungen
+          ..sort((a, b) =>
+              b['date'].compareTo(a['date'])); // Sortiere nach Datum absteigend
+      });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Fehler beim Abrufen der Buchungen: $error")),
+      );
+    }
+  }
+
+  double _calculateOffenerSaldo() {
+    return _buchungen
+        .where((buchung) => !(buchung['bezahlt'] as bool? ?? false))
+        .fold(0.0, (sum, buchung) => sum + (buchung['summe'] as double));
+  }
+
   Future<void> postGetraenke() async {
     try {
       setState(() {
         _isLoading = true;
       });
 
-      // Aufruf der Post-Methode im Provider
-      int statusCode =
-          await Provider.of<GetraenkeBuchenProvider>(context, listen: false)
-              .postGetraenke();
+      final provider =
+          Provider.of<GetraenkeBuchenProvider>(context, listen: false);
+      final statusCode = await provider.postGetraenke();
 
       setState(() {
         _isLoading = false;
       });
 
-      // Erfolgs- oder Fehlernachricht basierend auf Statuscode anzeigen
       if (statusCode >= 200 && statusCode < 300) {
-        showSnackBar("Erfolg! Die Getränke wurden verbucht");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Erfolgreich gebucht!")),
+        );
+        await fetchUserBuchungen(); // Liste aktualisieren
       } else {
-        showSnackBar("Fehler beim Buchen der Getränke: $statusCode");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Fehler beim Buchen: $statusCode")),
+        );
       }
     } catch (error) {
       setState(() {
         _isLoading = false;
       });
-      showSnackBar("Ein unerwarteter Fehler ist aufgetreten: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Ein Fehler ist aufgetreten: $error")),
+      );
     }
-  }
-
-  // Methode zum Anzeigen der SnackBar
-  void showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, textAlign: TextAlign.center),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  }
-
-  // Methode zum Zurücksetzen des Providers
-  void resetProvider() {
-    Provider.of<GetraenkeBuchenProvider>(context, listen: false).resetData();
-  }
-
-  // Widget zum Erstellen einer Getränkereihe
-  Widget buildBeverageRow(String label, double price, int count,
-      VoidCallback increment, VoidCallback decrement) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "$label (${price.toStringAsFixed(2)} €)",
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          textAlign: TextAlign.center,
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.remove),
-              onPressed: count > 0 ? decrement : null,
-            ),
-            Text(
-              "$count",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: increment,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  @override
-  void didChangeDependencies() {
-    if(!Provider.of<AuthProvider>(context).isAuth){
-      Navigator.of(context).pushNamed(AuthScreen.routeName);
-    }
-    super.didChangeDependencies();
   }
 
   @override
@@ -115,17 +94,19 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 "Getränke buchen: ${summe.toStringAsFixed(2)} €",
-                style:
-                    const TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
+              // Getränkereihen
               buildBeverageRow(
                 "Wasser",
                 1.00,
@@ -133,7 +114,7 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
                 () => provider.updateWasser(anzWasser + 1),
                 () => provider.updateWasser(anzWasser - 1),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               buildBeverageRow(
                 "Apfelschorle, Iso, Limo, Spezi",
                 1.50,
@@ -141,7 +122,7 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
                 () => provider.updateSoft(anzSoft + 1),
                 () => provider.updateSoft(anzSoft - 1),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               buildBeverageRow(
                 "Weizen, Bier, Radler",
                 2.00,
@@ -149,28 +130,133 @@ class _GetraenkeBuchenState extends State<GetraenkeBuchenScreen> {
                 () => provider.updateBier(anzBier + 1),
                 () => provider.updateBier(anzBier - 1),
               ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                child: ElevatedButton(
-                  onPressed: _isLoading || summe == 0 ? null : postGetraenke,
-                  child: Container(
-                    alignment: Alignment.center,
-                    width: double.infinity,
-                    height: 50,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            "Getränke buchen",
-                            style: TextStyle(fontSize: 20),
-                          ),
-                  ),
-                ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _isLoading || summe == 0 ? null : postGetraenke,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Buchen"),
               ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : Column(
+                      children: [
+                        Text(
+                          "Offener Saldo: ${_calculateOffenerSaldo().toStringAsFixed(2)} €",
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _buchungen.length,
+                          itemBuilder: (context, index) {
+                            final buchung = _buchungen[index];
+
+                            // Formatierte Datumsausgabe
+                            final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
+                            final formattedDate = dateFormat.format(
+                              DateTime.parse(buchung['date']),
+                            );
+
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: buchung['bezahlt'] == true
+                                    ? Colors.grey[300]
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              child: ListTile(
+                                title: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Buchung vom $formattedDate",
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      "${buchung['summe']} €",
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Wasser: ${buchung['anzWasser']}",
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    Text(
+                                      "Bier: ${buchung['anzBier']}",
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    Text(
+                                      "Softgetränke: ${buchung['anzSoft']}",
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // Die Buttons "+" und "-" in eine eigene Zeile packen
+  Column buildBeverageRow(String label, double price, int amount,
+      VoidCallback increment, VoidCallback decrement) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "$label: ${price.toStringAsFixed(2)} €",
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove),
+              onPressed: amount > 0 ? decrement : null,
+            ),
+            Text(
+              amount.toString(),
+              style: const TextStyle(fontSize: 18),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: increment,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

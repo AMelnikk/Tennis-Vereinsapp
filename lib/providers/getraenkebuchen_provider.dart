@@ -42,7 +42,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
     _anzWasser = 0;
     _anzSoft = 0;
     _anzBier = 0;
-    _summe = 0;
+    _summe = 0.0;
     notifyListeners();
   }
 

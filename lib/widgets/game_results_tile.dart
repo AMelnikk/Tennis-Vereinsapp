@@ -31,31 +31,37 @@ class GameResultsTile extends StatelessWidget {
     return Image.asset("assets/images/Man_icon.png", width: 40, height: 40);
   }
 
+  void _showSnackBar(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+      ),
+    );
+  }
+
   Future<void> _launchURL(BuildContext context) async {
-    final Uri? url = Uri.tryParse(gameResult.url);
-    if (url != null && await canLaunchUrl(url)) {
-      try {
+    try {
+      final Uri url = Uri.parse(gameResult.url); // URL als Uri parsen
+      if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
           mode: LaunchMode.externalApplication, // Externer Browser
         );
-      } catch (e) {
-        print('Fehler beim Öffnen der URL: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open the link.'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.redAccent,
-          ),
+      } else {
+        _showSnackBar(
+          context,
+          'Invalid URL: ${gameResult.url}',
+          Colors.redAccent,
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Invalid URL: ${gameResult.url}'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
-        ),
+    } catch (e) {
+      print('Fehler beim Öffnen der URL: $e');
+      _showSnackBar(
+        context,
+        'Could not open the link.',
+        Colors.redAccent,
       );
     }
   }

@@ -200,7 +200,7 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
                     ],
                   ),
                 ),
-                // Zeigen Sie gefilterte und sortierte Ergebnisse
+                // Hier verwenden wir Expanded, um sicherzustellen, dass ListView den restlichen Platz einnimmt
                 Expanded(
                   child: ListView(
                     children: getSortedResults(getFilteredResults())

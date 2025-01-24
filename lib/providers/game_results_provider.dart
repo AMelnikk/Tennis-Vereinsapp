@@ -12,13 +12,14 @@ class GameResultsProvider with ChangeNotifier {
   List<GameResult> get gameResults => _gameResults;
 
   Future<List<GameResult>> getData() async {
-    if (_token == null || _token.isEmpty) {
-      throw Exception("Token fehlt");
-    }
+    //if (_token == null || _token.isEmpty) {
+    //  throw Exception("Token fehlt");
+    //}
 
     final List<GameResult> loadedData = [];
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften.json");
+    //final url = Uri.parse("https://db-teg-default-rtdb.firebaseio.com/Mannschaften.json?auth=$_token");
 
     try {
       final response = await http.get(url);
@@ -67,7 +68,7 @@ class GameResultsProvider with ChangeNotifier {
       return 400;
     }
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final key = newResult.saison + "_" + newResult.mannschaft;
+    final key = "${newResult.saison}_${newResult.mannschaft}";
     final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/Mannschaft_$key.json?auth=$_token");

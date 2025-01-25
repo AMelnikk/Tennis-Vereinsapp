@@ -78,6 +78,9 @@ class AuthProvider with ChangeNotifier {
   Future<void> signUp(String email, String password, String platzbuchungLink,
       String name) async {
     {
+      if(name.isEmpty){
+        throw HttpException(message: "NAME_FEHLT");
+      }
       final dbUrl = Uri.parse(
           "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
       try {
@@ -104,12 +107,13 @@ class AuthProvider with ChangeNotifier {
         storage.write(key: "email", value: email);
         storage.write(key: "password", value: password);
 
-        var rest = await http.put(
+        // var rest = 
+        await http.put(
           Uri.parse(
               "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json?auth=$_token"),
           body: json.encode({"name": name, "platzbuchung_link": platzbuchungLink}),
         );
-        print(rest.statusCode);
+        // print(rest.statusCode);
 
         var linkResponse = await http.get(Uri.parse(
             "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));

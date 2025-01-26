@@ -26,10 +26,8 @@ class PhotoProvider with ChangeNotifier {
     final List<XFile> files = await picker
         .pickMultiImage(); // Ermöglicht das Auswählen mehrerer Bilder
 
-    if (files != null) {
-      // Hier fügen wir die ausgewählten Bilder zur Liste 'images' hinzu
-      images = files.map((file) => Image.file(File(file.path))).toList();
-    }
+    // Hier fügen wir die ausgewählten Bilder zur Liste 'images' hinzu
+    images = files.map((file) => Image.file(File(file.path))).toList();
     notifyListeners();
   }
 

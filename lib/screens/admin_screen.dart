@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:verein_app/screens/add_termine_screen.dart';
 import 'package:verein_app/screens/getraenke_summen_screen.dart';
 import 'package:verein_app/screens/getraenkedetails_screen.dart';
 import 'package:verein_app/screens/add_mannschaft_screen.dart';
@@ -35,6 +36,12 @@ class AdminScreen extends StatelessWidget {
                 Navigator.of(context).pushNamed(AddMannschaftScreen.routename);
               },
               text: "Mannschaft hinzufügen",
+            ),
+            AdminFunction(
+              function: () {
+                Navigator.of(context).pushNamed(AddTermineScreen.routename);
+              },
+              text: "Termine hochladen",
             ),
             AdminFunction(
                 function: () {

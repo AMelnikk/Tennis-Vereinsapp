@@ -134,7 +134,6 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GameResultsProvider>(context);
@@ -360,7 +359,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                       DataCell(
                         GestureDetector(
                           onTap: () => _launchURL(entry.url), // URL öffnen
-                          child: Text(
+                          child: const Text(
                             'Link öffnen',
                             style: TextStyle(
                               color: Colors.blue,

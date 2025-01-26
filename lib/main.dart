@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/termine_provider.dart';
+import 'package:verein_app/screens/add_termine_screen.dart';
 import './screens/getraenke_summen_screen.dart';
 import './providers/getraenkebuchen_provider.dart';
 import './screens/getraenkedetails_screen.dart';
@@ -28,6 +30,7 @@ import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 import "./screens/add_mannschaft_screen.dart";
+import "./screens/calendar_screen.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +59,9 @@ class MyApp extends StatelessWidget {
           ),
           ChangeNotifierProvider.value(
             value: NewsProvider(Provider.of<AuthProvider>(context).token),
+          ),
+          ChangeNotifierProvider.value(
+            value: TermineProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
             value: UserProvider(Provider.of<AuthProvider>(context).token),
@@ -99,6 +105,8 @@ class MyApp extends StatelessWidget {
                   const GetraenkeSummenScreen(),
               AddMannschaftScreen.routename: (ctx) =>
                   const AddMannschaftScreen(),
+              CalendarScreen.routename: (ctx) => const CalendarScreen(),
+              AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
             },
           ),
         ),
@@ -201,7 +209,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: VereinAppbar(),
-      body: _isLoading 
+      body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )

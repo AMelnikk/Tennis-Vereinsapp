@@ -179,10 +179,10 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Expanded(
+                                    const Expanded(
                                       child: Text(
                                         "Buchung vom",
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -202,7 +202,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "$formattedDate",
+                                      formattedDate,
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,

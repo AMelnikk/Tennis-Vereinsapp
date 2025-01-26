@@ -43,26 +43,30 @@ class GameResultsTile extends StatelessWidget {
 
   Future<void> _launchURL(BuildContext context) async {
     try {
-      final Uri url = Uri.parse(gameResult.url); // URL als Uri parsen
+      final Uri url = Uri.parse(gameResult.url); // Parse the URL
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
-          mode: LaunchMode.externalApplication, // Externer Browser
+          mode: LaunchMode.externalApplication, // Open in external browser
         );
       } else {
+        // Using the context safely without assuming it's valid across the async gap
+        if (context.mounted) {
+          _showSnackBar(
+            context,
+            'Invalid URL: ${gameResult.url}',
+            Colors.redAccent,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
         _showSnackBar(
           context,
-          'Invalid URL: ${gameResult.url}',
+          'Could not open the link.',
           Colors.redAccent,
         );
       }
-    } catch (e) {
-      print('Fehler beim Öffnen der URL: $e');
-      _showSnackBar(
-        context,
-        'Could not open the link.',
-        Colors.redAccent,
-      );
     }
   }
 

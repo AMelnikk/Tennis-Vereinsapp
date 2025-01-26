@@ -8,7 +8,7 @@ class GetraenkeBuchungenDetailsScreen extends StatefulWidget {
   static const routename = "/getraenkedetails-screen";
 
   @override
-  _GetraenkeBuchungenDetailsScreenState createState() =>
+  State<GetraenkeBuchungenDetailsScreen> createState() =>
       _GetraenkeBuchungenDetailsScreenState();
 }
 
@@ -47,11 +47,13 @@ class _GetraenkeBuchungenDetailsScreenState
         _applyFilters();
       });
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Fehler beim Laden der Buchungen: $error"),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Fehler beim Laden der Buchungen: $error"),
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -129,19 +131,25 @@ class _GetraenkeBuchungenDetailsScreenState
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);
     provider.updateBezahlt(buchungId, !bezahlt).then((status) {
       if (status == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bezahlt-Status geändert.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Bezahlt-Status geändert.')),
+          );
+        }
         _loadBuchungen(); // Buchungsliste aktualisieren
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fehler beim Ändern des Status.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fehler beim Ändern des Status.')),
+          );
+        }
       }
     }).catchError((e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $e')),
+        );
+      }
     }).whenComplete(() {
       setState(() {
         _isLoading = false;
@@ -158,19 +166,25 @@ class _GetraenkeBuchungenDetailsScreenState
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);
     provider.deleteBuchung(buchungId).then((status) {
       if (status == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Buchung gelöscht.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Buchung gelöscht.')),
+          );
+        }
         _loadBuchungen(); // Buchungsliste aktualisieren
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fehler beim Löschen der Buchung.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fehler beim Löschen der Buchung.')),
+          );
+        }
       }
     }).catchError((e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $e')),
+        );
+      }
     }).whenComplete(() {
       setState(() {
         _isLoading = false;

@@ -379,11 +379,23 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                               icon: const Icon(Icons.delete),
                               onPressed: () async {
                                 final confirmed =
-                                    await _showDeleteConfirmation(ctx);
+                                    await _showDeleteConfirmation(context);
+
+                                // Guard against async gaps
+                                if (!mounted) {
+                                  return;
+                                }
+
                                 if (confirmed) {
-                                  provider
+                                  await provider
                                       .deleteGameResult(entry.id); // Löschen
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
+
+                                  // Ensure widget is still mounted before showing the snackbar
+                                  if (!mounted) {
+                                    return;
+                                  }
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text('Eintrag gelöscht.'),
                                       backgroundColor: Colors.green,
@@ -431,8 +443,6 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      print('Fehler: URL konnte nicht geöffnet werden: $url');
-    }
+    } else {}
   }
 }

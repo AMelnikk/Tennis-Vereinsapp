@@ -80,37 +80,41 @@ class _PdfScreenState extends State<PdfScreen> {
                           child: const Icon(Icons.open_in_new),
                         )
                       : FloatingActionButton(
-                          onPressed: () {
-                            downloadPdf().then(
-                              (String path) {
-                                setState(() {
-                                  exists = true;
-                                });
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    content: const Text(
-                                        "Datei wurde erfolgreich in Downloads Ordner heruntergeladen"),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text("Ok"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          OpenFilex.open(path,
-                                              type: "application/pdf");
-                                        },
-                                        child: const Text("Öffnen"),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
+                          onPressed: () async {
+                            String path = await downloadPdf();
+                            // Ensure the widget is still mounted before updating UI
+                            if (!mounted) return;
+
+                            setState(() {
+                              exists = true;
+                            });
+
+                            // Check if the widget is still mounted before showing the dialog
+                            if (mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  content: const Text(
+                                      "Datei wurde erfolgreich in Downloads Ordner heruntergeladen"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text("Ok"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        OpenFilex.open(path,
+                                            type: "application/pdf");
+                                      },
+                                      child: const Text("Öffnen"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                           child: const Icon(Icons.download),
                         ),

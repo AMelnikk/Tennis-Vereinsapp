@@ -67,7 +67,6 @@ class GameResultsProvider with ChangeNotifier {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
     final key = "${newResult.saison}_${newResult.mannschaft}";
     final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
@@ -81,11 +80,11 @@ class GameResultsProvider with ChangeNotifier {
           'saison': newResult.saison,
           'mannschaft': newResult.mannschaft,
           'liga': newResult.liga,
-          'gruppe': newResult.gruppe ?? '', // Standardwert setzen
-          'matchbilanz': newResult.matchbilanz ?? '', // Standardwert setzen
-          'satzbilanz': newResult.satzbilanz ?? '', // Standardwert setzen
-          'position': newResult.position ?? '', // Standardwert setzen
-          'kommentar': newResult.kommentar ?? '', // Standardwert setzen
+          'gruppe': newResult.gruppe, // Standardwert setzen
+          'matchbilanz': newResult.matchbilanz, // Standardwert setzen
+          'satzbilanz': newResult.satzbilanz, // Standardwert setzen
+          'position': newResult.position, // Standardwert setzen
+          'kommentar': newResult.kommentar, // Standardwert setzen
           'pdfBlob': newResult.pdfBlob != null
               ? base64Encode(newResult.pdfBlob!)
               : null,

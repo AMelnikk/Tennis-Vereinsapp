@@ -11,8 +11,6 @@ class AddNewsScreen extends StatefulWidget {
   State<AddNewsScreen> createState() => _AddNewsScreenState();
 }
 
-enum NewsTag { tag1, tag2 } // TODO
-
 class _AddNewsScreenState extends State<AddNewsScreen> {
   bool _isLoading = false;
 
@@ -47,7 +45,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
-            child: Padding(
+              child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -101,7 +99,8 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: TextButton.icon(
                               onPressed: () {
-                                Provider.of<NewsProvider>(context, listen: false)
+                                Provider.of<NewsProvider>(context,
+                                        listen: false)
                                     .pickImage();
                               },
                               icon: const Icon(Icons.photo),
@@ -122,7 +121,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           setState(() {
                             _isLoading = true;
                           });
-            
+
                           final responseStatusCode =
                               await Provider.of<NewsProvider>(context,
                                       listen: false)
@@ -130,7 +129,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           setState(() {
                             _isLoading = false;
                           });
-            
+
                           showSnackBar(responseStatusCode);
                         },
                         child: Container(
@@ -147,8 +146,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                   ],
                 ),
               ),
-          ),
+            ),
     );
   }
 }
-

@@ -54,10 +54,12 @@ class _GameResultsScreenState extends State<GameResultsScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to load game results. Please try again.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to load game results. Please try again.')),
+        );
+      }
     }
   }
 

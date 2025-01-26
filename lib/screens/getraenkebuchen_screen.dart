@@ -35,9 +35,11 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
               b['date'].compareTo(a['date'])); // Sortiere nach Datum absteigend
       });
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Fehler beim Abrufen der Buchungen: $error")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Fehler beim Abrufen der Buchungen: $error")),
+        );
+      }
     }
   }
 
@@ -63,22 +65,28 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
       });
 
       if (statusCode >= 200 && statusCode < 300) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erfolgreich gebucht!")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Erfolgreich gebucht!")),
+          );
+        }
         await fetchUserBuchungen(); // Liste aktualisieren
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Fehler beim Buchen: $statusCode")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Fehler beim Buchen: $statusCode")),
+          );
+        }
       }
     } catch (error) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ein Fehler ist aufgetreten: $error")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Ein Fehler ist aufgetreten: $error")),
+        );
+      }
     }
   }
 

@@ -83,11 +83,18 @@ class _AuthScreenState extends State<AuthScreen> {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {
+      print(error.toString());
       var errorMessage = "Sie können nicht authentifiziert werden";
       if (error.toString().contains("INVALID_EMAIL")) {
         errorMessage = "Email ist falsch";
-      } else if (error.toString().contains("INVALID_LOGIN_CREDENTIALS")) {
-        errorMessage = "Email oder Passwort sind falsch";
+      } else if (error.toString().contains("MISSING_PASSWORD")) {
+        errorMessage = "Passwort fehlt";
+      } else if (error.toString().contains("WEAK_PASSWORD")) {
+        errorMessage =
+            "Passwort ist zu kurz: Es muss wenigstens 6 Zeichen erhalten";
+      } else if (error.toString().contains("NAME_FEHLT")) {
+        errorMessage =
+            "Name fehlt";
       }
       _showErrorDialog(errorMessage);
     } catch (error) {
@@ -225,7 +232,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                 child: TextFormField(
-                  obscureText: true,
+                  // obscureText: true,
                   controller: platzbuchungLink,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
@@ -238,7 +245,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   onPressed: () async {
                     await signUp();
                   },
-                  child: const Text("anmelden")),
+                  child: const Text("registrieren")),
             ],
           ),
           TextButton(

@@ -7,7 +7,7 @@ class GetraenkeSummenScreen extends StatefulWidget {
   static const routename = "/getraenkesummen-screen";
 
   @override
-  _GetraenkeSummenScreenState createState() => _GetraenkeSummenScreenState();
+  State<GetraenkeSummenScreen> createState() => _GetraenkeSummenScreenState();
 }
 
 class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
@@ -51,11 +51,13 @@ class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
         _userSummen = userSummen;
       });
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Fehler beim Laden der Buchungen: $error"),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Fehler beim Laden der Buchungen: $error"),
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;

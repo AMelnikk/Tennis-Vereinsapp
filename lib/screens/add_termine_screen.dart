@@ -71,9 +71,10 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
 
         // Daten an den TermineProvider senden
         if (termine.isNotEmpty) {
-          await Provider.of<TermineProvider>(context, listen: false)
-              .saveTermineToFirebase(termine);
-
+          if (mounted) {
+            await Provider.of<TermineProvider>(context, listen: false)
+                .saveTermineToFirebase(termine);
+          }
           if (mounted) {
             showSnackBar("Termine erfolgreich hochgeladen!");
           }

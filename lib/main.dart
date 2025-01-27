@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
 import 'package:verein_app/screens/add_termine_screen.dart';
@@ -32,8 +33,9 @@ import "./screens/news_screen.dart";
 import "./screens/add_mannschaft_screen.dart";
 import "./screens/calendar_screen.dart";
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
     (_) {
       runApp(const MyApp());

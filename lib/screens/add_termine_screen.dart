@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
@@ -23,81 +22,72 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
     });
 
     try {
-      // Datei auswählen
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
       );
 
       if (result != null) {
-        File file = File(result.files.single.path!);
-        final bytes = file.readAsBytesSync();
+        var bytes = result.files.single.bytes;
 
-        // Excel einlesen
-        var excel = Excel.decodeBytes(bytes);
-        final List<Map<String, dynamic>> termine = [];
+        if (bytes != null) {
+          var excel = Excel.decodeBytes(bytes);
+          final List<Map<String, dynamic>> termine = [];
 
-        // Sicherstellen, dass Tabellen vorhanden sind
-        if (excel.tables.isNotEmpty) {
-          var rows = excel.tables.values.first.rows;
+          if (excel.tables.isNotEmpty) {
+            var rows = excel.tables.values.first.rows;
 
-          // Überschrift auslassen, ab Zeile 2 (Index 1) starten
-          for (var row in rows.skip(1)) {
-            // Sicherstellen, dass die Zeile mindestens 3 Spalten hat
-            if (row.length >= 3) {
-              // ID als Integer parsen
-              final idString = row[0]?.value?.toString();
-              final datumString = row[1]?.value?.toString();
-              final ereignis = row[2]?.value?.toString() ?? '';
+            for (var row in rows.skip(1)) {
+              if (row.length >= 3) {
+                final idString = row[0]?.value?.toString();
+                final datumString = row[1]?.value?.toString();
+                final ereignis = row[2]?.value?.toString() ?? '';
+                final kategorie = row[3]?.value?.toString() ?? '';
+                final details = row[4]?.value?.toString() ?? '';
+                final abfrage = row[5]?.value?.toString() ?? '';
 
-              // Prüfen, ob die Werte gültig sind
-              if (idString != null &&
-                  datumString != null &&
-                  ereignis.isNotEmpty) {
-                final id = int.tryParse(idString) ?? -1;
-                final datum = DateTime.tryParse(datumString);
+                if (idString != null &&
+                    datumString != null &&
+                    ereignis.isNotEmpty) {
+                  final id = int.tryParse(idString) ?? -1;
+                  final datum = DateTime.tryParse(datumString);
 
-                if (id > 0 && datum != null) {
-                  termine.add({
-                    "id": id,
-                    "datum": datum,
-                    "ereignis": ereignis,
-                  });
+                  if (id > 0 && datum != null) {
+                    termine.add({
+                      "id": id,
+                      "datum": datum,
+                      "ereignis": ereignis,
+                      "kategorie": kategorie,
+                      "details": details,
+                      "abfrage": abfrage,
+                    });
+                  }
                 }
               }
             }
           }
-        }
 
-        // Daten an den TermineProvider senden
-        if (termine.isNotEmpty) {
-          if (mounted) {
+          if (termine.isNotEmpty) {
             await Provider.of<TermineProvider>(context, listen: false)
                 .saveTermineToFirebase(termine);
-          }
-          if (mounted) {
             showSnackBar("Termine erfolgreich hochgeladen!");
-          }
-        } else {
-          if (mounted) {
+          } else {
             showSnackBar("Keine gültigen Termine gefunden.");
           }
+        } else {
+          showSnackBar("Fehler beim Lesen der Datei.");
         }
       } else {
-        if (mounted) {
-          showSnackBar("Keine Datei ausgewählt.");
-        }
+        showSnackBar("Keine Datei ausgewählt.");
       }
-    } catch (error) {
-      if (mounted) {
-        showSnackBar("Fehler: $error");
-      }
+    } catch (error, stackTrace) {
+      print("Error: $error");
+      print("StackTrace: $stackTrace");
+      showSnackBar("Fehler: $error");
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

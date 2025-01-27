@@ -31,6 +31,9 @@ class TermineProvider with ChangeNotifier {
             'datum':
                 termin['datum'].toIso8601String(), // Datum im ISO8601-Format
             'ereignis': termin['ereignis'], // Ereignisbeschreibung
+            "kategorie": termin['kategorie'],
+            "details": termin['details'],
+            "abfrage": termin['abfrage'],
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -83,7 +86,10 @@ class TermineProvider with ChangeNotifier {
                         DateTime
                             .now(), // Wenn Datum fehlt, setze das aktuelle Datum
                     title: eventData['ereignis'] ??
-                        'Kein Titel', // Falls kein Titel vorhanden, 'Kein Titel' setzen
+                        '', // Falls kein Titel vorhanden, 'Kein Titel' setzen
+                    description: eventData['description'] ?? '',
+                    kategorie: eventData['kategorie'] ?? '',
+                    abfrage: eventData['abfrage'] ?? '',
                   );
                 } else {
                   debugPrint("Ungültige Daten für Event: $entry");
@@ -103,6 +109,9 @@ class TermineProvider with ChangeNotifier {
                     date: DateTime.tryParse(item['datum'] ?? '') ??
                         DateTime.now(),
                     title: item['ereignis'] ?? 'Kein Titel',
+                    description: item['description'] ?? '',
+                    kategorie: item['kategorie'] ?? '',
+                    abfrage: item['abfrage'] ?? '',
                   );
                 } else {
                   debugPrint("Ungültige Daten für Event in Liste: $item");

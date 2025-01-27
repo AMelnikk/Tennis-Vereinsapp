@@ -19,49 +19,53 @@ class AdminScreen extends StatelessWidget {
       appBar: VereinAppbar(),
       body: Padding(
         padding: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            AdminFunction(
-                function: () {
-                  Navigator.of(context).pushNamed(AddNewsScreen.routename);
-                },
-                text: "Neuigkeiten hinzufügen"),
-            AdminFunction(
-                function: () {
-                  Navigator.of(context).pushNamed(AddPhotoScreen.routename);
-                },
-                text: "Fotos hinzufügen"),
-            AdminFunction(
-              function: () {
-                Navigator.of(context).pushNamed(AddMannschaftScreen.routename);
-              },
-              text: "Mannschaft hinzufügen",
-            ),
-            AdminFunction(
-              function: () {
-                Navigator.of(context).pushNamed(AddTermineScreen.routename);
-              },
-              text: "Termine hochladen",
-            ),
-            AdminFunction(
-                function: () {
-                  Navigator.of(context).pushNamed(AddUserScreen.routename);
-                },
-                text: "Nutzer hinzufügen"),
-            AdminFunction(
+        child: SingleChildScrollView(
+          // Wrap the Column with SingleChildScrollView
+          child: Column(
+            children: [
+              AdminFunction(
+                  function: () {
+                    Navigator.of(context).pushNamed(AddNewsScreen.routename);
+                  },
+                  text: "Neuigkeiten hinzufügen"),
+              AdminFunction(
+                  function: () {
+                    Navigator.of(context).pushNamed(AddPhotoScreen.routename);
+                  },
+                  text: "Fotos hinzufügen"),
+              AdminFunction(
                 function: () {
                   Navigator.of(context)
-                      .pushNamed(GetraenkeBuchungenDetailsScreen.routename);
+                      .pushNamed(AddMannschaftScreen.routename);
                 },
-                text: "Alle Getränkebuchungen Details"),
-            AdminFunction(
-              function: () {
-                Navigator.of(context)
-                    .pushNamed(GetraenkeSummenScreen.routename);
-              },
-              text: "Getränke Summen",
-            )
-          ],
+                text: "Mannschaft hinzufügen",
+              ),
+              AdminFunction(
+                function: () {
+                  Navigator.of(context).pushNamed(AddTermineScreen.routename);
+                },
+                text: "Termine hochladen",
+              ),
+              AdminFunction(
+                  function: () {
+                    Navigator.of(context).pushNamed(AddUserScreen.routename);
+                  },
+                  text: "Nutzer hinzufügen"),
+              AdminFunction(
+                  function: () {
+                    Navigator.of(context)
+                        .pushNamed(GetraenkeBuchungenDetailsScreen.routename);
+                  },
+                  text: "Alle Getränkebuchungen Details"),
+              AdminFunction(
+                function: () {
+                  Navigator.of(context)
+                      .pushNamed(GetraenkeSummenScreen.routename);
+                },
+                text: "Getränke Summen",
+              )
+            ],
+          ),
         ),
       ),
     );

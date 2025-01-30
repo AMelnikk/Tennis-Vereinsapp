@@ -67,6 +67,7 @@ class GameResultsProvider with ChangeNotifier {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
+    // final timestamp = DateTime.now().millisecondsSinceEpoch;
     final key = "${newResult.saison}_${newResult.mannschaft}";
     final date = DateTime.now().toIso8601String();
     final url = Uri.parse(

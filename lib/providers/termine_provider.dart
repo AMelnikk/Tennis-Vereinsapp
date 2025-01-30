@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:verein_app/models/calendar_event.dart';
 
 class TermineProvider with ChangeNotifier {
@@ -11,124 +12,220 @@ class TermineProvider with ChangeNotifier {
   List<CalendarEvent> events = [];
   bool isLoading = false;
 
-  /// Speichert die Liste der Termine in Firebase
-  Future<int> saveTermineToFirebase(List<Map<String, dynamic>> termine) async {
+  Future<int> saveTermineToFirebase(List<CalendarEvent> termine) async {
     if (_token == null || _token.isEmpty) {
       return 400; // Fehler: Kein Token vorhanden
     }
 
     try {
+      // Finde alle Jahre aus den Terminen im Upload-File
+      Set<int> jahre = termine.map((t) => t.date.year).toSet();
+
+      // Lade alle Termine für diese Jahre auf einmal
+      List<Map<String, dynamic>> allData = await loadAllTermineForYears(jahre);
+
+      // Gehe durch alle Termine und prüfe, ob sie existieren oder neu hinzugefügt werden müssen
       for (var termin in termine) {
-        // Erstelle eindeutige URL basierend auf Firebase-Pfad
-        final url = Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Termine/${termin['id']}.json?auth=$_token");
-
-        // Sende die Daten an Firebase
-        final response = await http.put(
-          url,
-          body: json.encode({
-            'id': termin['id'], // ID des Termins
-            'datum':
-                termin['datum'].toIso8601String(), // Datum im ISO8601-Format
-            'ereignis': termin['ereignis'], // Ereignisbeschreibung
-            "kategorie": termin['kategorie'],
-            "details": termin['details'],
-            "abfrage": termin['abfrage'],
-          }),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (response.statusCode != 200) {
-          // Fehler beim Speichern des Termins
-          debugPrint("Fehler beim Speichern von Termin ID: ${termin['id']}");
-          return response.statusCode;
+        // Überprüfe, ob der Termin schon existiert
+        bool terminGefunden = await updateExistingTermin(allData, termin);
+        if (terminGefunden) {
+          continue; // Termin wurde aktualisiert, fahre mit dem nächsten fort
         }
+
+        // Wenn der Termin nicht gefunden wurde, lege ihn als neuen Termin an
+        await createNewTermin(termin);
       }
 
-      // Erfolgreich verarbeitet
       return 200;
     } on SocketException {
-      // Netzwerkfehler
-      debugPrint("Netzwerkfehler beim Speichern der Termine");
+      debugPrint("⚠️ Netzwerkfehler beim Speichern der Termine");
       return 500;
     } catch (error) {
-      // Allgemeiner Fehler
-      debugPrint("Fehler beim Speichern der Termine: $error");
+      debugPrint("⚠️ Fehler beim Speichern der Termine: $error");
       return 400;
     }
   }
 
+  Future<List<Map<String, dynamic>>> loadAllTermineForYears(
+      Set<int> jahre) async {
+    List<Map<String, dynamic>> allTermine = [];
+
+    for (var jahr in jahre) {
+      final url = Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr.json?auth=$_token");
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        dynamic responseJson =
+            (response.body.isNotEmpty && response.body != "null")
+                ? json.decode(response.body)
+                : {};
+
+        if (responseJson is Map<String, dynamic>) {
+          allTermine
+              .addAll(responseJson.values.whereType<Map<String, dynamic>>());
+        } else if (responseJson is List) {
+          allTermine.addAll(responseJson.whereType<Map<String, dynamic>>());
+        }
+      }
+    }
+
+    return allTermine;
+  }
+
+// Die Methode erwartet die Liste, also iteriere durch die Liste, um die Map zu übergeben
+  Future<bool> updateExistingTermin(
+      List<Map<String, dynamic>> allData, CalendarEvent termin) async {
+    for (var event in allData) {
+      final eventDate = DateTime.tryParse(event['date'] ?? '');
+      final eventTitle = event['title'] ?? '';
+      if (eventDate != null &&
+          eventDate.year == termin.date.year &&
+          eventDate.month == termin.date.month &&
+          eventDate.day == termin.date.day &&
+          eventTitle == termin.title) {
+        // Termin existiert, also aktualisiere ihn
+        final eventId = event['id'];
+        final updateUrl = Uri.parse(
+            "https://db-teg-default-rtdb.firebaseio.com/Termine/${termin.date.year}/$eventId.json?auth=$_token");
+
+        final responsePut = await http.put(
+          updateUrl,
+          body: json.encode({
+            'id': eventId,
+            'date': DateFormat('yyyy-MM-dd').format(termin.date),
+            'title': termin.title,
+            'category': termin.category,
+            'details': termin.description,
+            'query': termin.query,
+          }),
+          headers: {'Content-Type': 'application/json'},
+        );
+
+        if (responsePut.statusCode == 200) {
+          debugPrint("✅ Termin mit ID $eventId erfolgreich aktualisiert.");
+          return true;
+        } else {
+          debugPrint("⚠️ Fehler beim Aktualisieren des Termins ID $eventId");
+          return false;
+        }
+      }
+    }
+    return false; // Termin wurde nicht gefunden
+  }
+
+// Die Methode erwartet die Liste, also iteriere durch die Liste, um die Map zu übergeben
+  Future<void> createNewTermin(CalendarEvent termin) async {
+    final counterUrl = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Termine/counter.json?auth=$_token");
+
+    // 1️⃣ Counter abrufen
+    final responseCounter = await http.get(counterUrl);
+
+    int newId = 1; // Standardwert, falls der Zähler noch nicht existiert
+
+    if (responseCounter.statusCode == 200 && responseCounter.body.isNotEmpty) {
+      final counterData = json.decode(responseCounter.body);
+
+      if (counterData is int) {
+        newId = counterData; // Falls nur eine Zahl gespeichert ist
+      } else if (counterData is Map<String, dynamic> &&
+          counterData.containsKey('id')) {
+        newId = counterData['id'];
+      }
+    } else {
+      // Falls kein Zähler existiert, initialisiere ihn mit 1
+      await http.put(
+        counterUrl,
+        body: json.encode(1),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
+
+    // ✅ Jetzt haben wir eine eindeutige ID (newId)
+
+    final jahr = termin.date.year;
+    final newUrl = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr/$newId.json?auth=$_token");
+
+    // 2️⃣ Neuen Termin mit der neuen ID speichern
+    final responsePut = await http.put(
+      newUrl,
+      body: json.encode({
+        'id': newId,
+        'date': DateFormat('yyyy-MM-dd').format(termin.date),
+        'title': termin.title,
+        'category': termin.category,
+        'details': termin.description,
+        'query': termin.query,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (responsePut.statusCode == 200) {
+      debugPrint("✅ Neuer Termin mit ID $newId gespeichert.");
+    } else {
+      debugPrint("⚠️ Fehler beim Speichern von Termin ID: $newId");
+    }
+
+    // 3️⃣ Zähler in Firebase hochzählen
+    await http.put(
+      counterUrl,
+      body: json.encode(newId + 1),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+
   /// Lädt die Termine vom Server (z. B. Firebase) und speichert sie in der Liste
-  Future<void> loadEvents() async {
+  Future<void> loadEvents(int jahr) async {
     isLoading = true;
+    List<Map<String, dynamic>> data = [];
 
     try {
-      final url =
-          Uri.parse("https://db-teg-default-rtdb.firebaseio.com/Termine.json");
+      final url = Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr.json");
 
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final dynamic data = json.decode(response.body);
+        // Prüfen, ob die Antwort nicht leer oder "null" ist
+        dynamic responseJson =
+            (response.body.isNotEmpty && response.body != "null")
+                ? json.decode(response.body)
+                : {};
 
-        // Überprüfe, ob die Antwort eine Map oder Liste ist
-        if (data is Map<String, dynamic>) {
-          // Firebase gibt eine Map zurück
-          events = data.entries
-              .map((entry) {
-                final eventData = entry.value;
-
-                // Null-Prüfung für eventData, bevor auf die Daten zugegriffen wird
-                if (eventData != null) {
-                  return CalendarEvent(
-                    id: eventData['id'] ??
-                        'Unknown', // Falls 'id' fehlt, wird 'Unknown' gesetzt
-                    date: DateTime.tryParse(eventData['datum'] ?? '') ??
-                        DateTime
-                            .now(), // Wenn Datum fehlt, setze das aktuelle Datum
-                    title: eventData['ereignis'] ??
-                        '', // Falls kein Titel vorhanden, 'Kein Titel' setzen
-                    description: eventData['description'] ?? '',
-                    kategorie: eventData['kategorie'] ?? '',
-                    abfrage: eventData['abfrage'] ?? '',
-                  );
-                } else {
-                  debugPrint("Ungültige Daten für Event: $entry");
-                  return null; // Überspringe ungültige Events
-                }
-              })
-              .whereType<CalendarEvent>()
-              .toList(); // Entferne null-Events
-        } else if (data is List) {
-          // Firebase gibt eine Liste zurück
-          events = data
-              .map((item) {
-                // Null-Prüfung für item
-                if (item != null) {
-                  return CalendarEvent(
-                    id: item['id'] ?? 'Unknown',
-                    date: DateTime.tryParse(item['datum'] ?? '') ??
-                        DateTime.now(),
-                    title: item['ereignis'] ?? 'Kein Titel',
-                    description: item['description'] ?? '',
-                    kategorie: item['kategorie'] ?? '',
-                    abfrage: item['abfrage'] ?? '',
-                  );
-                } else {
-                  debugPrint("Ungültige Daten für Event in Liste: $item");
-                  return null;
-                }
-              })
-              .whereType<CalendarEvent>()
+        if (responseJson is Map<String, dynamic>) {
+          // Falls eine Map zurückkommt, die Werte extrahieren
+          data = responseJson.values
+              .where((event) => event != null && event is Map<String, dynamic>)
+              .cast<Map<String, dynamic>>()
               .toList();
-        } else {
-          // Unbekanntes Format
-          events = [];
+        } else if (responseJson is List) {
+          // Falls eine Liste zurückkommt, direkt umwandeln
+          data = responseJson
+              .where((event) => event != null && event is Map<String, dynamic>)
+              .cast<Map<String, dynamic>>()
+              .toList();
         }
       } else {
-        throw Exception("Fehler beim Laden der Termine");
+        debugPrint("⚠️ Fehler beim Abrufen der Daten: ${response.statusCode}");
       }
+
+      // Events aus den validen Daten erstellen
+      events = data.map((eventData) {
+        return CalendarEvent(
+          id: eventData['id'] is int
+              ? eventData['id']
+              : 0, // Sicherstellen, dass die ID ein int ist
+          date: DateTime.tryParse(eventData['date'] ?? '') ?? DateTime.now(),
+          title: eventData['title'] ?? 'Kein Titel',
+          description: eventData['details'] ?? '',
+          category: eventData['category'] ?? '',
+          query: eventData['query'] ?? '',
+        );
+      }).toList();
     } catch (error) {
-      debugPrint("Fehler beim Laden der Termine: $error");
+      debugPrint("❌ Fehler beim Laden der Termine: $error");
       events = [];
     } finally {
       isLoading = false;

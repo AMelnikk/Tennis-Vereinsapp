@@ -10,6 +10,7 @@ import './screens/getraenkedetails_screen.dart';
 import './screens/datenschutz_screen.dart';
 import './screens/getraenkebuchen_screen.dart';
 import './providers/user_provider.dart';
+import './providers/ligaspiele_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_overview_screen.dart';
@@ -17,6 +18,7 @@ import './providers/news_provider.dart';
 import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
+import './screens/add_ligaspiele_screen.dart';
 import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
@@ -66,6 +68,9 @@ class MyApp extends StatelessWidget {
             value: TermineProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
+            value: LigaSpieleProvider(Provider.of<AuthProvider>(context).token),
+          ),
+          ChangeNotifierProvider.value(
             value: UserProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
@@ -109,6 +114,8 @@ class MyApp extends StatelessWidget {
                   const AddMannschaftScreen(),
               CalendarScreen.routename: (ctx) => const CalendarScreen(),
               AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
+              AddLigaSpieleScreen.routename: (ctx) =>
+                  const AddLigaSpieleScreen(),
             },
           ),
         ),

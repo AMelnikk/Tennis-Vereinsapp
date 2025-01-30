@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:verein_app/models/calendar_event.dart';
 import '../providers/termine_provider.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -32,42 +33,45 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
 
         if (bytes != null) {
           var excel = Excel.decodeBytes(bytes);
-          final List<Map<String, dynamic>> termine = [];
+          final List<CalendarEvent> termine = []; // Liste vom Typ CalendarEvent
 
           if (excel.tables.isNotEmpty) {
             var rows = excel.tables.values.first.rows;
 
             for (var row in rows.skip(1)) {
-              if (row.length >= 3) {
-                final idString = row[0]?.value?.toString();
-                final datumString = row[1]?.value?.toString();
-                final ereignis = row[2]?.value?.toString() ?? '';
-                final kategorie = row[3]?.value?.toString() ?? '';
-                final details = row[4]?.value?.toString() ?? '';
-                final abfrage = row[5]?.value?.toString() ?? '';
+              // Erste Zeile überspringen (Überschriften)
+              if (row.length >= 5) {
+                // Überprüfen, ob genügend Spalten vorhanden sind
+                final datumString = row[0]?.value?.toString() as String;
+                final title = row[1]?.value?.toString() ?? '';
+                final category = row[2]?.value?.toString() ?? '';
+                final details = row[3]?.value?.toString() ?? '';
+                final query = row[4]?.value?.toString() ?? '';
 
-                if (idString != null &&
-                    datumString != null &&
-                    ereignis.isNotEmpty) {
-                  final id = int.tryParse(idString) ?? -1;
-                  final datum = DateTime.tryParse(datumString);
+                final datum = DateTime.tryParse(datumString);
 
-                  if (id > 0 && datum != null) {
-                    termine.add({
-                      "id": id,
-                      "datum": datum,
-                      "ereignis": ereignis,
-                      "kategorie": kategorie,
-                      "details": details,
-                      "abfrage": abfrage,
-                    });
-                  }
+                if (datum != null) {
+                  // Umwandeln in CalendarEvent
+                  termine.add(CalendarEvent(
+                    id: 0,
+                    date: datum,
+                    title: title,
+                    description: details,
+                    category: category,
+                    query: query,
+                  ));
+                } else {
+                  debugPrint("Ungültige ID oder Datum in der Zeile: $row");
                 }
+              } else {
+                debugPrint(
+                    "Ungültige Zeile: Es werden die Spalten Datum, Titel, Kategorie, Details und Abfrage (ja/nein) erwartet.");
               }
             }
           }
 
           if (termine.isNotEmpty) {
+            // Termine werden hier gespeichert
             await Provider.of<TermineProvider>(context, listen: false)
                 .saveTermineToFirebase(termine);
             showSnackBar("Termine erfolgreich hochgeladen!");
@@ -81,8 +85,8 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
         showSnackBar("Keine Datei ausgewählt.");
       }
     } catch (error, stackTrace) {
-      print("Error: $error");
-      print("StackTrace: $stackTrace");
+      debugPrint("Error: $error");
+      debugPrint("StackTrace: $stackTrace");
       showSnackBar("Fehler: $error");
     } finally {
       setState(() {

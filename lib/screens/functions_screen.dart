@@ -56,7 +56,7 @@ class FunctionsScreen extends StatelessWidget {
                           .pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
                 FunctionTile(
-                    image: Image.asset("assets/images/Fotogalerie.webp"),
+                    image: Image.asset("assets/images/Termine.webp"),
                     onTap: () {
                       Navigator.of(context).pushNamed(CalendarScreen.routename);
                     }),

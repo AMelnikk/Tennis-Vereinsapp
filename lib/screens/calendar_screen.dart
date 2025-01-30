@@ -1,12 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:verein_app/models/calendar_event.dart';
 import 'package:verein_app/providers/termine_provider.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:verein_app/widgets/verein_appbar.dart';
@@ -60,45 +60,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  void _showEventDialog(List events) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("${DateFormat('dd.MM.yyyy').format(_selectedDay)}:"),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: events
-                  .map(
-                    (event) => Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _getCategoryColor(event.kategorie),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        event.title,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Schließen"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _showEventDialog(List events) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text("${DateFormat('dd.MM.yyyy').format(_selectedDay)}:"),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: events
+  //                 .map(
+  //                   (event) => Container(
+  //                     margin: const EdgeInsets.symmetric(vertical: 4),
+  //                     padding: const EdgeInsets.all(8),
+  //                     decoration: BoxDecoration(
+  //                       color: _getCategoryColor(event.kategorie),
+  //                       borderRadius: BorderRadius.circular(8),
+  //                     ),
+  //                     child: Text(
+  //                       event.title,
+  //                       style: const TextStyle(color: Colors.white),
+  //                     ),
+  //                   ),
+  //                 )
+  //                 .toList(),
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: const Text("Schließen"),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +370,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CalendarScreen(),
+                              builder: (context) => const CalendarScreen(),
                             ),
                           );
                         },
@@ -384,7 +384,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       const SizedBox(width: 16),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
+                          shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.horizontal(),
                           ),
                           backgroundColor: Colors.blue[900],
@@ -395,7 +395,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CalendarScreen(),
+                              builder: (context) => const CalendarScreen(),
                             ),
                           );
                         },
@@ -463,11 +463,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
                                 color: Colors.black26,
                                 blurRadius: 8,
-                                offset: const Offset(0, 4),
+                                offset: Offset(0, 4),
                               ),
                             ],
                           ),
@@ -673,7 +673,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   String _generateIcsContent(CalendarEvent event) {
     final startDateTime = _formatDateTimeForIcs(event.date);
     final endDateTime = _formatDateTimeForIcs(
-        event.date.add(Duration(hours: 1))); // Beispiel: 1 Stunde später
+        event.date.add(const Duration(hours: 1))); // Beispiel: 1 Stunde später
 
     final icsContent = '''
         BEGIN:VCALENDAR
@@ -715,10 +715,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           text: 'Termin exportieren', // Optionaler Text
         );
       } else {
-        print('Die Datei existiert nicht: $icsFilePath');
+        if(kDebugMode) print('Die Datei existiert nicht: $icsFilePath');
       }
     } catch (e) {
-      print('Fehler beim Teilen der Datei: $e');
+      if(kDebugMode) print('Fehler beim Teilen der Datei: $e');
     }
   }
 

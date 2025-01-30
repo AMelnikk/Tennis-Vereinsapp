@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -83,7 +84,7 @@ class _AuthScreenState extends State<AuthScreen> {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {
-      print(error.toString());
+      if(kDebugMode) print(error.toString());
       var errorMessage = "Sie können nicht authentifiziert werden";
       if (error.toString().contains("INVALID_EMAIL")) {
         errorMessage = "Email ist falsch";

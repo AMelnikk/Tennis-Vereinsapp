@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/screens/add_termine_screen.dart';
-import 'package:verein_app/screens/getraenke_summen_screen.dart';
-import 'package:verein_app/screens/getraenkedetails_screen.dart';
-import 'package:verein_app/screens/add_mannschaft_screen.dart';
-import '../screens/add_user_screen.dart';
+import './add_termine_screen.dart';
+import './getraenke_summen_screen.dart';
+import './getraenkedetails_screen.dart';
+import './add_mannschaft_screen.dart';
+import './add_user_screen.dart';
 import './add_news_screen.dart';
 import './add_photo_screen.dart';
 import '../widgets/admin_function.dart';

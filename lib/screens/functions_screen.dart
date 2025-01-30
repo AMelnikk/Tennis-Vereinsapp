@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/screens/calendar_screen.dart';
-import 'package:verein_app/screens/getraenkebuchen_screen.dart';
+import './screens/calendar_screen.dart';
+import './screens/getraenkebuchen_screen.dart';
 import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';

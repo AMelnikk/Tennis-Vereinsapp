@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:verein_app/models/calendar_event.dart';
-import 'package:verein_app/providers/termine_provider.dart';
+import './models/calendar_event.dart';
+import './providers/termine_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:verein_app/widgets/verein_appbar.dart';
+import './widgets/verein_appbar.dart';
 import 'dart:convert'; // Für utf8-Encodierung
 
 class CalendarScreen extends StatefulWidget {

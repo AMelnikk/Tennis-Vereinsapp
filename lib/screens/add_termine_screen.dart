@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
@@ -68,9 +69,11 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
           }
 
           if (termine.isNotEmpty) {
-            await Provider.of<TermineProvider>(context, listen: false)
-                .saveTermineToFirebase(termine);
-            showSnackBar("Termine erfolgreich hochgeladen!");
+            if (mounted) {
+              await Provider.of<TermineProvider>(context, listen: false)
+                  .saveTermineToFirebase(termine);
+              showSnackBar("Termine erfolgreich hochgeladen!");
+            }
           } else {
             showSnackBar("Keine gültigen Termine gefunden.");
           }
@@ -81,8 +84,8 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
         showSnackBar("Keine Datei ausgewählt.");
       }
     } catch (error, stackTrace) {
-      print("Error: $error");
-      print("StackTrace: $stackTrace");
+      if (kDebugMode) print("Error: $error");
+      if (kDebugMode) print("StackTrace: $stackTrace");
       showSnackBar("Fehler: $error");
     } finally {
       setState(() {

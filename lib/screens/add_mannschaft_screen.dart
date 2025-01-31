@@ -142,83 +142,85 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
       appBar: AppBar(
         title: const Text("Mannschaften verwalten"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDropdownField(
-                label: 'Saison',
-                value: _selectedSaison,
-                items: ["Sommer 2024", "Winter 24/25", "Sommer 2025"],
-                onChanged: (value) => setState(() => _selectedSaison = value!),
-              ),
-              _buildDropdownField(
-                label: 'Mannschaft',
-                value: _selectedMannschaft,
-                items: [
-                  "Herren I",
-                  "Herren II",
-                  "Herren III",
-                  "Herren 30 I",
-                  "Herren 30 II",
-                  "Herren 40 I",
-                  "Herren 40 II",
-                  "Herren 50 I",
-                  "Damen I",
-                  "Junioren I",
-                  "Junioren II",
-                  "Knaben I",
-                  "Knaben II",
-                  "Bambini I",
-                  "Bambini II",
-                  "Bambini III",
-                  "Bambini IV",
-                  "U10 I",
-                  "U10 II",
-                  "U10 III",
-                  "U10 IV",
-                  "U9 I",
-                  "U9 II"
-                ],
-                onChanged: (value) =>
-                    setState(() => _selectedMannschaft = value!),
-              ),
-              _buildDropdownField(
-                label: 'Liga',
-                value: _selectedLiga,
-                items: [
-                  "Nordliga 4",
-                  "Nordliga 3",
-                  "Nordliga 2",
-                  "Nordliga 1",
-                  "Landesliga 2",
-                  "Landesliga 1"
-                ],
-                onChanged: (value) => setState(() => _selectedLiga = value!),
-              ),
-              _buildTextFormField('URL', controller: _controllers['url']),
-              _buildTextFormField('Gruppe', controller: _controllers['gruppe'],
-                  validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Bitte die Gruppe eingeben';
-                }
-                return null;
-              }),
-              _buildTextFormField('Matchbilanz',
-                  controller: _controllers['matchbilanz']),
-              _buildTextFormField('Satzbilanz',
-                  controller: _controllers['satzbilanz']),
-              _buildTextFormField('Position',
-                  controller: _controllers['position']),
-              _buildTextFormField('Kommentar',
-                  controller: _controllers['kommentar']),
-              _buildPdfSelector(),
-              _buildActionButtons(),
-              _buildGameResultsTable(provider),
-            ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDropdownField(
+                  label: 'Saison',
+                  value: _selectedSaison,
+                  items: ["Sommer 2024", "Winter 24/25", "Sommer 2025"],
+                  onChanged: (value) => setState(() => _selectedSaison = value!),
+                ),
+                _buildDropdownField(
+                  label: 'Mannschaft',
+                  value: _selectedMannschaft,
+                  items: [
+                    "Herren I",
+                    "Herren II",
+                    "Herren III",
+                    "Herren 30 I",
+                    "Herren 30 II",
+                    "Herren 40 I",
+                    "Herren 40 II",
+                    "Herren 50 I",
+                    "Damen I",
+                    "Junioren I",
+                    "Junioren II",
+                    "Knaben I",
+                    "Knaben II",
+                    "Bambini I",
+                    "Bambini II",
+                    "Bambini III",
+                    "Bambini IV",
+                    "U10 I",
+                    "U10 II",
+                    "U10 III",
+                    "U10 IV",
+                    "U9 I",
+                    "U9 II"
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _selectedMannschaft = value!),
+                ),
+                _buildDropdownField(
+                  label: 'Liga',
+                  value: _selectedLiga,
+                  items: [
+                    "Nordliga 4",
+                    "Nordliga 3",
+                    "Nordliga 2",
+                    "Nordliga 1",
+                    "Landesliga 2",
+                    "Landesliga 1"
+                  ],
+                  onChanged: (value) => setState(() => _selectedLiga = value!),
+                ),
+                _buildTextFormField('URL', controller: _controllers['url']),
+                _buildTextFormField('Gruppe', controller: _controllers['gruppe'],
+                    validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte die Gruppe eingeben';
+                  }
+                  return null;
+                }),
+                _buildTextFormField('Matchbilanz',
+                    controller: _controllers['matchbilanz']),
+                _buildTextFormField('Satzbilanz',
+                    controller: _controllers['satzbilanz']),
+                _buildTextFormField('Position',
+                    controller: _controllers['position']),
+                _buildTextFormField('Kommentar',
+                    controller: _controllers['kommentar']),
+                _buildPdfSelector(),
+                _buildActionButtons(),
+                _buildGameResultsTable(provider),
+              ],
+            ),
           ),
         ),
       ),

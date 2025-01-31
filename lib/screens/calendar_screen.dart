@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -23,7 +24,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _selectedDay;
   late DateTime _focusedDay;
-  List<CalendarEvent> calendar_events = [];
+  List<CalendarEvent> calendarEvents = [];
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         // Alle Events zusammenführen
         setState(() {
-          calendar_events = [
+          calendarEvents = [
             ...termineProvider.events,
             ...ligaSpieleProvider.getLigaSpieleAsEvents(jahr),
           ];
@@ -75,6 +76,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     final calendarProvider = Provider.of<TermineProvider>(context);
 
@@ -185,7 +187,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       calendarStyle: _buildCalendarStyle(),
       calendarBuilders: CalendarBuilders(
         defaultBuilder: (context, day, focusedDay) {
-          final eventsForDay = calendar_events
+          final eventsForDay = calendarEvents
               .where((event) =>
                   event.date.year == day.year &&
                   event.date.month == day.month &&
@@ -241,7 +243,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 alignment: Alignment.center,
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.orange,
                     shape: BoxShape.circle,
                   ),
@@ -261,7 +263,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 alignment: Alignment.center,
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.blueAccent,
                     shape: BoxShape.circle,
                   ),
@@ -628,7 +630,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildEventDetailsCard(BuildContext context, CalendarEvent event) {
     return Dialog(
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.zero), // Eckiger Rahmen
       child: Container(
         width: 300, // Weniger breit
@@ -641,7 +643,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Align(
               alignment: Alignment.topRight,
               child: IconButton(
-                icon: Icon(Icons.close, color: Colors.black),
+                icon: const Icon(Icons.close, color: Colors.black),
                 onPressed: () {
                   Navigator.of(context).pop(); // Schließt den Dialog
                 },
@@ -651,7 +653,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Center(
               child: Text(
                 event.category,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent,
@@ -664,15 +666,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Container(
               height: 2,
               color: Colors.blueAccent,
-              margin: EdgeInsets.symmetric(vertical: 8),
+              margin: const EdgeInsets.symmetric(vertical: 8),
             ),
 
             // Kategorie + Teams
             RichText(
               text: TextSpan(
-                style: TextStyle(fontSize: 16, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 children: [
-                  TextSpan(text: "Beschreibung:\n"),
+                  const TextSpan(text: "Beschreibung:\n"),
                   TextSpan(text: "${event.title}\n"),
                   TextSpan(text: event.description),
                 ],
@@ -688,12 +690,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero, // Eckiger Button
                   ),
                 ),
-                child: Text("Termin exportieren"),
+                child: const Text("Termin exportieren"),
               ),
             ),
           ],
@@ -753,10 +755,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           text: 'Termin exportieren', // Optionaler Text
         );
       } else {
-        print('Die Datei existiert nicht: $icsFilePath');
+        if(kDebugMode) print('Die Datei existiert nicht: $icsFilePath');
       }
     } catch (e) {
-      print('Fehler beim Teilen der Datei: $e');
+      if(kDebugMode) print('Fehler beim Teilen der Datei: $e');
     }
   }
 

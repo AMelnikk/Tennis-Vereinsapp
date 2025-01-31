@@ -160,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     if (mounted) {
-      email = await Provider.of<AuthProvider>(context, listen: false)
+      email = await Provider.of<AuthProvider>(context)
           .storage
           .read(key: "email");
     }

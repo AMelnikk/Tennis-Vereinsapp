@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:verein_app/models/calendar_event.dart';
+import 'package:verein_app/providers/ligaspiele_provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -22,33 +23,36 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _selectedDay;
   late DateTime _focusedDay;
+  List<CalendarEvent> calendar_events = [];
 
   @override
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
     _focusedDay = DateTime.now();
-
-    // Holen Sie sich das Jahr basierend auf dem fokussierten Tag
     int jahr = _focusedDay.year;
 
-    // Verwende addPostFrameCallback, um die Events nach dem ersten Build zu laden
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Greife auf den Provider zu und lade die Events
-      final calendarProvider =
-          Provider.of<TermineProvider>(context, listen: false);
+      try {
+        final termineProvider =
+            Provider.of<TermineProvider>(context, listen: false);
+        final ligaSpieleProvider =
+            Provider.of<LigaSpieleProvider>(context, listen: false);
 
-      // Lade die Events für das Jahr
-      await calendarProvider.loadEvents(jahr);
+        await termineProvider.loadEvents(jahr);
+        await ligaSpieleProvider.loadLigaSpiele(jahr);
 
-      // Setze den State, um das Widget zu aktualisieren, falls nötig
-      setState(() {});
+        // Alle Events zusammenführen
+        setState(() {
+          calendar_events = [
+            ...termineProvider.events,
+            ...ligaSpieleProvider.getLigaSpieleAsEvents(jahr),
+          ];
+        });
+      } catch (e) {
+        debugPrint("Fehler beim Laden der Events: $e");
+      }
     });
-  }
-
-  Future<void> _loadEvents(TermineProvider calProv, int jahr) async {
-    // Lade die Ereignisse für das angegebene Jahr
-    await calProv.loadEvents(jahr);
   }
 
   @override
@@ -61,11 +65,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       case 'Arbeitseinsatz':
         return const Color(0xFFEF6C00); // Gedämpftes Orange
       case 'Termin':
-        return const Color(0xFF1976D2); // Gedämpftes Blau
+        return const Color.fromARGB(255, 210, 25, 25); // Rot
       case 'Jugendtermin':
         return const Color(0xFF388E3C); // Gedämpftes Grün
       case 'Ligaspiel':
-        return const Color(0xFFFBC02D); // Gedämpftes Gelb
+        return const Color.fromARGB(255, 29, 32, 185); // Gedämpftes Gelb
       default:
         return Colors.grey[600]!; // Standard Grau
     }
@@ -181,29 +185,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
       calendarStyle: _buildCalendarStyle(),
       calendarBuilders: CalendarBuilders(
         defaultBuilder: (context, day, focusedDay) {
-          final eventsForDay = calendarProvider.events
+          final eventsForDay = calendar_events
               .where((event) =>
                   event.date.year == day.year &&
                   event.date.month == day.month &&
                   event.date.day == day.day)
               .toList();
+          bool isOutsideCurrentMonth = day.month != _focusedDay.month;
 
-          return _buildDayCell(day, eventsForDay);
+          return _buildDayCell(day, eventsForDay, isOutsideCurrentMonth);
         },
       ),
+      enabledDayPredicate: (day) {
+        // Stelle sicher, dass alle Tage aktiv sind
+        return true; // Gibt zurück, dass alle Tage aktiv sind
+      },
     );
   }
 
-  Widget _buildDayCell(DateTime day, List<CalendarEvent> eventsForDay) {
+  Widget _buildDayCell(DateTime day, List<CalendarEvent> eventsForDay,
+      bool isOutsideCurrentMonth) {
+    bool isToday =
+        isSameDay(day, DateTime.now()); // Prüft, ob es der heutige Tag ist
+    bool isSelected = isSameDay(
+        day, _selectedDay); // Überprüft, ob es der ausgewählte Tag ist
+
     return GestureDetector(
       onTap: () {
         // Nur ein Popup anzeigen, wenn es Termine für den Tag gibt
+        _selectedDay = day;
         if (eventsForDay.isNotEmpty) {
           _showEventPopup(eventsForDay);
         }
       },
       child: Container(
-        height: 150, // Zellenhöhe
+        height: 160, // Zellenhöhe verringert für kompaktere Darstellung
         decoration: BoxDecoration(
           color: Colors.transparent,
           border: Border.all(
@@ -212,24 +228,68 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 : Colors.transparent,
             width: 2,
           ),
+          // Optional: Ändere das Aussehen der Zelle, wenn sie außerhalb des aktuellen Monats ist
+          backgroundBlendMode:
+              isOutsideCurrentMonth ? BlendMode.darken : BlendMode.srcOver,
         ),
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(0), // Weniger Abstand
         child: Stack(
           children: [
-            // Tag des Monats oben rechts
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4, right: 4),
-                child: Text(
-                  '${day.day}',
-                  style: const TextStyle(
-                    fontSize: 8, // Einheitliche Schriftgröße
-                    color: Colors.black54, // Dezente Farbe
+            // Wenn es der heutige Tag ist, wird der Tag im Kreis in der Mitte angezeigt
+            if (isToday)
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
+            // Wenn es der ausgewählte Tag ist, zentrieren
+            if (isSelected)
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            // Wenn es nicht der heutige oder ausgewählte Tag ist, oben rechts anzeigen
+            if (!isToday && !isSelected)
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 4),
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(
+                      fontSize: 10, // Einheitliche Schriftgröße
+                      color: Colors.black54, // Dezente Farbe
+                    ),
+                  ),
+                ),
+              ),
             // Inhalte der Zelle
             Positioned.fill(
               child: _buildDayCellContent(eventsForDay),

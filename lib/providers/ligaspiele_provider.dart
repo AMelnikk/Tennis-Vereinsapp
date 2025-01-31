@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:verein_app/models/calendar_event.dart';
 
 class LigaSpieleProvider with ChangeNotifier {
   LigaSpieleProvider(this._token);
@@ -60,13 +61,33 @@ class LigaSpieleProvider with ChangeNotifier {
     }
   }
 
+  List<CalendarEvent> getLigaSpieleAsEvents(int jahr) {
+    // Filtere nur die Ligaspiele, die zum angegebenen Jahr passen
+    return ligaSpiele.where((spiel) {
+      final spielDatum = DateTime.tryParse(spiel["datum"] ?? "");
+      return spielDatum?.year == jahr;
+    }).map((spiel) {
+      return CalendarEvent(
+        id: int.parse(
+            spiel["id"] ?? "0"), // Falls ID nicht vorhanden oder fehlerhaft
+        title: "${spiel["heim"]} vs ${spiel["gast"]}",
+        date: DateTime.parse("${spiel["datum"]} ${spiel["uhrzeit"]}"),
+        category: "Ligaspiel",
+        description:
+            "${spiel["altersklasse"]} - ${spiel["spielklasse"]}, Gruppe: ${spiel["gruppe"]}",
+        query: spiel["spielort"],
+      );
+    }).toList();
+  }
+
   /// Lädt die Ligaspiele vom Server (z. B. Firebase)
-  Future<void> loadLigaSpiele() async {
+  /// Lädt die Ligaspiele und gibt sie als CalendarEvent für das Jahr zurück
+  Future<void> loadLigaSpiele(int jahr) async {
     isLoading = true;
     notifyListeners();
     try {
       final url = Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele.json");
+          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json");
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
@@ -75,8 +96,7 @@ class LigaSpieleProvider with ChangeNotifier {
             final spielData = entry.value;
             return {
               'id': spielData['id'] ?? 'Unknown',
-              'datum':
-                  DateTime.tryParse(spielData['datum'] ?? '') ?? DateTime.now(),
+              'datum': spielData['datum'] ?? '',
               'uhrzeit': spielData['uhrzeit'] ?? '',
               'altersklasse': spielData['altersklasse'] ?? '',
               'spielklasse': spielData['spielklasse'] ?? '',

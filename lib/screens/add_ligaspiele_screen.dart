@@ -47,9 +47,11 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
         }
 
         if (spiele.isNotEmpty) {
-          await Provider.of<LigaSpieleProvider>(context, listen: false)
-              .saveLigaSpiele(spiele);
-          showSnackBar("Spiele erfolgreich hochgeladen!");
+          if (mounted) {
+            await Provider.of<LigaSpieleProvider>(context, listen: false)
+                .saveLigaSpiele(spiele);
+            showSnackBar("Spiele erfolgreich hochgeladen!");
+          }
         } else {
           showSnackBar("Keine gültigen Spiele gefunden.");
         }

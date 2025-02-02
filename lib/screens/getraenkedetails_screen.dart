@@ -198,120 +198,122 @@ class _GetraenkeBuchungenDetailsScreenState
       appBar: AppBar(
         title: const Text("Getränkebuchungen"),
       ),
-      body: Column(
-        children: [
-          // Filter oben hinzufügen
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedUser,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedUser = value ?? "Alle";
-                        _applyFilters();
-                      });
-                    },
-                    items: _users.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Filter oben hinzufügen
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButton<String>(
+                      value: _selectedUser,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedUser = value ?? "Alle";
+                          _applyFilters();
+                        });
+                      },
+                      items: _users.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedYear,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedYear = value ?? "Alle";
-                        _applyFilters();
-                      });
-                    },
-                    items: _years.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButton<String>(
+                      value: _selectedYear,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedYear = value ?? "Alle";
+                          _applyFilters();
+                        });
+                      },
+                      items: _years.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SwitchListTile(
-                    title: const Text("Nur unbezahlte"),
-                    value: _onlyUnpaid,
-                    onChanged: (value) {
-                      setState(() {
-                        _onlyUnpaid = value;
-                        _applyFilters();
-                      });
-                    },
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SwitchListTile(
+                      title: const Text("Nur unbezahlte"),
+                      value: _onlyUnpaid,
+                      onChanged: (value) {
+                        setState(() {
+                          _onlyUnpaid = value;
+                          _applyFilters();
+                        });
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Ladeanzeige oder DataTable
-          _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : _filteredBuchungen.isEmpty
-                  ? const Center(
-                      child: Text("Keine Buchungen verfügbar"),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text("Datum")),
-                            DataColumn(label: Text("Uhrzeit")),
-                            DataColumn(label: Text("Benutzer")),
-                            DataColumn(label: Text("Wasser")),
-                            DataColumn(label: Text("Softdrinks")),
-                            DataColumn(label: Text("Bier")),
-                            DataColumn(label: Text("Summe (€)")),
-                            DataColumn(label: Text("Bezahlt")),
-                            DataColumn(label: Text("Aktionen")),
-                          ],
-                          rows: _filteredBuchungen.map((buchung) {
-                            final String buchungId = buchung['id'];
-                            final bool bezahlt = buchung['bezahlt'] ?? false;
-                            return DataRow(cells: [
-                              DataCell(Text(_formatDate(buchung['date']))),
-                              DataCell(Text(_formatTime(buchung['date']))),
-                              DataCell(
-                                  Text(buchung['username'] ?? 'Unbekannt')),
-                              DataCell(Text(buchung['anzWasser'].toString())),
-                              DataCell(Text(buchung['anzSoft'].toString())),
-                              DataCell(Text(buchung['anzBier'].toString())),
-                              DataCell(
-                                  Text(buchung['summe'].toStringAsFixed(2))),
-                              DataCell(Switch(
-                                value: bezahlt,
-                                onChanged: (bool value) {
-                                  _toggleBezahlt(buchungId, bezahlt);
-                                },
-                              )),
-                              DataCell(IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  _deleteBuchung(buchungId);
-                                },
-                              )),
-                            ]);
-                          }).toList(),
+            // Ladeanzeige oder DataTable
+            _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : _filteredBuchungen.isEmpty
+                    ? const Center(
+                        child: Text("Keine Buchungen verfügbar"),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columns: const [
+                              DataColumn(label: Text("Datum")),
+                              DataColumn(label: Text("Uhrzeit")),
+                              DataColumn(label: Text("Benutzer")),
+                              DataColumn(label: Text("Wasser")),
+                              DataColumn(label: Text("Softdrinks")),
+                              DataColumn(label: Text("Bier")),
+                              DataColumn(label: Text("Summe (€)")),
+                              DataColumn(label: Text("Bezahlt")),
+                              DataColumn(label: Text("Aktionen")),
+                            ],
+                            rows: _filteredBuchungen.map((buchung) {
+                              final String buchungId = buchung['id'];
+                              final bool bezahlt = buchung['bezahlt'] ?? false;
+                              return DataRow(cells: [
+                                DataCell(Text(_formatDate(buchung['date']))),
+                                DataCell(Text(_formatTime(buchung['date']))),
+                                DataCell(
+                                    Text(buchung['username'] ?? 'Unbekannt')),
+                                DataCell(Text(buchung['anzWasser'].toString())),
+                                DataCell(Text(buchung['anzSoft'].toString())),
+                                DataCell(Text(buchung['anzBier'].toString())),
+                                DataCell(
+                                    Text(buchung['summe'].toStringAsFixed(2))),
+                                DataCell(Switch(
+                                  value: bezahlt,
+                                  onChanged: (bool value) {
+                                    _toggleBezahlt(buchungId, bezahlt);
+                                  },
+                                )),
+                                DataCell(IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    _deleteBuchung(buchungId);
+                                  },
+                                )),
+                              ]);
+                            }).toList(),
+                          ),
                         ),
                       ),
-                    ),
-        ],
+          ],
+        ),
       ),
     );
   }

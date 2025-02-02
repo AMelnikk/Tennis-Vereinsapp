@@ -6,7 +6,7 @@ import './place_booking_screen.dart';
 import './photo_gallery_screen.dart';
 import './trainers_screen.dart';
 import './documents_screen.dart';
-import './game_results_screen.dart';
+import 'team_screen.dart';
 import '../widgets/function_tile.dart';
 
 class FunctionsScreen extends StatelessWidget {
@@ -35,8 +35,7 @@ class FunctionsScreen extends StatelessWidget {
                 FunctionTile(
                     image: Image.asset("assets/images/Spielergebnisse.webp"),
                     onTap: () {
-                      Navigator.of(context)
-                          .pushNamed(GameResultsScreen.routename);
+                      Navigator.of(context).pushNamed(TeamScreen.routename);
                     }), // Spielergebnisse
                 FunctionTile(
                     image: Image.asset("assets/images/Dokumentenbox.webp"),

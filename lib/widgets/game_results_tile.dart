@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/game_result.dart';
+import '../models/team.dart';
 
 class GameResultsTile extends StatelessWidget {
   const GameResultsTile({super.key, required this.gameResult});
 
-  final GameResult gameResult;
+  final Team gameResult;
 
   // Logik für die Hintergrundfarbe
   Color? getBackgroundColor() {

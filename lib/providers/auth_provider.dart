@@ -78,7 +78,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> signUp(String email, String password, String platzbuchungLink,
       String name) async {
     {
-      if(name.isEmpty){
+      if (name.isEmpty) {
         throw HttpException(message: "NAME_FEHLT");
       }
       final dbUrl = Uri.parse(
@@ -107,11 +107,15 @@ class AuthProvider with ChangeNotifier {
         storage.write(key: "email", value: email);
         storage.write(key: "password", value: password);
 
-        // var rest = 
+        // var rest =
         await http.put(
           Uri.parse(
               "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json?auth=$_token"),
-          body: json.encode({"name": name, "platzbuchung_link": platzbuchungLink}),
+          body: json.encode({
+            "name": name,
+            "platzbuchung_link": platzbuchungLink,
+            "Berechtigung": "Mitglied",
+          }),
         );
         // print(rest.statusCode);
 

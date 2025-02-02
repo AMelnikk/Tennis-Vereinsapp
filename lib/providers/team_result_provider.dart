@@ -53,31 +53,62 @@ class LigaSpieleProvider with ChangeNotifier {
   }
 
   List<CalendarEvent> getLigaSpieleAsEvents(int jahr) {
-    return ligaSpiele.where((spiel) {
-      final spielDatum = DateTime.tryParse(spiel["datum"] ?? "");
-      return spielDatum != null && spielDatum.year == jahr;
-    }).map((spiel) {
+    List<CalendarEvent> events = [];
+
+    for (var spiel in ligaSpiele) {
+      String? datumString = spiel["datum"];
+      if (datumString == null || datumString.trim().isEmpty) {
+        print("Kein Datum gefunden für Spiel: $spiel");
+        continue;
+      }
+
+      DateTime? spielDatum = parseDate(datumString.trim());
+      if (spielDatum == null) {
+        print(
+            "Datum konnte nicht geparst werden: '$datumString' für Spiel: $spiel");
+        continue;
+      }
+
+      if (spielDatum.year != jahr) {
+        continue;
+      }
+
+      // Beispiel: Heimspiel prüfen
       bool istHeimspiel = spiel["heim"] == "TeG Altmühlgrund";
 
-      return CalendarEvent(
+      // Erstelle das Event
+      CalendarEvent event = CalendarEvent(
         id: int.tryParse(spiel["id"] ?? "0") ?? 0,
-        title:
-            "${istHeimspiel ? "🏠 " : ""}${spiel["altersklasse"]}", // Icon voranstellen, wenn Heimspiel
-        date: DateTime.tryParse("${spiel["datum"]} ${spiel["uhrzeit"]}") ??
-            DateTime.now(),
+        title: "${istHeimspiel ? "🏠 " : ""}${spiel["altersklasse"]}",
+        date: spielDatum, // Wir nutzen hier das geparste Datum
         category: "Ligaspiel",
         description:
-            "Gruppe: ${spiel["gruppe"]}\n${spiel["heim"]} vs ${spiel["gast"]}\n",
-        query: spiel["spielort"] ?? "",
+            "Gruppe: ${spiel["gruppe"]}\n\n${spiel["heim"]} vs ${spiel["gast"]}\n\nSpielort: ${spiel["spielort"]}\nUhrzeit: ${spiel["uhrzeit"]}",
+        query: "",
       );
-    }).toList();
+
+      events.add(event);
+    }
+    return events;
+  }
+
+  DateTime? parseDate(String dateStr) {
+    try {
+      // Erstelle ein DateFormat für "dd.MM.yyyy"
+      DateFormat format = DateFormat('dd.MM.yyyy');
+      DateTime parsedDate = format.parse(dateStr);
+      print("Parsed date: $parsedDate"); // Debug-Ausgabe
+      return parsedDate;
+    } catch (e) {
+      print("Fehler beim Parsen des Datums: $dateStr, Fehler: $e");
+      return null;
+    }
   }
 
   /// Lädt die Ligaspiele vom Server (z. B. Firebase)
   /// Lädt die Ligaspiele und gibt sie als CalendarEvent für das Jahr zurück
   Future<void> loadLigaSpiele(int jahr) async {
     isLoading = true;
-    notifyListeners();
     try {
       final url = Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json");
@@ -115,7 +146,6 @@ class LigaSpieleProvider with ChangeNotifier {
       ligaSpiele = [];
     } finally {
       isLoading = false;
-      notifyListeners();
     }
   }
 }

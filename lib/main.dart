@@ -34,6 +34,7 @@ import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 import "screens/add_team_screen.dart";
+import "screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
 
 void main() async {
@@ -93,6 +94,7 @@ class MyApp extends StatelessWidget {
             home: const MyHomePage(),
             routes: {
               TeamScreen.routename: (ctx) => TeamScreen(),
+              TeamDetailScreen.routename: (ctx) => TeamDetailScreen(),
               DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
               AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
@@ -163,9 +165,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     if (mounted) {
-      email = await Provider.of<AuthProvider>(context)
-          .storage
-          .read(key: "email");
+      email =
+          await Provider.of<AuthProvider>(context).storage.read(key: "email");
     }
     if (mounted) {
       password = await Provider.of<AuthProvider>(context, listen: false)

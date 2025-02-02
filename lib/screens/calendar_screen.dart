@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -642,28 +641,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Schließen Button oben rechts
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.black),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Schließt den Dialog
-                },
-              ),
-            ),
-            // Titel in Blau und Fett
-            Center(
-              child: Text(
-                event.category,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+            // Titel und Schließen-Button in einer Zeile
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  event.category,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.black),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Schließt den Dialog
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
 
             // Blaue Trennlinie
             Container(
@@ -711,62 +708,77 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void _exportEventAsIcs(CalendarEvent event) async {
     final icsContent = _generateIcsContent(event);
     final icsFilePath = await _saveIcsFile(event, icsContent);
-    await _shareIcsFile(icsFilePath);
+    if (icsFilePath != null) {
+      await _shareIcsFile(icsFilePath);
+    } else {
+      print("Fehler: Die Datei konnte nicht gespeichert werden.");
+    }
   }
 
   String _generateIcsContent(CalendarEvent event) {
     final startDateTime = _formatDateTimeForIcs(event.date);
-    final endDateTime = _formatDateTimeForIcs(
-        event.date.add(const Duration(hours: 1))); // Beispiel: 1 Stunde später
+    final endDateTime =
+        _formatDateTimeForIcs(event.date.add(const Duration(hours: 1)));
 
-    final icsContent = '''
-        BEGIN:VCALENDAR
-        VERSION:2.0
-        PRODID:-//YourAppName//Event Exporter//EN
-        BEGIN:VEVENT
-        UID:event_${event.id}
-        SUMMARY:${event.title}
-        DTSTART:$startDateTime
-        DTEND:$endDateTime
-        DESCRIPTION:${event.description}
-        STATUS:CONFIRMED
-        END:VEVENT
-        END:VCALENDAR
-        ''';
-    return icsContent;
+    return '''
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:TeG Altmuehlgrund
+METHODE:PUBLISH
+BEGIN:VEVENT
+UID:event_${event.id}
+LOCATION:Tennisplatz
+SUMMARY:${event.title}
+DESCRIPTION:${event.description}
+CLASS:PUBLIC
+DTSTART;TZID=UTC:$startDateTime
+DTEND;TZID=UTC:$endDateTime
+DTSTAMP:$startDateTime
+END:VEVENT
+END:VCALENDAR
+'''
+        .trimLeft(); // Entfernt unnötige Leerzeichen
   }
 
-  Future<String> _saveIcsFile(CalendarEvent event, String icsContent) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final icsFileName = 'event_${event.title}.ics';
-    final icsFilePath = '${directory.path}/$icsFileName';
+  Future<String?> _saveIcsFile(CalendarEvent event, String icsContent) async {
+    try {
+      final directory = await getTemporaryDirectory(); // Besser für das Teilen
+      if (directory == null) {
+        print("Fehler: Konnte keinen Speicherort finden.");
+        return null;
+      }
 
-    await File(icsFilePath).writeAsString(icsContent, encoding: utf8);
-    return icsFilePath;
+      final sanitizedTitle = event.title
+          .replaceAll(RegExp(r'[^\w\s]'), '_'); // Sonderzeichen ersetzen
+      final icsFilePath = '${directory.path}/event_$sanitizedTitle.ics';
+      final file = File(icsFilePath);
+      await file.writeAsString(icsContent, encoding: utf8);
+
+      print("ICS-Datei gespeichert: $icsFilePath");
+      return icsFilePath;
+    } catch (e) {
+      print("Fehler beim Speichern der Datei: $e");
+      return null;
+    }
   }
 
   Future<void> _shareIcsFile(String icsFilePath) async {
     try {
-      // Überprüfen, ob die Datei existiert
       final file = File(icsFilePath);
       if (await file.exists()) {
-        // Datei in ein XFile umwandeln
-        final xFile = XFile(icsFilePath);
-
-        // Teilen der Datei
-        await Share.shareXFiles(
-          [xFile], // Liste mit der Datei
-          text: 'Termin exportieren', // Optionaler Text
-        );
+        print("Teile Datei: $icsFilePath");
+        await Share.shareXFiles([XFile(icsFilePath)],
+            text: 'Termin exportieren');
       } else {
-        print('Die Datei existiert nicht: $icsFilePath');
+        print("Fehler: Datei existiert nicht! Pfad: $icsFilePath");
       }
     } catch (e) {
-      print('Fehler beim Teilen der Datei: $e');
+      print("Fehler beim Teilen der Datei: $e");
     }
   }
 
   String _formatDateTimeForIcs(DateTime dateTime) {
-    return DateFormat('yyyyMMdd\'T\'HHmmss\'Z\'').format(dateTime.toUtc());
+    return DateFormat("yyyyMMdd'T'HHmmss'Z'")
+        .format(dateTime.toUtc()); // Korrekte UTC-Zeit
   }
 }

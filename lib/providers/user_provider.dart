@@ -21,10 +21,11 @@ class UserProvider with ChangeNotifier {
           {
             "platzbuchung_link": platzbuchungLink.text,
             "name": name.text,
+            "Berechtigung": "Mitglied",
           },
         ),
       );
-      if(kDebugMode) print(response.statusCode);
+      if (kDebugMode) print(response.statusCode);
       return response.statusCode;
     } catch (error) {
       if (kDebugMode) print(error);

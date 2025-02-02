@@ -2,8 +2,11 @@ import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+//import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
+//import 'package:share_plus/share_plus.dart';
 import '../widgets/verein_appbar.dart';
 
 class PdfScreen extends StatefulWidget {
@@ -20,12 +23,18 @@ class PdfScreen extends StatefulWidget {
 class _PdfScreenState extends State<PdfScreen> {
   late bool exists;
   bool _isLoading = false;
+  late String downloadPath;
 
   Future<String> downloadPdf() async {
     try {
       ByteData bytes = await rootBundle.load(widget.assetPath);
       Uint8List list = bytes.buffer.asUint8List();
-      var directory = io.Directory("/storage/emulated/0/Download");
+      io.Directory? directory;
+      if (io.Platform.isAndroid) {
+        directory = io.Directory("/storage/emulated/0/Download");
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
       var path = "${directory.path}/${widget.name}.pdf";
       final file = io.File(path);
       file.writeAsBytes(list);
@@ -44,9 +53,18 @@ class _PdfScreenState extends State<PdfScreen> {
     setState(() {
       _isLoading = true;
     });
+    if (io.Platform.isAndroid) {
+      exists = await io.File("/storage/emulated/0/Download/${widget.name}.pdf")
+          .exists();
+      downloadPath = "/storage/emulated/0/Download/${widget.name}.pdf";
+      // print('android pdf exist path: /storage/emulated/0/Download/${widget.name}.pdf');
+    } else {
+      var dir = await getApplicationDocumentsDirectory();
+      exists = await io.File("${dir.path}/${widget.name}.pdf").exists();
+      downloadPath = "${dir.path}/${widget.name}.pdf";
+      // print('ios pdf exist path: ${dir.path}/${widget.name}.pdf');
+    }
 
-    exists = await io.File("/storage/emulated/0/Download/${widget.name}.pdf")
-        .exists();
     setState(() {
       _isLoading = false;
     });
@@ -73,29 +91,30 @@ class _PdfScreenState extends State<PdfScreen> {
                   child: exists
                       ? FloatingActionButton(
                           onPressed: () {
-                            OpenFilex.open(
-                                "/storage/emulated/0/Download/${widget.name}.pdf",
-                                type: "application/pdf");
+                            if (io.Platform.isAndroid) {
+                              OpenFilex.open(downloadPath,
+                                  type: "application/pdf");
+                            } else {
+                              OpenFilex.open(downloadPath,
+                                  type: "application/pdf");
+                            }
                           },
                           child: const Icon(Icons.open_in_new),
                         )
                       : FloatingActionButton(
                           onPressed: () async {
                             String path = await downloadPdf();
-                            // Ensure the widget is still mounted before updating UI
                             if (!mounted) return;
 
                             setState(() {
                               exists = true;
                             });
-
-                            // Check if the widget is still mounted before showing the dialog
                             if (mounted) {
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   content: const Text(
-                                      "Datei wurde erfolgreich in Downloads Ordner heruntergeladen"),
+                                      "Datei wurde erfolgreich heruntergeladen"),
                                   actions: [
                                     TextButton(
                                       onPressed: () {

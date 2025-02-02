@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
 import './screens/getraenke_summen_screen.dart';
@@ -10,7 +11,7 @@ import './screens/getraenkedetails_screen.dart';
 import './screens/datenschutz_screen.dart';
 import './screens/getraenkebuchen_screen.dart';
 import './providers/user_provider.dart';
-import './providers/ligaspiele_provider.dart';
+import 'providers/team_result_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_overview_screen.dart';
@@ -18,21 +19,21 @@ import './providers/news_provider.dart';
 import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
-import './screens/add_ligaspiele_screen.dart';
+import 'screens/add_team_game_screen.dart';
 import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
 import './screens/auth_screen.dart';
 import './screens/photo_gallery_screen.dart';
 import './screens/trainers_screen.dart';
-import "./providers/game_results_provider.dart";
+import "providers/team_provider.dart";
 import './screens/documents_screen.dart';
 import './screens/functions_screen.dart';
-import './screens/game_results_screen.dart';
+import 'screens/team_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
-import "./screens/add_mannschaft_screen.dart";
+import "screens/add_team_screen.dart";
 import "./screens/calendar_screen.dart";
 
 void main() async {
@@ -55,8 +56,7 @@ class MyApp extends StatelessWidget {
       builder: (context, _) => MultiProvider(
         providers: [
           ChangeNotifierProvider.value(
-            value:
-                GameResultsProvider(Provider.of<AuthProvider>(context).token),
+            value: TeamProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
             value: PhotoProvider(Provider.of<AuthProvider>(context).token),
@@ -74,6 +74,9 @@ class MyApp extends StatelessWidget {
             value: UserProvider(Provider.of<AuthProvider>(context).token),
           ),
           ChangeNotifierProvider.value(
+            value: SaisonProvider(Provider.of<AuthProvider>(context).token),
+          ),
+          ChangeNotifierProvider.value(
             value: GetraenkeBuchenProvider(
                 Provider.of<AuthProvider>(context).token),
           ),
@@ -89,7 +92,7 @@ class MyApp extends StatelessWidget {
             ),
             home: const MyHomePage(),
             routes: {
-              GameResultsScreen.routename: (ctx) => const GameResultsScreen(),
+              TeamScreen.routename: (ctx) => TeamScreen(),
               DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
               AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),

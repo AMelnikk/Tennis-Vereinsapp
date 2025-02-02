@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:verein_app/models/calendar_event.dart';
-import 'package:verein_app/providers/ligaspiele_provider.dart';
+import 'package:verein_app/providers/team_result_provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -23,7 +23,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _selectedDay;
   late DateTime _focusedDay;
-  List<CalendarEvent> calendar_events = [];
+  List<CalendarEvent> calendarEvents = [];
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         // Alle Events zusammenführen
         setState(() {
-          calendar_events = [
+          calendarEvents = [
             ...termineProvider.events,
             ...ligaSpieleProvider.getLigaSpieleAsEvents(jahr),
           ];
@@ -75,6 +75,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     final calendarProvider = Provider.of<TermineProvider>(context);
 
@@ -185,7 +186,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       calendarStyle: _buildCalendarStyle(),
       calendarBuilders: CalendarBuilders(
         defaultBuilder: (context, day, focusedDay) {
-          final eventsForDay = calendar_events
+          final eventsForDay = calendarEvents
               .where((event) =>
                   event.date.year == day.year &&
                   event.date.month == day.month &&
@@ -213,7 +214,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return GestureDetector(
       onTap: () {
         // Nur ein Popup anzeigen, wenn es Termine für den Tag gibt
-        _selectedDay = day;
+        setState(() {
+          _selectedDay = day; // Neuen ausgewählten Tag setzen
+          _focusedDay = day; // Fokus-Tag aktualisieren
+        });
+
         if (eventsForDay.isNotEmpty) {
           _showEventPopup(eventsForDay);
         }
@@ -240,13 +245,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Align(
                 alignment: Alignment.center,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(8), // <- 'const' nur hier
+                  decoration: const BoxDecoration(
                     color: Colors.orange,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
-                    '${day.day}',
+                    '${day.day}', // Muss dynamisch bleiben, daher kein 'const'
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -261,7 +266,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 alignment: Alignment.center,
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.blueAccent,
                     shape: BoxShape.circle,
                   ),
@@ -345,7 +350,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Text(
           event.title,
           style: const TextStyle(
-            fontSize: 8,
+            fontSize: 9,
             color: Colors.white,
           ),
           overflow: TextOverflow.ellipsis,
@@ -628,7 +633,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildEventDetailsCard(BuildContext context, CalendarEvent event) {
     return Dialog(
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.zero), // Eckiger Rahmen
       child: Container(
         width: 300, // Weniger breit
@@ -641,7 +646,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Align(
               alignment: Alignment.topRight,
               child: IconButton(
-                icon: Icon(Icons.close, color: Colors.black),
+                icon: const Icon(Icons.close, color: Colors.black),
                 onPressed: () {
                   Navigator.of(context).pop(); // Schließt den Dialog
                 },
@@ -651,7 +656,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Center(
               child: Text(
                 event.category,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.blueAccent,
@@ -664,15 +669,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Container(
               height: 2,
               color: Colors.blueAccent,
-              margin: EdgeInsets.symmetric(vertical: 8),
+              margin: const EdgeInsets.symmetric(vertical: 8),
             ),
 
             // Kategorie + Teams
             RichText(
               text: TextSpan(
-                style: TextStyle(fontSize: 16, color: Colors.black),
+                style: const TextStyle(fontSize: 16, color: Colors.black),
                 children: [
-                  TextSpan(text: "Beschreibung:\n"),
+                  const TextSpan(text: "Beschreibung:\n"),
                   TextSpan(text: "${event.title}\n"),
                   TextSpan(text: event.description),
                 ],
@@ -688,12 +693,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero, // Eckiger Button
                   ),
                 ),
-                child: Text("Termin exportieren"),
+                child: const Text("Termin exportieren"),
               ),
             ),
           ],

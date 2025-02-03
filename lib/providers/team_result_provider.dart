@@ -70,7 +70,6 @@ class LigaSpieleProvider with ChangeNotifier {
         .toList();
   }
 
-  /// Speichert die Liste der Ligaspiele in Firebase
   Future<int> saveLigaSpiele(List<TennisMatch> spiele) async {
     if (_token == null || _token.isEmpty) {
       return 400; // Fehler: Kein Token vorhanden
@@ -79,31 +78,73 @@ class LigaSpieleProvider with ChangeNotifier {
     try {
       for (var spiel in spiele) {
         final DateTime spielDatum = spiel.datum;
-
         final jahr = spielDatum.year;
-
         final url = Uri.parse(
             "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token");
 
-        final response = await http.put(
-          url,
-          body: json.encode(spiel
-              .toJson()), // Direkt die JSON-Daten des TennisMatch übergeben
-          headers: {'Content-Type': 'application/json'},
-        );
+        // Überprüfen, ob das Spiel schon existiert
+        final existingResponse = await http.get(url);
 
-        if (response.statusCode != 200) {
-          debugPrint("Fehler beim Speichern von Spiel ID: ${spiel.id}");
-          return response.statusCode;
+        // Hier wird existingData nur einmal definiert
+        Map<String, dynamic>? existingData;
+
+        // Wenn der Response einen Körper hat und er erfolgreich dekodiert wird
+        if (existingResponse.statusCode == 200 &&
+            existingResponse.body.isNotEmpty) {
+          try {
+            existingData = json.decode(existingResponse.body);
+          } catch (e) {
+            debugPrint("Fehler beim Dekodieren der vorhandenen Daten: $e");
+            existingData = null;
+          }
+        }
+
+        if (existingData != null) {
+          // Hier kombinieren wir die vorhandenen Daten mit den neuen Daten
+          final updatedData = {
+            ...existingData,
+            ...spiel.toJson(
+                includeErgebnis: false,
+                includeSpielbericht: false, // Wird nicht ins JSON aufgenommen
+                includePhotoBlob: false),
+          }; // Nur die Felder aktualisieren, die sich geändert haben
+
+          // Update mit PATCH statt PUT
+          final updateResponse = await http.patch(
+            url,
+            body: json.encode(updatedData),
+            headers: {'Content-Type': 'application/json'},
+          );
+
+          if (updateResponse.statusCode != 200) {
+            debugPrint("Fehler beim Aktualisieren von Spiel ID: ${spiel.id}");
+            return updateResponse.statusCode;
+          }
+        } else {
+          // Wenn das Spiel nicht existiert, speichern wir es komplett neu
+          final response = await http.put(
+            url,
+            body: json.encode(spiel.toJson(
+              includeErgebnis: true,
+              includeSpielbericht: true,
+              includePhotoBlob: true,
+            )),
+            headers: {'Content-Type': 'application/json'},
+          );
+
+          if (response.statusCode != 200) {
+            debugPrint("Fehler beim Speichern von Spiel ID: ${spiel.id}");
+            return response.statusCode;
+          }
         }
       }
-      return 200;
+      return 200; // Erfolgreich
     } on SocketException {
       debugPrint("Netzwerkfehler beim Speichern der Ligaspiele");
-      return 500;
+      return 500; // Netzwerkfehler
     } catch (error) {
       debugPrint("Fehler beim Speichern der Ligaspiele: $error");
-      return 400;
+      return 400; // Allgemeiner Fehler
     }
   }
 
@@ -148,6 +189,8 @@ class LigaSpieleProvider with ChangeNotifier {
               spielort: spielData['spielort'] ?? '',
               ergebnis: spielData['ergebnis'] ?? '',
               saison: spielData['saison'] ?? '',
+              spielbericht: spielData['spielbericht'] ?? '',
+              photoBlobSB: spielData['photoBlob'],
             );
           }).toList();
         } else {

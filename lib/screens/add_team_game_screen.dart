@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:verein_app/models/team.dart';
-import 'package:verein_app/models/tennismatch.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/team_provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../models/team.dart';
+import '../models/tennismatch.dart';
+import '../models/season.dart';
+import '../providers/team_provider.dart';
+import '../utils/app_utils.dart';
 import '../providers/team_result_provider.dart';
 import '../providers/season_provider.dart'; // Importiere den SaisonProvider
 import '../widgets/verein_appbar.dart';
@@ -31,8 +31,8 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
   void initState() {
     super.initState();
 
-    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final messenger = ScaffoldMessenger.of(context); // Vorher speichern
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
       List<SaisonData> loadedSeasons = await saisonProvider.getAllSeasons();
@@ -96,7 +96,8 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
           Set<Team> distinctTeams = extractDistinctTeams(spiele);
 
           // Füge die Teams hinzu oder aktualisiere sie
-          await teamProvider.addOrUpdateTeams(saisonKey, distinctTeams);
+          await teamProvider.addOrUpdateTeams(
+              messenger, saisonKey, distinctTeams);
 
           if (!mounted) return; // Prüfen, ob das Widget noch existiert
 
@@ -161,6 +162,8 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
           spielort: fields[9],
           saison: saisonKey,
           ergebnis: '',
+          spielbericht: '',
+          photoBlobSB: null,
         ));
       }
     }

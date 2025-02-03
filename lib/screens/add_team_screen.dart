@@ -106,7 +106,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
       );
 
       await provider.addTeam(newEntry);
-      await provider.getData(newEntry.saison); // Aktualisierte Daten abrufen
+      await provider.getData(
+          messenger, newEntry.saison); // Aktualisierte Daten abrufen
     } catch (error) {
       // Fehlerbehandlung: z.B. eine Snackbar anzeigen
       if (mounted) {
@@ -185,6 +186,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     return Scaffold(
       appBar: AppBar(
         title: const Text("Mannschaften verwalten"),
@@ -235,7 +237,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                         height: 300, // Sichere Höhe setzen
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
-                          child: _buildGameResultsTable(provider),
+                          child: _buildGameResultsTable(messenger, provider),
                         ),
                       ),
                     ],
@@ -575,7 +577,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     );
   }
 
-  Widget _buildGameResultsTable(TeamProvider provider) {
+  Widget _buildGameResultsTable(
+      ScaffoldMessengerState messenger, TeamProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SingleChildScrollView(
@@ -584,7 +587,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
         child: SingleChildScrollView(
           scrollDirection: Axis.vertical, // Vertikales Scrollen hinzufügen
           child: FutureBuilder<List<Team>>(
-            future: provider.getData(_selectedSaisonKey), // Daten abrufen
+            future: provider.getData(
+                messenger, _selectedSaisonKey), // Daten abrufen
             builder: (ctx, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -598,8 +602,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                           style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 10),
                       ElevatedButton(
-                        onPressed: () => provider
-                            .getData(_selectedSaisonKey), // Daten erneut laden
+                        onPressed: () => provider.getData(messenger,
+                            _selectedSaisonKey), // Daten erneut laden
                         child: const Text('Erneut versuchen'),
                       ),
                     ],
@@ -690,8 +694,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                                   );
                                 }
                                 setState(() {
-                                  provider
-                                      .getData(entry.saison); // Daten neu laden
+                                  provider.getData(messenger,
+                                      entry.saison); // Daten neu laden
                                 });
                               },
                             ),

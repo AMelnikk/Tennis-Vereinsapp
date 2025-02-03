@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:verein_app/utils/app_utils.dart';
 import '../models/team.dart';
 
 class TeamProvider with ChangeNotifier {
@@ -10,7 +12,8 @@ class TeamProvider with ChangeNotifier {
   List<Team> _teams = [];
   String _saisonKey = '';
 
-  Future<List<Team>> getData(String saisonKey) async {
+  Future<List<Team>> getData(
+      ScaffoldMessengerState messenger, saisonKey) async {
     //if (_token == null || _token.isEmpty) {
     //  throw Exception("Token fehlt");
     //}
@@ -41,24 +44,20 @@ class TeamProvider with ChangeNotifier {
 
           _teams = loadedData;
           _saisonKey = saisonKey;
-          if (kDebugMode) {
-            print('Team Daten geladen for Saison: $saisonKey');
-          }
+          appError(messenger, 'Team Daten geladen for Saison: $saisonKey');
         } else {
-          if (kDebugMode) {
-            print('Keine Daten vorhanden.');
-          }
+          appError(messenger, 'Keine Daten vorhanden.');
         }
       } else {
         // Fehlerhafte Antwort behandeln
-        throw Exception(
+        appError(messenger,
             'Fehler beim Abrufen der Daten: ${response.statusCode} ${response.reasonPhrase}');
       }
     } catch (e) {
       // Generelle Fehlerbehandlung
-      if (kDebugMode) {
-        print('Fehler beim Abrufen der Daten: $e');
-      }
+
+      appError(messenger, 'Fehler beim Abrufen der Daten: $e');
+
       rethrow; // Fehler weitergeben, falls er weiter oben behandelt werden soll
     }
 
@@ -155,9 +154,10 @@ class TeamProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addOrUpdateTeams(String saisonKey, Set<Team> newteams) async {
+  Future<void> addOrUpdateTeams(ScaffoldMessengerState messenger,
+      String saisonKey, Set<Team> newteams) async {
     // Fetch existing teams
-    List<Team> existingteams = await getData(saisonKey);
+    List<Team> existingteams = await getData(messenger, saisonKey);
 
     // Create a map for fast look-up based on team key (mannschaft + liga + gruppe)
     Map<String, Team> teamsMap = {

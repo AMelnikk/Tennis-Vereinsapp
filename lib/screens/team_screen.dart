@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/season_provider.dart';
+import '../models/season.dart';
+import '../providers/season_provider.dart';
 import '../models/team.dart';
 import '../providers/team_provider.dart';
 import '../widgets/game_results_tile.dart';

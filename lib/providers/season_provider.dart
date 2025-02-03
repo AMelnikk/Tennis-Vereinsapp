@@ -1,4 +1,4 @@
-import 'package:verein_app/models/season.dart';
+import '../models/season.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';

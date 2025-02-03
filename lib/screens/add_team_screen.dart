@@ -5,8 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/season_provider.dart';
+import '../models/season.dart';
+import '../providers/season_provider.dart';
 import '../providers/team_provider.dart';
 import '../models/team.dart';
 
@@ -459,7 +459,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
         children: [
           TextButton(
             onPressed: _pickPdfFile, // Hier rufst du _pickPdfFile auf
-            child: Text('PDF auswählen'),
+            child: const Text('PDF auswählen'),
           ),
           if (_pdfBlob != null) ...[
             Text(

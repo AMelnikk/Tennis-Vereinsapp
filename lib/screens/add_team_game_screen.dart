@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:verein_app/models/team.dart';
-import 'package:verein_app/models/tennismatch.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/team_provider.dart';
+import '../models/team.dart';
+import '../models/tennismatch.dart';
+import '../models/season.dart';
+import '../providers/team_provider.dart';
 import '../providers/team_result_provider.dart';
 import '../providers/season_provider.dart'; // Importiere den SaisonProvider
 import '../widgets/verein_appbar.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:verein_app/models/calendar_event.dart';
+import '../models/calendar_event.dart';
 import '../providers/termine_provider.dart';
 import '../widgets/verein_appbar.dart';
 

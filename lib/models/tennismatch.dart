@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:intl/intl.dart';
 
 class TennisMatch {
@@ -12,6 +15,8 @@ class TennisMatch {
   final String spielort;
   final String ergebnis;
   final String saison;
+  final String spielbericht;
+  final Uint8List? photoBlobSB;
 
   TennisMatch({
     required this.id,
@@ -23,12 +28,17 @@ class TennisMatch {
     required this.heim,
     required this.gast,
     required this.spielort,
-    required this.ergebnis,
     required this.saison,
+    required this.ergebnis,
+    required this.spielbericht,
+    required this.photoBlobSB,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson(
+      {bool includeErgebnis = false,
+      bool includeSpielbericht = false,
+      bool includePhotoBlob = false}) {
+    final jsonMap = {
       'id': id,
       'datum': DateFormat('dd.MM.yyyy').format(datum),
       'uhrzeit': uhrzeit,
@@ -38,8 +48,21 @@ class TennisMatch {
       'heim': heim,
       'gast': gast,
       'spielort': spielort,
-      'ergebnis': ergebnis,
       'saison': saison,
     };
+
+    // Wenn die Felder nicht ausgeschlossen sind, füge sie zum JSON hinzu
+    if (includeErgebnis) {
+      jsonMap['ergebnis'] = ergebnis;
+    }
+    if (includeSpielbericht) {
+      jsonMap['spielbericht'] = spielbericht;
+    }
+    if (includePhotoBlob) {
+      jsonMap['photoBlobSB'] =
+          photoBlobSB != null ? base64Encode(photoBlobSB!) : '';
+    }
+
+    return jsonMap;
   }
 }

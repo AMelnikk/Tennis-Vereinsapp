@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/season_provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../models/season.dart';
+import '../providers/season_provider.dart';
 import '../models/team.dart';
 import '../providers/team_provider.dart';
 import '../widgets/team_tile.dart';
@@ -28,13 +27,22 @@ class _TeamScreenState extends State<TeamScreen> {
   @override
   void initState() {
     super.initState();
+  }
 
-    loadSeasonData(); // Lädt Saisondaten direkt in initState
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This is where you should safely access providers or inherited widgets
+    //saisonProvider = Provider.of<SaisonProvider>(context, listen: false);
+    // Now you can safely call methods or load data that depend on context
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+      loadSeasonData(messenger);
+    });
   }
 
   // Methode zum Abrufen der Saisondaten
-  Future<void> loadSeasonData() async {
-    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+  Future<void> loadSeasonData(ScaffoldMessengerState messenger) async {
     try {
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
@@ -46,20 +54,19 @@ class _TeamScreenState extends State<TeamScreen> {
           selectedSeason = filterSeasons.first;
         });
         // Jetzt auch die Teams für die gewählte Saison laden
-        getData();
+        getData(messenger);
       } else {
         setState(() {
           filterSeasons = [];
         });
       }
     } catch (error) {
-      appError(messenger, "Fehler beim Laden der Saisons: $error");
+      //appError(messenger, "Fehler beim Laden der Saisons: $error");
     }
   }
 
   // Abruf der Teams
-  Future<void> getData() async {
-    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+  Future<void> getData(ScaffoldMessengerState messenger) async {
     try {
       setState(() {
         _isLoading = true;
@@ -67,9 +74,10 @@ class _TeamScreenState extends State<TeamScreen> {
 
       if (selectedSeason?.key != null) {
         teams = await Provider.of<TeamProvider>(context, listen: false).getData(
+            messenger,
             selectedSeason!.key); // Wir holen die Teams für die gewählte Saison
         getFilteredResults();
-        appError(messenger, 'Teams geladen: ${teams.length} Teams');
+        //appError(messenger, 'Teams geladen: ${teams.length} Teams');
       } else {
         teams = [];
       }
@@ -167,6 +175,7 @@ class _TeamScreenState extends State<TeamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     return Scaffold(
       appBar: VereinAppbar(),
       body: Column(
@@ -213,7 +222,8 @@ class _TeamScreenState extends State<TeamScreen> {
                             setState(() {
                               selectedSeason = value;
                             });
-                            getData(); // Hole die Daten für die gewählte Saison
+                            getData(
+                                messenger); // Hole die Daten für die gewählte Saison
                           }
                         },
                       ),

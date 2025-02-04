@@ -4,12 +4,12 @@ import 'package:verein_app/models/season.dart';
 import 'package:verein_app/providers/season_provider.dart';
 import '../models/team.dart';
 import '../providers/team_provider.dart';
-import '../widgets/game_results_tile.dart';
+import '../widgets/team_tile.dart';
 import '../widgets/verein_appbar.dart';
 
 class TeamScreen extends StatefulWidget {
   const TeamScreen({super.key});
-  static const routename = "/game-results";
+  static const routename = "/team-screen";
 
   @override
   State<TeamScreen> createState() => _TeamScreenState();
@@ -18,6 +18,7 @@ class TeamScreen extends StatefulWidget {
 class _TeamScreenState extends State<TeamScreen> {
   var _isLoading = true;
   List<Team> teams = [];
+  List<Team> filteredTeams = [];
   List<SaisonData> filterSeasons = [];
   SaisonData? selectedSeason;
   String selectedAgeGroup = 'All';
@@ -25,7 +26,7 @@ class _TeamScreenState extends State<TeamScreen> {
   @override
   void initState() {
     super.initState();
-    print('initState gestartet');
+
     loadSeasonData(); // Lädt Saisondaten direkt in initState
   }
 
@@ -34,14 +35,12 @@ class _TeamScreenState extends State<TeamScreen> {
     try {
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
-      print('Lade Saisondaten...');
       List<SaisonData> loadedSeasons = await saisonProvider.getAllSeasons();
 
       if (loadedSeasons.isNotEmpty) {
         setState(() {
           filterSeasons = loadedSeasons;
           selectedSeason = filterSeasons.first;
-          print('Saisondaten geladen: ${filterSeasons.length} Seasons');
         });
         // Jetzt auch die Teams für die gewählte Saison laden
         getData();
@@ -49,7 +48,6 @@ class _TeamScreenState extends State<TeamScreen> {
         setState(() {
           filterSeasons = [];
         });
-        print("Keine Saisondaten gefunden!");
       }
     } catch (error) {
       print("Fehler beim Laden der Saisons: $error");
@@ -66,6 +64,7 @@ class _TeamScreenState extends State<TeamScreen> {
       if (selectedSeason?.key != null) {
         teams = await Provider.of<TeamProvider>(context, listen: false).getData(
             selectedSeason!.key); // Wir holen die Teams für die gewählte Saison
+        getFilteredResults();
         print('Teams geladen: ${teams.length} Teams');
       } else {
         teams = [];
@@ -88,12 +87,12 @@ class _TeamScreenState extends State<TeamScreen> {
   }
 
   // Filtermethoden für Saison
-  List<Team> getFilteredResults() {
-    var filteredResults = teams;
+  void getFilteredResults() {
+    filteredTeams = teams;
 
     // Filter für Saison
     if (selectedSeason != null && selectedSeason!.key.isNotEmpty) {
-      filteredResults = filteredResults
+      filteredTeams = filteredTeams
           .where((result) =>
               result.saison ==
               selectedSeason!.key) // Vergleiche den Saison-Namen
@@ -102,7 +101,7 @@ class _TeamScreenState extends State<TeamScreen> {
 
     // Filter für Jugend und Erwachsene
     if (selectedAgeGroup == 'Jugend') {
-      filteredResults = filteredResults
+      filteredTeams = filteredTeams
           .where((result) =>
               result.mannschaft.startsWith("U9") ||
               result.mannschaft.startsWith("U10") ||
@@ -111,7 +110,7 @@ class _TeamScreenState extends State<TeamScreen> {
               result.mannschaft.startsWith("Junioren"))
           .toList();
     } else if (selectedAgeGroup == 'Erwachsene') {
-      filteredResults = filteredResults
+      filteredTeams = filteredTeams
           .where((result) =>
               !result.mannschaft.startsWith("U9") &&
               !result.mannschaft.startsWith("U10") &&
@@ -120,8 +119,6 @@ class _TeamScreenState extends State<TeamScreen> {
               !result.mannschaft.startsWith("Junioren"))
           .toList();
     }
-
-    return filteredResults;
   }
 
   // Logik für die Teamreihenfolge
@@ -234,6 +231,7 @@ class _TeamScreenState extends State<TeamScreen> {
                         onChanged: (value) {
                           setState(() {
                             selectedAgeGroup = value!;
+                            getFilteredResults();
                           });
                         },
                       ),
@@ -244,11 +242,11 @@ class _TeamScreenState extends State<TeamScreen> {
             },
           ),
           // Anzeige der Teams
-          if (teams.isNotEmpty)
+          if (filteredTeams.isNotEmpty)
             Expanded(
               child: ListView(
-                children: teams.map((team) {
-                  return GameResultsTile(gameResult: team);
+                children: filteredTeams.map((teamT) {
+                  return TeamTile(teamTile: teamT);
                 }).toList(),
               ),
             ),

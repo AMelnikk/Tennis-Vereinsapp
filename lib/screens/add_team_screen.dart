@@ -28,7 +28,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
   String _selectedMannschaft = "";
   String _selectedLiga = "";
   bool _isLoading = false;
-  File? _selectedPhoto; // Die Variable, die das ausgewählte Foto speichert
+  File? _selectedPhoto; // Variable to hold the selected image file
+  Uint8List? _photoBlob; // Variable to hold the photo as bytes
   String _selectedSaisonKey = '';
   SaisonData? _selectedSaison;
   List<SaisonData> filterSeasons = [];
@@ -37,6 +38,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     'url': TextEditingController(),
     'gruppe': TextEditingController(),
     'matchbilanz': TextEditingController(),
+    'mannschaftsführerName': TextEditingController(),
+    'mannschaftsführerTel': TextEditingController(),
     'satzbilanz': TextEditingController(),
     'position': TextEditingController(),
     'kommentar': TextEditingController(),
@@ -82,18 +85,21 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
 
     try {
       final provider = Provider.of<TeamProvider>(context, listen: false);
-
+      _convertPhotoToBlob();
       final newEntry = Team(
         url: _controllers['url']?.text ?? '',
         saison: _selectedSaisonKey,
         mannschaft: _selectedMannschaft,
         liga: _selectedLiga,
         gruppe: _controllers['gruppe']?.text ?? '',
+        mfName: _controllers['mannschaftsführerName']?.text ?? '',
+        mfTel: _controllers['mannschaftsführerTel']?.text ?? '',
         matchbilanz: _controllers['matchbilanz']?.text ?? '',
         satzbilanz: _controllers['satzbilanz']?.text ?? '',
         position: _controllers['position']?.text ?? '',
         kommentar: _controllers['kommentar']?.text ?? '',
         pdfBlob: _pdfPath != null ? await _readPdfFile() : null,
+        photoBlob: _photoBlob,
       );
 
       await provider.addTeam(newEntry);
@@ -150,7 +156,10 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
       _controllers['satzbilanz']?.text = entry.satzbilanz;
       _controllers['position']?.text = entry.position;
       _controllers['kommentar']?.text = entry.kommentar;
-      _pdfBlob = null;
+      _controllers['mannschaftsführerName']?.text = entry.mfName;
+      _controllers['mannschaftsführerTel']?.text = entry.mfTel;
+      _pdfBlob = entry.pdfBlob;
+      _photoBlob = entry.photoBlob;
     });
   }
 
@@ -214,10 +223,12 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                       const SizedBox(height: 5),
                       _buildPhotoSelector(),
                       const SizedBox(height: 5),
+                      _buildPdfSelector(), // <-- Hier hinzufügen
+                      const SizedBox(height: 5),
                       _buildActionButtons(),
                       const SizedBox(height: 5),
-                      // Wrap the table in a scrollable widget
-                      Expanded(
+                      SizedBox(
+                        height: 300, // Sichere Höhe setzen
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
                           child: _buildGameResultsTable(provider),
@@ -357,8 +368,8 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     "Herren 40 II",
     "Herren 50",
     "Damen",
-    "Junioren",
-    "Junioren II",
+    "Junioren 18",
+    "Junioren 18 II",
     "Knaben",
     "Knaben II",
     "Bambini",
@@ -382,20 +393,49 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     "Landesliga 1"
   ];
 
+  // Method to select the photo
   Widget _buildPhotoSelector() {
-    return ElevatedButton(
-      onPressed: () async {
-        final ImagePicker picker = ImagePicker();
-        final XFile? photo =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (photo != null) {
-          setState(() {
-            _selectedPhoto = File(photo.path); // Hier wird das Bild gespeichert
-          });
-        }
-      },
-      child: const Text('Foto auswählen'),
+    return Row(
+      children: [
+        ElevatedButton(
+          onPressed: () async {
+            final ImagePicker picker = ImagePicker();
+            final XFile? photo =
+                await picker.pickImage(source: ImageSource.gallery);
+            if (photo != null) {
+              final bytes =
+                  await photo.readAsBytes(); // Lies das Bild als Bytes
+              setState(() {
+                _photoBlob = bytes; // Speichere die Bytes für Flutter Web
+              });
+            }
+          },
+          child: const Text('Foto auswählen'),
+        ),
+        const SizedBox(width: 10),
+        if (_photoBlob != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(
+              _photoBlob!,
+              height: 100,
+              width: 100,
+              fit: BoxFit.cover,
+            ),
+          ),
+      ],
     );
+  }
+
+  // Method to convert the photo to bytes and assign it to `photoBlob`
+  void _convertPhotoToBlob() async {
+    if (_selectedPhoto != null) {
+      final bytes =
+          await _selectedPhoto!.readAsBytes(); // Convert file to bytes
+      setState(() {
+        _photoBlob = bytes; // Update the state with the bytes
+      });
+    }
   }
 
   Widget _buildDropdownField({
@@ -451,22 +491,40 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     );
   }
 
-  // Dein bereits definiertes Widget
   Widget _buildPdfSelector() {
     return Padding(
       padding: const EdgeInsets.only(top: 0.0),
       child: Row(
         children: [
           TextButton(
-            onPressed: _pickPdfFile, // Hier rufst du _pickPdfFile auf
+            onPressed: () async {
+              _pickPdfFile(); // Assuming _pickPdfFile() is a method that doesn't return anything
+              setState(
+                  () {}); // This simply triggers a rebuild, no need to use it
+            },
             child: Text('PDF auswählen'),
           ),
-          if (_pdfBlob != null) ...[
-            Text(
-              'PDF ausgewählt: ${_pdfPath!.split('/').last}', // Zeige den Dateinamen an
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(width: 10),
+          if (_pdfBlob != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'PDF ausgewählt: ${_pdfPath!.split('/').last}', // Zeige den Dateinamen an
+                    overflow: TextOverflow.ellipsis, // Verhindert Textüberlauf
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _pdfBlob = null; // Setze das PDF auf null
+                      _pdfPath = null; // Setze den Pfad auf null
+                    });
+                  },
+                ),
+              ],
             ),
-          ],
         ],
       ),
     );
@@ -489,9 +547,6 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
         // Optional: Speichere auch den Pfad, wenn du ihn benötigst
         _pdfPath = result.files.single.path;
       });
-    } else {
-      // Hier kannst du Fehlerbehandlung hinzufügen, falls keine Datei ausgewählt wurde
-      print('Keine Datei ausgewählt oder Fehler beim Laden der Datei');
     }
   }
 

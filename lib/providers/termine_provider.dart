@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:verein_app/models/calendar_event.dart';
+import '../models/calendar_event.dart';
 
 class TermineProvider with ChangeNotifier {
   TermineProvider(this._token);

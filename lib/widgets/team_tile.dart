@@ -44,9 +44,7 @@ class TeamTile extends StatelessWidget {
 
   Future<void> _launchURL(BuildContext context) async {
     try {
-      print("launching");
       final Uri url = Uri.parse(teamTile.url); // Parse the URL
-      // if (await canLaunchUrl(url)) {
       await launchUrl(
         url,
         mode: LaunchMode.externalApplication, // Open in external browser

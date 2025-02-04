@@ -15,7 +15,7 @@ class TeamProvider with ChangeNotifier {
     //  throw Exception("Token fehlt");
     //}
 
-    if (_teams.isNotEmpty && this._saisonKey == saisonKey) {
+    if (_teams.isNotEmpty && _saisonKey == saisonKey) {
       return _teams;
     }
 
@@ -40,7 +40,7 @@ class TeamProvider with ChangeNotifier {
           });
 
           _teams = loadedData;
-          this._saisonKey = saisonKey;
+          _saisonKey = saisonKey;
           if (kDebugMode) {
             print('Team Daten geladen for Saison: $saisonKey');
           }

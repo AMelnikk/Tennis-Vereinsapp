@@ -93,8 +93,8 @@ class MyApp extends StatelessWidget {
             ),
             home: const MyHomePage(),
             routes: {
-              TeamScreen.routename: (ctx) => TeamScreen(),
-              TeamDetailScreen.routename: (ctx) => TeamDetailScreen(),
+              TeamScreen.routename: (ctx) => const TeamScreen(),
+              TeamDetailScreen.routename: (ctx) => const TeamDetailScreen(),
               DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
               TrainersScreen.routename: (ctx) => const TrainersScreen(),
               AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),

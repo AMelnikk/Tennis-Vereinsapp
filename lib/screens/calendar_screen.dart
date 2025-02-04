@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -8,10 +7,8 @@ import 'package:verein_app/popUps/calender_show_day_events_popup.dart';
 import 'package:verein_app/popUps/calender_show_event_details_popup.dart';
 import 'package:verein_app/providers/team_result_provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:verein_app/utils/app_colors.dart';
 import 'package:verein_app/widgets/verein_appbar.dart';
-import 'dart:convert'; // Für utf8-Encodierung
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -59,21 +56,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Arbeitseinsatz':
-        return const Color(0xFFEF6C00); // Gedämpftes Orange
-      case 'Termin':
-        return const Color.fromARGB(255, 210, 25, 25); // Rot
-      case 'Jugendtermin':
-        return const Color(0xFF388E3C); // Gedämpftes Grün
-      case 'Ligaspiel':
-        return const Color.fromARGB(255, 29, 32, 185); // Gedämpftes Gelb
-      default:
-        return Colors.grey[600]!; // Standard Grau
-    }
   }
 
   @override
@@ -345,7 +327,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           horizontal: 4,
         ),
         decoration: BoxDecoration(
-          color: _getCategoryColor(event.category),
+          color: getCategoryColor(event.category),
           borderRadius: BorderRadius.circular(0),
         ),
         child: Text(

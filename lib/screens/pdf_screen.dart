@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:verein_app/popUps/pdf_download_popup.dart';
 //import 'package:share_plus/share_plus.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -91,48 +92,26 @@ class _PdfScreenState extends State<PdfScreen> {
                   child: exists
                       ? FloatingActionButton(
                           onPressed: () {
-                            if (io.Platform.isAndroid) {
-                              OpenFilex.open(downloadPath,
-                                  type: "application/pdf");
-                            } else {
-                              OpenFilex.open(downloadPath,
-                                  type: "application/pdf");
-                            }
+                            OpenFilex.open(downloadPath,
+                                type: "application/pdf");
                           },
                           child: const Icon(Icons.open_in_new),
                         )
                       : FloatingActionButton(
                           onPressed: () async {
                             String path = await downloadPdf();
-                            if (!mounted) return;
-
                             setState(() {
                               exists = true;
                             });
+
+                            // Nun sicherstellen, dass der BuildContext noch verfügbar ist, bevor er verwendet wird
                             if (mounted) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  content: const Text(
-                                      "Datei wurde erfolgreich heruntergeladen"),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text("Ok"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        OpenFilex.open(path,
-                                            type: "application/pdf");
-                                      },
-                                      child: const Text("Öffnen"),
-                                    ),
-                                  ],
-                                ),
-                              );
+                              // Hier prüfen wir explizit, ob der Navigator noch verwendet werden kann
+                              if (!Navigator.canPop(context)) return;
+
+                              // Zeige Dialog nur, wenn der Widget-Context noch verfügbar ist
+                              showDownloadDialog(
+                                  context, path); // Dialog sicher anzeigen
                             }
                           },
                           child: const Icon(Icons.download),

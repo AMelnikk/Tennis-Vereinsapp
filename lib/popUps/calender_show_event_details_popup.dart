@@ -23,6 +23,7 @@ void showEventDetails(BuildContext context, CalendarEvent event) {
 }
 
 Widget _buildEventDetailsCard(BuildContext context, CalendarEvent event) {
+  final messenger = ScaffoldMessenger.of(context); // Messenger holen
   return Dialog(
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.zero), // Eckiger Rahmen
@@ -78,7 +79,7 @@ Widget _buildEventDetailsCard(BuildContext context, CalendarEvent event) {
           Align(
             alignment: Alignment.center,
             child: ElevatedButton(
-              onPressed: () => exportEventAsIcs(event),
+              onPressed: () => exportEventAsIcs(messenger, event),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,

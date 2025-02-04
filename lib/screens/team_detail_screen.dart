@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/models/calendar_event.dart';
 import 'package:verein_app/models/season.dart';
 import 'package:verein_app/models/team.dart';
 import 'package:verein_app/models/tennismatch.dart';
 import 'package:verein_app/providers/season_provider.dart';
 import 'package:verein_app/providers/team_result_provider.dart';
+import 'package:verein_app/utils/app_colors.dart';
+import 'package:verein_app/utils/app_utils.dart';
 
 class TeamDetailScreen extends StatefulWidget {
   static const routename = "/team-detail";
@@ -40,6 +41,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context); // Messenger holen
     final saisonProvider = Provider.of<SaisonProvider>(context, listen: false);
     final saisonData = saisonProvider.getSaisonDataForSaisonKey(team.saison);
     return Scaffold(
@@ -109,14 +111,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     activeTab, team.mannschaft, saisonData),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Fehler: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
                     return snapshot
                         .data!; // Das Widget, das zurückgegeben wurde
                   } else {
-                    return Center(child: Text('Keine Daten verfügbar'));
+                    appError(messenger, 'Keine Daten verfügbar');
+                    return const Center(child: Text('Keine Daten verfügbar'));
                   }
                 },
               ),
@@ -129,7 +132,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   Widget getMannschaftDetails(SaisonData saisonData) {
     return Container(
-      padding: EdgeInsets.all(5),
+      padding: const EdgeInsets.all(5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -143,7 +146,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 minimumSize: const Size(double.infinity, 50),
                 padding: const EdgeInsets.symmetric(
                     vertical: 16), // Mehr Innenabstand
-                shape: RoundedRectangleBorder(
+                shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero, // Ecken eckig
                 ),
               ),
@@ -224,18 +227,6 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   Future<Widget> getMannschaftsSpiele(
       int activeTab, String mannschaftName, SaisonData saisonData) async {
     if (activeTab == 0) {
-      if (saisonData == null) {
-        return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Text("Saison-Daten für die Mannschaft nicht gefunden."),
-        );
-      }
-
       List<TennisMatch> mannschaftsSpiele = [];
 
       if (saisonData.jahr != -1) {
@@ -246,6 +237,10 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         mannschaftsSpiele.addAll(spieleErstesJahr);
       }
 
+      // Statt innerhalb der async-Methode auf den BuildContext zuzugreifen,
+      // prüfen wir hier nach der asynchronen Operation, ob das Widget noch im Baum ist
+      if (!mounted) return Container(); // Return an empty widget if not mounted
+
       if (saisonData.jahr2 != -1) {
         List<TennisMatch> spieleZweitesJahr =
             await Provider.of<LigaSpieleProvider>(context, listen: false)
@@ -253,6 +248,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                     saisonData.jahr2, mannschaftName, saisonData.key);
         mannschaftsSpiele.addAll(spieleZweitesJahr);
       }
+
+      if (!mounted) return Container(); // Check again before returning
 
       if (mannschaftsSpiele.isEmpty) {
         return Container(
@@ -283,27 +280,8 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                   ? spiel.altersklasse
                   : spiel.gast;
 
-              bool ergebnisVorhanden =
-                  spiel.ergebnis.isNotEmpty && spiel.ergebnis.contains(":");
-              String ergebnisText = spiel.ergebnis;
-
-              Color ergebnisFarbe = Colors.yellowAccent!;
-              if (ergebnisVorhanden) {
-                List<String> ergebnisTeile = spiel.ergebnis.split(":");
-                int heimMatchpunkte = int.tryParse(ergebnisTeile[0]) ?? 0;
-                int gastMatchpunkte = int.tryParse(ergebnisTeile[1]) ?? 0;
-
-                if ((heimMatchpunkte > gastMatchpunkte &&
-                        spiel.heim == "TeG Altmühlgrund") ||
-                    (heimMatchpunkte < gastMatchpunkte &&
-                        spiel.gast == "TeG Altmühlgrund")) {
-                  ergebnisFarbe = Colors.green;
-                } else if (heimMatchpunkte == gastMatchpunkte) {
-                  ergebnisFarbe = Colors.grey;
-                } else {
-                  ergebnisFarbe = Colors.red;
-                }
-              }
+              Color ergebnisFarbe =
+                  getErgebnisCellColor(spiel.ergebnis, spiel.heim, spiel.gast);
 
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -347,7 +325,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (ergebnisText.isEmpty) ...[
+                          if (spiel.ergebnis.isEmpty) ...[
                             Text(
                               DateFormat('dd.MM.yy').format(spiel.datum),
                               style: const TextStyle(
@@ -369,9 +347,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                               maxLines: 1,
                             ),
                           ],
-                          if (ergebnisText.isNotEmpty) ...[
+                          if (spiel.ergebnis.isNotEmpty) ...[
                             Text(
-                              ergebnisText,
+                              spiel.ergebnis,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
@@ -436,13 +414,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   Widget getSpieler(int activeTab) {
     if (activeTab == 0) {
       return Container(
-        margin: EdgeInsets.all(16),
-        padding: EdgeInsets.all(16),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Column(
+        child: const Column(
           children: [
             // Placeholder for players (will be filled later)
             Text("Spieler/-innen - In Arbeit",

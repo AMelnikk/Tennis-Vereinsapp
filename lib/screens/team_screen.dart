@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/season.dart';
 import 'package:verein_app/providers/season_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../models/team.dart';
 import '../providers/team_provider.dart';
 import '../widgets/team_tile.dart';
@@ -16,6 +17,7 @@ class TeamScreen extends StatefulWidget {
 }
 
 class _TeamScreenState extends State<TeamScreen> {
+  // ignore: unused_field
   var _isLoading = true;
   List<Team> teams = [];
   List<Team> filteredTeams = [];
@@ -32,6 +34,7 @@ class _TeamScreenState extends State<TeamScreen> {
 
   // Methode zum Abrufen der Saisondaten
   Future<void> loadSeasonData() async {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     try {
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
@@ -50,12 +53,13 @@ class _TeamScreenState extends State<TeamScreen> {
         });
       }
     } catch (error) {
-      print("Fehler beim Laden der Saisons: $error");
+      appError(messenger, "Fehler beim Laden der Saisons: $error");
     }
   }
 
   // Abruf der Teams
   Future<void> getData() async {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     try {
       setState(() {
         _isLoading = true;
@@ -65,7 +69,7 @@ class _TeamScreenState extends State<TeamScreen> {
         teams = await Provider.of<TeamProvider>(context, listen: false).getData(
             selectedSeason!.key); // Wir holen die Teams für die gewählte Saison
         getFilteredResults();
-        print('Teams geladen: ${teams.length} Teams');
+        appError(messenger, 'Teams geladen: ${teams.length} Teams');
       } else {
         teams = [];
       }
@@ -77,12 +81,6 @@ class _TeamScreenState extends State<TeamScreen> {
       setState(() {
         _isLoading = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to load game results. Please try again.')),
-        );
-      }
     }
   }
 

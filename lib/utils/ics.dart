@@ -1,16 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:verein_app/models/calendar_event.dart';
+import 'package:verein_app/utils/app_utils.dart';
 
-void exportEventAsIcs(CalendarEvent event) async {
+void exportEventAsIcs(
+    ScaffoldMessengerState messenger, CalendarEvent event) async {
   final icsContent = _generateIcsContent(event);
   final icsFilePath = await _saveIcsFile(event, icsContent);
   if (icsFilePath != null) {
-    await _shareIcsFile(icsFilePath);
+    await _shareIcsFile(messenger, icsFilePath);
   }
 }
 
@@ -54,17 +57,18 @@ Future<String?> _saveIcsFile(CalendarEvent event, String icsContent) async {
   }
 }
 
-Future<void> _shareIcsFile(String icsFilePath) async {
+Future<void> _shareIcsFile(
+    ScaffoldMessengerState messenger, String icsFilePath) async {
   try {
     final file = File(icsFilePath);
     if (await file.exists()) {
-      print("Teile Datei: $icsFilePath");
+      appError(messenger, "Teile Datei: $icsFilePath");
       await Share.shareXFiles([XFile(icsFilePath)], text: 'Termin exportieren');
     } else {
-      print("Fehler: Datei existiert nicht! Pfad: $icsFilePath");
+      appError(messenger, "Fehler: Datei existiert nicht! Pfad: $icsFilePath");
     }
   } catch (e) {
-    print("Fehler beim Teilen der Datei: $e");
+    appError(messenger, "Fehler beim Teilen der Datei: $e");
   }
 }
 

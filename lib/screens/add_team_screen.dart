@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:verein_app/models/season.dart';
 import 'package:verein_app/providers/season_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../providers/team_provider.dart';
 import '../models/team.dart';
 
@@ -31,6 +32,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
   File? _selectedPhoto; // Variable to hold the selected image file
   Uint8List? _photoBlob; // Variable to hold the photo as bytes
   String _selectedSaisonKey = '';
+  // ignore: unused_field
   SaisonData? _selectedSaison;
   List<SaisonData> filterSeasons = [];
 
@@ -78,6 +80,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
   }
 
   void _saveEntry() async {
+    final messenger = ScaffoldMessenger.of(context); // Messenger holen
     if (!_formKey.currentState!.validate() || _isLoading) return;
     setState(() {
       _isLoading = true;
@@ -106,8 +109,9 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
       await provider.getData(newEntry.saison); // Aktualisierte Daten abrufen
     } catch (error) {
       // Fehlerbehandlung: z.B. eine Snackbar anzeigen
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Fehler beim Speichern: ${error.toString()}')));
+      if (mounted) {
+        appError(messenger, "Fehler beim Speichern: ${error.toString()}");
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -502,7 +506,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
               setState(
                   () {}); // This simply triggers a rebuild, no need to use it
             },
-            child: Text('PDF auswählen'),
+            child: const Text('PDF auswählen'),
           ),
           const SizedBox(width: 10),
           if (_pdfBlob != null)

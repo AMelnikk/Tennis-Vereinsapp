@@ -9,6 +9,7 @@ import 'package:verein_app/models/team.dart';
 import 'package:verein_app/models/tennismatch.dart';
 import 'package:verein_app/models/season.dart';
 import 'package:verein_app/providers/team_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../providers/team_result_provider.dart';
 import '../providers/season_provider.dart'; // Importiere den SaisonProvider
 import '../widgets/verein_appbar.dart';
@@ -29,28 +30,36 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
+
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
       List<SaisonData> loadedSeasons = await saisonProvider.getAllSeasons();
 
-      if (loadedSeasons.isNotEmpty) {
+      if (mounted) {
+        // Sicherstellen, dass das Widget noch existiert
         setState(() {
-          seasons = loadedSeasons;
-          selectedSeason = seasons.first.key;
-          setState(() {
-            _isLoading = false;
-          });
+          if (loadedSeasons.isNotEmpty) {
+            seasons = loadedSeasons;
+            selectedSeason = seasons.first.key;
+          }
+          _isLoading = false;
         });
       } else {
-        print("Keine Saisondaten gefunden!");
+        appError(messenger, "Widget wurde während des Ladevorgangs entfernt.");
       }
     });
   }
 
   Future<void> importCsvAndSaveToFirebase(String saisonKey) async {
+    final messenger =
+        ScaffoldMessenger.of(context); // Messenger vorher speichern
+    final ligaSpieleProvider =
+        Provider.of<LigaSpieleProvider>(context, listen: false);
+    final teamProvider = Provider.of<TeamProvider>(context, listen: false);
     if (selectedSeason.isEmpty) {
-      showSnackBar("Bitte wählen Sie eine Saison aus.");
+      appError(messenger, "Bitte wählen Sie eine Saison aus.");
       return;
     }
     setState(() {
@@ -81,30 +90,27 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
         }
 
         if (spiele.isNotEmpty) {
-          await Provider.of<LigaSpieleProvider>(context, listen: false)
-              .saveLigaSpiele(spiele);
+          await ligaSpieleProvider.saveLigaSpiele(spiele);
 
           // Extrahiere die eindeutigen Teams
           Set<Team> distinctTeams = extractDistinctTeams(spiele);
 
           // Füge die Teams hinzu oder aktualisiere sie
-          await Provider.of<TeamProvider>(context, listen: false)
-              .addOrUpdateTeams(
-                  saisonKey, distinctTeams); // Die Methode aufrufen
+          await teamProvider.addOrUpdateTeams(saisonKey, distinctTeams);
 
           if (!mounted) return; // Prüfen, ob das Widget noch existiert
 
-          showSnackBar("Spiele und Teams erfolgreich hochgeladen!");
+          appError(messenger, "Spiele und Teams erfolgreich hochgeladen!");
         } else {
           if (!mounted) return;
 
-          showSnackBar("Keine gültigen Spiele gefunden.");
+          appError(messenger, "Keine gültigen Spiele gefunden.");
         }
       } else {
-        showSnackBar("Keine Datei ausgewählt.");
+        appError(messenger, "Keine Datei ausgewählt.");
       }
     } catch (error) {
-      showSnackBar("Fehler: $error");
+      appError(messenger, "Fehler: $error");
     } finally {
       setState(() {
         _isLoading = false;
@@ -160,11 +166,6 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
     }
 
     return spiele;
-  }
-
-  void showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   // Methode, um eine neue Saison anzulegen

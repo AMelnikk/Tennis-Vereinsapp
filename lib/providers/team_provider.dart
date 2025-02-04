@@ -8,11 +8,16 @@ class TeamProvider with ChangeNotifier {
   TeamProvider(this._token);
   final String? _token;
   List<Team> _teams = [];
+  String _saisonKey = '';
 
   Future<List<Team>> getData(String saisonKey) async {
     //if (_token == null || _token.isEmpty) {
     //  throw Exception("Token fehlt");
     //}
+
+    if (_teams.isNotEmpty && this._saisonKey == saisonKey) {
+      return _teams;
+    }
 
     final List<Team> loadedData = [];
     final url = Uri.parse(
@@ -29,16 +34,16 @@ class TeamProvider with ChangeNotifier {
 
         // Überprüfen, ob Daten existieren
         if (extractedData != null) {
-          if (kDebugMode) {
-            print('Daten erhalten: $extractedData');
-          }
-
           // Daten in GameResult-Objekte umwandeln
           extractedData.forEach((resId, resData) {
             loadedData.add(Team.fromJson(resData, resId));
           });
 
           _teams = loadedData;
+          this._saisonKey = saisonKey;
+          if (kDebugMode) {
+            print('Team Daten geladen for Saison: $saisonKey');
+          }
         } else {
           if (kDebugMode) {
             print('Keine Daten vorhanden.');
@@ -79,12 +84,17 @@ class TeamProvider with ChangeNotifier {
           'mannschaft': newResult.mannschaft,
           'liga': newResult.liga,
           'gruppe': newResult.gruppe, // Standardwert setzen
+          'mf_name': newResult.mfName, // Standardwert setzen
+          'mf_tel': newResult.mfTel, // Standardwert setzen
           'matchbilanz': newResult.matchbilanz, // Standardwert setzen
           'satzbilanz': newResult.satzbilanz, // Standardwert setzen
           'position': newResult.position, // Standardwert setzen
           'kommentar': newResult.kommentar, // Standardwert setzen
           'pdfBlob': newResult.pdfBlob != null
               ? base64Encode(newResult.pdfBlob!)
+              : null,
+          'photoBlob': newResult.photoBlob != null
+              ? base64Encode(newResult.photoBlob!)
               : null,
           'creationDate': date,
         }),

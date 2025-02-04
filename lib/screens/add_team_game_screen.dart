@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:verein_app/models/team.dart';
@@ -139,9 +140,12 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
       if (fields.length >= 10) {
         int index = fields[5].indexOf("Gr");
         String gruppe = fields[5].substring(index);
+        final String datumString = fields[0]; // "19.10.2024"
+        final DateFormat dateFormat = DateFormat("dd.MM.yyyy");
+        DateTime? datum = dateFormat.parse(datumString);
         spiele.add(TennisMatch(
           id: fields[8],
-          datum: fields[0],
+          datum: datum,
           uhrzeit: fields[1],
           altersklasse: fields[2],
           spielklasse: fields[3],
@@ -151,9 +155,6 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
           spielort: fields[9],
           saison: saisonKey,
           ergebnis: '',
-          mf_name: '',
-          mf_tel: '',
-          photo: '',
         ));
       }
     }

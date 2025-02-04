@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:verein_app/models/calendar_event.dart';
+import 'package:verein_app/popUps/calender_show_day_events_popup.dart';
+import 'package:verein_app/popUps/calender_show_event_details_popup.dart';
 import 'package:verein_app/providers/team_result_provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -219,7 +221,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         });
 
         if (eventsForDay.isNotEmpty) {
-          _showEventPopup(eventsForDay);
+          showEventPopup(context, eventsForDay, _selectedDay);
         }
       },
       child: Container(
@@ -312,13 +314,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (eventsForDay.isNotEmpty) ...[
           // Erster Event
           _buildEventItem(eventsForDay.first, () {
-            _showEventDetails(context, eventsForDay.first);
+            showEventDetails(context, eventsForDay.first);
           }),
           // Zweiter Event oder "+X mehr"
           if (eventsForDay.length > 1) ...[
             if (eventsForDay.length == 2)
               _buildEventItem(eventsForDay[1], () {
-                _showEventDetails(context, eventsForDay[1]);
+                showEventDetails(context, eventsForDay[1]);
               })
             else
               Text(
@@ -460,325 +462,5 @@ class _CalendarScreenState extends State<CalendarScreen> {
       outsideTextStyle: const TextStyle(fontSize: 10, color: Colors.grey),
       cellAlignment: Alignment.topRight,
     );
-  }
-
-  void _showEventPopup(List<CalendarEvent> eventsForDay) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Initiale Position für Zentrierung
-            Offset position = Offset(
-              (MediaQuery.of(dialogContext).size.width - 300) / 2,
-              (MediaQuery.of(dialogContext).size.height - 200) / 2,
-            );
-
-            return Scaffold(
-              backgroundColor: Colors.transparent,
-              body: Stack(
-                children: [
-                  // Hintergrund zum Schließen des Popups
-                  GestureDetector(
-                    onTap: () => Navigator.of(dialogContext).pop(),
-                    child: Container(color: Colors.black54),
-                  ),
-                  // Verschiebbares Popup
-                  Positioned(
-                    left: position.dx,
-                    top: position.dy,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        setState(() {
-                          position += details.delta; // Position aktualisieren
-                        });
-                      },
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Container(
-                          width: 300,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 8,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              // "X"-Button oben rechts
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: IconButton(
-                                  icon: const Icon(Icons.close,
-                                      color: Colors.black),
-                                  onPressed: () =>
-                                      Navigator.of(dialogContext).pop(),
-                                ),
-                              ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(
-                                      height: 8), // Platz für den "X"-Button
-                                  // Datum anzeigen
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 8.0, right: 32),
-                                    child: Text(
-                                      DateFormat('dd. MMMM yyyy')
-                                          .format(_selectedDay),
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  // Event-Liste
-                                  if (eventsForDay.isEmpty)
-                                    const Center(
-                                      child:
-                                          Text("Keine Events für diesen Tag."),
-                                    )
-                                  else
-                                    SizedBox(
-                                      height:
-                                          500, // Begrenzte Höhe für Scrollbarkeit
-                                      child: ListView.builder(
-                                        itemCount: eventsForDay.length,
-                                        itemBuilder: (context, index) {
-                                          final event = eventsForDay[index];
-                                          return GestureDetector(
-                                            onTap: () {
-                                              _showEventDetails(
-                                                  dialogContext, event);
-                                            },
-                                            child: Container(
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8),
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: _getCategoryColor(
-                                                    event.category),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  const Icon(Icons.event,
-                                                      color: Colors.white),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      event.title,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showEventDetails(BuildContext context, CalendarEvent event) {
-    showDialog(
-      context: context,
-      barrierDismissible:
-          false, // Dialog kann nur durch Schließen-Button geschlossen werden
-      builder: (BuildContext context) {
-        return Draggable(
-          feedback: Material(
-            type: MaterialType.transparency,
-            child: _buildEventDetailsCard(context, event),
-          ),
-          childWhenDragging: const SizedBox.shrink(),
-          child: Center(
-            child: _buildEventDetailsCard(context, event),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEventDetailsCard(BuildContext context, CalendarEvent event) {
-    return Dialog(
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero), // Eckiger Rahmen
-      child: Container(
-        width: 300, // Weniger breit
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Titel und Schließen-Button in einer Zeile
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  event.category,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Schließt den Dialog
-                  },
-                ),
-              ],
-            ),
-
-            // Blaue Trennlinie
-            Container(
-              height: 2,
-              color: Colors.blueAccent,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-            ),
-
-            // Kategorie + Teams
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-                children: [
-                  const TextSpan(text: "Beschreibung:\n"),
-                  TextSpan(text: "${event.title}\n"),
-                  TextSpan(text: event.description),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Termin-Export Button in Blau
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () => _exportEventAsIcs(event),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // Eckiger Button
-                  ),
-                ),
-                child: const Text("Termin exportieren"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _exportEventAsIcs(CalendarEvent event) async {
-    final icsContent = _generateIcsContent(event);
-    final icsFilePath = await _saveIcsFile(event, icsContent);
-    if (icsFilePath != null) {
-      await _shareIcsFile(icsFilePath);
-    } else {
-      print("Fehler: Die Datei konnte nicht gespeichert werden.");
-    }
-  }
-
-  String _generateIcsContent(CalendarEvent event) {
-    final startDateTime = _formatDateTimeForIcs(event.date);
-    final endDateTime =
-        _formatDateTimeForIcs(event.date.add(const Duration(hours: 1)));
-
-    return '''
-BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:TeG Altmuehlgrund
-METHODE:PUBLISH
-BEGIN:VEVENT
-UID:event_${event.id}
-LOCATION:Tennisplatz
-SUMMARY:${event.title}
-DESCRIPTION:${event.description}
-CLASS:PUBLIC
-DTSTART;TZID=UTC:$startDateTime
-DTEND;TZID=UTC:$endDateTime
-DTSTAMP:$startDateTime
-END:VEVENT
-END:VCALENDAR
-'''
-        .trimLeft(); // Entfernt unnötige Leerzeichen
-  }
-
-  Future<String?> _saveIcsFile(CalendarEvent event, String icsContent) async {
-    try {
-      final directory = await getTemporaryDirectory(); // Besser für das Teilen
-      if (directory == null) {
-        print("Fehler: Konnte keinen Speicherort finden.");
-        return null;
-      }
-
-      final sanitizedTitle = event.title
-          .replaceAll(RegExp(r'[^\w\s]'), '_'); // Sonderzeichen ersetzen
-      final icsFilePath = '${directory.path}/event_$sanitizedTitle.ics';
-      final file = File(icsFilePath);
-      await file.writeAsString(icsContent, encoding: utf8);
-
-      print("ICS-Datei gespeichert: $icsFilePath");
-      return icsFilePath;
-    } catch (e) {
-      print("Fehler beim Speichern der Datei: $e");
-      return null;
-    }
-  }
-
-  Future<void> _shareIcsFile(String icsFilePath) async {
-    try {
-      final file = File(icsFilePath);
-      if (await file.exists()) {
-        print("Teile Datei: $icsFilePath");
-        await Share.shareXFiles([XFile(icsFilePath)],
-            text: 'Termin exportieren');
-      } else {
-        print("Fehler: Datei existiert nicht! Pfad: $icsFilePath");
-      }
-    } catch (e) {
-      print("Fehler beim Teilen der Datei: $e");
-    }
-  }
-
-  String _formatDateTimeForIcs(DateTime dateTime) {
-    return DateFormat("yyyyMMdd'T'HHmmss'Z'")
-        .format(dateTime.toUtc()); // Korrekte UTC-Zeit
   }
 }

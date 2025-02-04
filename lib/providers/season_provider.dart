@@ -15,6 +15,19 @@ class SaisonProvider with ChangeNotifier {
   bool isLoading = false;
   List<SaisonData> saisons = [];
 
+  // Diese Methode gibt das SaisonData zurück, das mit dem Namen der Saison übereinstimmt
+  SaisonData getSaisonDataForSaisonKey(String saisonKey) {
+    return saisons.firstWhere(
+      (saisonData) => saisonData.key == saisonKey,
+      orElse: () => SaisonData(
+        key: '',
+        saison: '',
+        jahr: -1,
+        jahr2: -1, // Default values if not found
+      ),
+    );
+  }
+
   Future<void> loadSaisons() async {
     if (isLoading || dataLoaded) return; // Verhindere mehrfaches Laden
     isLoading = true;

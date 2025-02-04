@@ -38,34 +38,22 @@ class FunctionsScreen extends StatelessWidget {
                       Navigator.of(context).pushNamed(TeamScreen.routename);
                     }), // Spielergebnisse
                 FunctionTile(
-                    image: Image.asset("assets/images/Dokumentenbox.webp"),
+                    image: Image.asset("assets/images/Termine.webp"),
+                    onTap: () {
+                      Navigator.of(context).pushNamed(CalendarScreen.routename);
+                    }),
+                FunctionTile(
+                    image: Image.asset("assets/images/Platzbuchung.webp"),
                     onTap: () {
                       Navigator.of(context)
-                          .pushNamed(DocumentsScreen.routename);
-                    }), // Dokumentenbox
-                FunctionTile(
-                    image: Image.asset("assets/images/Trainer.webp"),
-                    onTap: () {
-                      Navigator.of(context).pushNamed(TrainersScreen.routename);
-                    }), // Trainer
+                          .pushNamed(PlaceBookingScreen.routename);
+                    }),
                 FunctionTile(
                     image: Image.asset("assets/images/Fotogalerie.webp"),
                     onTap: () {
                       Navigator.of(context)
                           .pushNamed(PhotoGalleryScreen.routename);
                     }), //Fotogalerie
-                FunctionTile(
-                    image: Image.asset("assets/images/Termine.webp"),
-                    onTap: () {
-                      Navigator.of(context).pushNamed(CalendarScreen.routename);
-                    }),
-                FunctionTile(
-                  image: Image.asset("assets/images/Platzbuchung.webp"),
-                  onTap: () {
-                    Navigator.of(context)
-                        .pushNamed(PlaceBookingScreen.routename);
-                  },
-                ), // Platzbuchung
                 FunctionTile(
                   image: Image.asset("assets/images/Getränkebuchung.webp"),
                   onTap: () {
@@ -82,11 +70,17 @@ class FunctionsScreen extends StatelessWidget {
                     );
                   },
                 ), //Online Shop
-
-                // FunctionTile(
-                //     image: Image.asset("assets/images/Spielergebnisse.jpg"),
-                //     onTap: () {}), //Termine
-                // //Kalender mit auf Datenbank gespeicherten Terminen
+                FunctionTile(
+                    image: Image.asset("assets/images/Dokumentenbox.webp"),
+                    onTap: () {
+                      Navigator.of(context)
+                          .pushNamed(DocumentsScreen.routename);
+                    }), // Dokumentenbox
+                FunctionTile(
+                    image: Image.asset("assets/images/Trainer.webp"),
+                    onTap: () {
+                      Navigator.of(context).pushNamed(TrainersScreen.routename);
+                    }), // Trainer
               ],
             ),
           ),

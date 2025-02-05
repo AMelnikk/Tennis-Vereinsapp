@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import '../popUps/add_season_popup.dart';
 import '../models/team.dart';
 import '../models/tennismatch.dart';
 import '../models/season.dart';
@@ -88,7 +89,7 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
             spiele = _parseCsv(csvString, saisonKey); // Parse the CSV string
           }
         }
-
+        if (!mounted) return;
         if (spiele.isNotEmpty) {
           await ligaSpieleProvider.saveLigaSpiele(spiele);
 
@@ -98,13 +99,8 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
           // Füge die Teams hinzu oder aktualisiere sie
           await teamProvider.addOrUpdateTeams(
               messenger, saisonKey, distinctTeams);
-
-          if (!mounted) return; // Prüfen, ob das Widget noch existiert
-
           appError(messenger, "Spiele und Teams erfolgreich hochgeladen!");
         } else {
-          if (!mounted) return;
-
           appError(messenger, "Keine gültigen Spiele gefunden.");
         }
       } else {
@@ -171,112 +167,6 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
     return spiele;
   }
 
-  // Methode, um eine neue Saison anzulegen
-  // Dialog zur Saison-Erstellung
-  void _showAddSeasonPopup(BuildContext context) {
-    final saisonProvider = Provider.of<SaisonProvider>(context, listen: false);
-    final seasonController =
-        TextEditingController(); // Controller für Saisonname
-    final yearController = TextEditingController(
-        text: DateTime.now()
-            .year
-            .toString()); // Vorbelegung mit dem aktuellen Jahr
-    String seasonType = 'Sommer'; // Standardmäßig Sommer
-    final formKey = GlobalKey<FormState>(); // Für Validierung
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Neue Saison hinzufügen'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: yearController,
-                  decoration: const InputDecoration(labelText: 'Jahr'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.length != 4) {
-                      return 'Bitte geben Sie ein gültiges Jahr ein';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: seasonController,
-                  decoration: const InputDecoration(labelText: 'Saisonname'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Bitte geben Sie einen Saisonname ein';
-                    }
-                    return null;
-                  },
-                ),
-                DropdownButtonFormField<String>(
-                  value: seasonType,
-                  onChanged: (newValue) {
-                    if (newValue != null) {
-                      seasonType = newValue;
-                    }
-                  },
-                  items: const [
-                    DropdownMenuItem(value: 'Sommer', child: Text('Sommer')),
-                    DropdownMenuItem(value: 'Winter', child: Text('Winter')),
-                  ],
-                  decoration: const InputDecoration(labelText: 'Saisonart'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Abbrechen'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState?.validate() ?? false) {
-                  String year = yearController.text;
-
-                  // Berechnung des Keys und der Jahre basierend auf Saisonart
-                  String seasonKey;
-                  int jahr1 = int.parse(year); // Jahr1 als int
-                  int jahr2 = -1; // Standardwert für Jahr2
-
-                  if (seasonType == 'Sommer') {
-                    seasonKey = year; // Sommer = Jahr als Key
-                  } else {
-                    // Winter-Saison
-                    String nextYear = (int.parse(year) + 1).toString();
-                    seasonKey =
-                        '${year.substring(2)}_${nextYear.substring(2)}'; // Winter = Jahr1_Jahr2
-                    jahr2 = int.parse(nextYear); // Jahr2 für Winter
-                  }
-
-                  // Neue Saison anlegen
-                  final saison = SaisonData(
-                    saison: seasonController.text,
-                    key: seasonKey,
-                    jahr: jahr1,
-                    jahr2: jahr2,
-                  );
-                  saisonProvider.saveSaison(saison);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Hinzufügen'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -319,7 +209,7 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
                       children: [
                         ElevatedButton(
                           onPressed: () {
-                            _showAddSeasonPopup(context);
+                            showAddSeasonPopup(context);
                           },
                           child: const Text('Neue Saison hinzufügen'),
                         ),

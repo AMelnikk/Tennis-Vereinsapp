@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../models/calendar_event.dart';
 import '../providers/termine_provider.dart';
 import '../widgets/verein_appbar.dart';
@@ -18,6 +19,7 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
   bool _isLoading = false;
 
   Future<void> importExcelAndSaveToFirebase() async {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     setState(() {
       _isLoading = true;
     });
@@ -61,10 +63,11 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
                     query: query,
                   ));
                 } else {
-                  debugPrint("Ungültige ID oder Datum in der Zeile: $row");
+                  appError(
+                      messenger, "Ungültige ID oder Datum in der Zeile: $row");
                 }
               } else {
-                debugPrint(
+                appError(messenger,
                     "Ungültige Zeile: Es werden die Spalten Datum, Titel, Kategorie, Details und Abfrage (ja/nein) erwartet.");
               }
             }
@@ -76,31 +79,25 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
               await Provider.of<TermineProvider>(context, listen: false)
                   .saveTermineToFirebase(termine);
             }
-            showSnackBar("Termine erfolgreich hochgeladen!");
+            appError(messenger, "Termine erfolgreich hochgeladen!");
           } else {
-            showSnackBar("Keine gültigen Termine gefunden.");
+            appError(messenger, "Keine gültigen Termine gefunden.");
           }
         } else {
-          showSnackBar("Fehler beim Lesen der Datei.");
+          appError(messenger, "Fehler beim Lesen der Datei.");
         }
       } else {
-        showSnackBar("Keine Datei ausgewählt.");
+        appError(messenger, "Keine Datei ausgewählt.");
       }
     } catch (error, stackTrace) {
       debugPrint("Error: $error");
       debugPrint("StackTrace: $stackTrace");
-      showSnackBar("Fehler: $error");
+      appError(messenger, "Fehler: $error");
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-// Define the showSnackBar method to display messages
-  void showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

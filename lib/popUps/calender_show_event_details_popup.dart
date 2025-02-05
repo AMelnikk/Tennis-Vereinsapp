@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:verein_app/models/calendar_event.dart';
-import 'package:verein_app/utils/ics.dart';
+import '../models/calendar_event.dart';
+import '../utils/ics.dart';
 
 void showEventDetails(BuildContext context, CalendarEvent event) {
   showDialog(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:verein_app/models/calendar_event.dart';
-import 'package:verein_app/popUps/calender_show_event_details_popup.dart';
-import 'package:verein_app/utils/app_colors.dart';
+import '../models/calendar_event.dart';
+import '../popUps/calender_show_event_details_popup.dart';
+import '../utils/app_colors.dart';
 
 void showEventPopup(BuildContext context, List<CalendarEvent> eventsForDay,
     DateTime selectedDay) {

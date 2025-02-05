@@ -36,9 +36,24 @@ import "./screens/news_screen.dart";
 import "./screens/add_team_screen.dart";
 import "./screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //const FirebaseOptions firebaseOptions = FirebaseOptions(
+  //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
+  //    authDomain: "db-teg.firebaseapp.com",
+  //    databaseURL: "https://db-teg-default-rtdb.firebaseio.com",
+  //    projectId: "db-teg",
+  //    storageBucket: "db-teg.firebasestorage.app",
+  //    messagingSenderId: "1050815457795",
+  //    appId: "1:1050815457795:web:2d0bc6f9b80793f6e37c36",
+  //    measurementId: "G-LNJY8VGKTG");
+  //try {
+  //  await Firebase.initializeApp();
+  //} catch (e) {
+  //  print("Firebase initialization failed: $e");
+  //}
   await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
     (_) {
@@ -57,29 +72,32 @@ class MyApp extends StatelessWidget {
       builder: (context, _) => MultiProvider(
         providers: [
           ChangeNotifierProvider.value(
-            value: TeamProvider(Provider.of<AuthProvider>(context).token),
+            value: TeamProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: PhotoProvider(Provider.of<AuthProvider>(context).token),
+            value: PhotoProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: NewsProvider(Provider.of<AuthProvider>(context).token),
+            value: NewsProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: TermineProvider(Provider.of<AuthProvider>(context).token),
+            value:
+                TermineProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: LigaSpieleProvider(Provider.of<AuthProvider>(context).token),
+            value: LigaSpieleProvider(
+                Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: UserProvider(Provider.of<AuthProvider>(context).token),
+            value: UserProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: SaisonProvider(Provider.of<AuthProvider>(context).token),
+            value:
+                SaisonProvider(Provider.of<AuthProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
             value: GetraenkeBuchenProvider(
-                Provider.of<AuthProvider>(context).token),
+                Provider.of<AuthProvider>(context).writeToken),
           ),
         ],
         child: Consumer<AuthProvider>(
@@ -91,6 +109,14 @@ class MyApp extends StatelessWidget {
                   backgroundColor: Color.fromRGBO(43, 43, 43, 1),
                   foregroundColor: Colors.white),
             ),
+            localizationsDelegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: [
+              Locale('de', 'DE'), // Deutsch
+            ],
             home: const MyHomePage(),
             routes: {
               TeamScreen.routename: (ctx) => const TeamScreen(),
@@ -103,12 +129,12 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
+              NewsOverviewScreen.routename: (ctx) => NewsOverviewScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
               GetraenkeBuchenScreen.routename: (ctx) =>
-                  Provider.of<AuthProvider>(context).isAuth
+                  Provider.of<AuthProvider>(context).isSignedIn
                       ? const GetraenkeBuchenScreen()
                       : const AuthScreen(pop: false),
               GetraenkeBuchungenDetailsScreen.routename: (ctx) =>

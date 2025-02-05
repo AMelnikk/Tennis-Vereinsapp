@@ -15,6 +15,13 @@ class _NewsScreenState extends State<NewsScreen> {
   bool _isLoading = false;
   bool _isRefreshLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Beim Laden der Seite Daten abrufen
+    getData();
+  }
+
   Future<void> refreshFunction() async {
     setState(() {
       _isRefreshLoading = true;
@@ -72,108 +79,83 @@ class _NewsScreenState extends State<NewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _isRefreshLoading || Provider.of<NewsProvider>(context).isNewsLoading
-        ? const Center(
-            child: CircularProgressIndicator(),
-          )
-        : Provider.of<NewsProvider>(context).loadedNews.isEmpty
-            ? RefreshIndicator(
-                onRefresh: getData,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height -
-                        AppBar().preferredSize.height -
-                        MediaQuery.of(context).padding.bottom -
-                        MediaQuery.of(context).padding.top -
-                        MediaQuery.of(context).viewInsets.bottom -
-                        kBottomNavigationBarHeight,
-                    child: const Center(
-                      child: Text(
-                        "Es gibt noch nichts hier",
-                        style: TextStyle(fontSize: 20),
-                      ),
-                    ),
+    final newsProvider = Provider.of<NewsProvider>(context);
+
+    if (_isRefreshLoading || newsProvider.isNewsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (newsProvider.loadedNews.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: getData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height -
+                AppBar().preferredSize.height -
+                MediaQuery.of(context).padding.bottom -
+                MediaQuery.of(context).padding.top -
+                MediaQuery.of(context).viewInsets.bottom -
+                kBottomNavigationBarHeight,
+            child: const Center(
+              child: Text(
+                "Es gibt noch nichts hier",
+                style: TextStyle(fontSize: 20),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final reversedNews = newsProvider.loadedNews.reversed.toList();
+
+    return RefreshIndicator(
+      onRefresh: refreshFunction,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (ctx, index) {
+                final news = reversedNews[index];
+                return NewsTile(
+                  id: news.id,
+                  title: news.title,
+                  date: news.date,
+                  body: news.body,
+                  photoBlob: news.photoBlob,
+                );
+              },
+              childCount: reversedNews.length,
+            ),
+          ),
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: SizedBox(
+                height: 50,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (newsProvider.hasMore)
+            SliverToBoxAdapter(
+              child: GestureDetector(
+                onTap: getData,
+                child: const SizedBox(
+                  height: 50,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.pending_rounded),
+                      SizedBox(width: 5),
+                      Text("mehr anzeigen"),
+                    ],
                   ),
                 ),
-              )
-            : RefreshIndicator(
-                onRefresh: refreshFunction,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverList.builder(
-                      itemCount:
-                          Provider.of<NewsProvider>(context).loadedNews.length,
-                      itemBuilder: (ctx, index) => NewsTile(
-                        id: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .id,
-                        title: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .title,
-                        date: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .date,
-                        body: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .body,
-                        base64image: Provider.of<NewsProvider>(context)
-                            .loadedNews[Provider.of<NewsProvider>(context)
-                                    .loadedNews
-                                    .length -
-                                1 -
-                                index]
-                            .imageData,
-                      ),
-                    ),
-                    if (_isLoading)
-                      const SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 50,
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                      )
-                    else if ((Provider.of<NewsProvider>(context).hasMore))
-                      SliverToBoxAdapter(
-                        child: GestureDetector(
-                          onTap: getData,
-                          child: const SizedBox(
-                            height: 50,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Icon(Icons.pending_rounded),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Text("mehr anzeigen"),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                  ],
-                ),
-              );
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

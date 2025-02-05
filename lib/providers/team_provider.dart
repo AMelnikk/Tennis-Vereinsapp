@@ -7,8 +7,8 @@ import 'package:verein_app/utils/app_utils.dart';
 import '../models/team.dart';
 
 class TeamProvider with ChangeNotifier {
-  TeamProvider(this._token);
-  final String? _token;
+  TeamProvider(this._writeToken);
+  final String? _writeToken;
   List<Team> _teams = [];
   String _saisonKey = '';
 
@@ -65,14 +65,14 @@ class TeamProvider with ChangeNotifier {
   }
 
   Future<int> addTeam(Team newResult) async {
-    if (_token == null || _token.isEmpty) {
+    if (_writeToken == null || _writeToken.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
     // final timestamp = DateTime.now().millisecondsSinceEpoch;
     final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${newResult.saison}/${newResult.mannschaft}.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${newResult.saison}/${newResult.mannschaft}.json?auth=$_writeToken");
 
     try {
       final response = await http.put(
@@ -134,12 +134,12 @@ class TeamProvider with ChangeNotifier {
   }
 
   Future<void> deleteTeam(String saisonkey, String id) async {
-    if (_token == null || _token.isEmpty) {
+    if (_writeToken == null || _writeToken.isEmpty) {
       throw Exception("Token fehlt");
     }
 
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/$saisonkey/$id.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/$saisonkey/$id.json?auth=$_writeToken");
 
     try {
       final response = await http.delete(url);
@@ -180,14 +180,14 @@ class TeamProvider with ChangeNotifier {
   }
 
   Future<int> updateTeam(Team existingTeam) async {
-    if (_token == null || _token.isEmpty) {
+    if (_writeToken == null || _writeToken.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400; // Fehler: Kein Token vorhanden
     }
 
     final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
-      "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${existingTeam.saison}/${existingTeam.mannschaft}.json?auth=$_token",
+      "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${existingTeam.saison}/${existingTeam.mannschaft}.json?auth=$_writeToken",
     );
 
     try {

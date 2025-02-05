@@ -32,14 +32,14 @@ class MoreScreen extends StatelessWidget {
                 Navigator.of(context).pushNamed(DatenschutzScreen.routename);
               },
               assetImage: "assets/images/Datenschutz.png"),
-          if (Provider.of<AuthProvider>(context).isAuth == false)
+          if (Provider.of<AuthProvider>(context).isSignedIn == false)
             MoreTile(
               function: () {
                 Navigator.of(context).pushNamed(AuthScreen.routeName);
               },
               assetImage: "assets/images/Anmelden.png",
             ),
-          if (Provider.of<AuthProvider>(context).isAuth)
+          if (Provider.of<AuthProvider>(context).isSignedIn)
             MoreTile(
                 function: Provider.of<AuthProvider>(context).signOut,
                 assetImage: "assets/images/Abmelden.png"),

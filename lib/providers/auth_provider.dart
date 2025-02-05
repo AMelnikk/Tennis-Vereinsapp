@@ -8,16 +8,16 @@ class AuthProvider with ChangeNotifier {
   late final Map<String, String?> credentials;
   final storage = const FlutterSecureStorage();
 
-  String? _token;
+  String? _writeToken;
   DateTime? _expiryDate;
   String? _userId;
   String? placeBookingLink;
 
-  String? get token {
+  String? get writeToken {
     if (_expiryDate != null &&
         _expiryDate!.isAfter(DateTime.now()) &&
-        _token != null) {
-      return _token;
+        _writeToken != null) {
+      return _writeToken;
     } else {
       return null;
     }
@@ -27,8 +27,8 @@ class AuthProvider with ChangeNotifier {
     return _userId;
   }
 
-  bool get isAuth {
-    return token != null;
+  bool get isSignedIn {
+    return _writeToken != null;
   }
 
   Future<void> signIn(String email, String password) async {
@@ -46,7 +46,7 @@ class AuthProvider with ChangeNotifier {
         if (responseData["error"] != null) {
           throw HttpException(message: responseData["error"]["message"]);
         }
-        _token = responseData["idToken"];
+        _writeToken = responseData["idToken"];
         _userId = responseData["localId"];
         _expiryDate = DateTime.now().add(
           Duration(
@@ -95,7 +95,7 @@ class AuthProvider with ChangeNotifier {
         if (responseData["error"] != null) {
           throw HttpException(message: responseData["error"]["message"]);
         }
-        _token = responseData["idToken"];
+        _writeToken = responseData["idToken"];
         _userId = responseData["localId"];
         _expiryDate = DateTime.now().add(
           Duration(
@@ -110,7 +110,7 @@ class AuthProvider with ChangeNotifier {
         // var rest =
         await http.put(
           Uri.parse(
-              "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json?auth=$_token"),
+              "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json?auth=$_writeToken"),
           body: json.encode({
             "name": name,
             "platzbuchung_link": platzbuchungLink,
@@ -137,7 +137,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   void signOut() {
-    _token = null;
+    _writeToken = null;
     _expiryDate = null;
     _userId = null;
     placeBookingLink = null;

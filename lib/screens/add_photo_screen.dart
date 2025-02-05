@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../providers/photo_provider.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -15,6 +16,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   bool _isLoading = false;
 
   Future<void> postImages() async {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     setState(() {
       _isLoading = true;
     });
@@ -23,22 +25,17 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       final statusCode =
           await Provider.of<PhotoProvider>(context, listen: false).postImages();
       if (statusCode == 200) {
-        showSnackBar("Erfolg! Die Bilder wurden hochgeladen");
+        appError(messenger, "Erfolg! Die Bilder wurden hochgeladen");
       } else {
-        showSnackBar("Fehler beim Hochladen der Bilder");
+        appError(messenger, "Fehler beim Hochladen der Bilder");
       }
     } catch (error) {
-      showSnackBar("Fehler: $error");
+      appError(messenger, "Fehler: $error");
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
-  }
-
-  void showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

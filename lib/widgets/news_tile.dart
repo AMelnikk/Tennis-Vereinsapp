@@ -1,34 +1,45 @@
-import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:verein_app/providers/news_provider.dart';
+import 'package:verein_app/utils/image_helper.dart';
 import '../screens/news_overview_screen.dart';
 
 class NewsTile extends StatelessWidget {
-  const NewsTile(
-      {super.key,
-      required this.id,
-      required this.title,
-      required this.date,
-      required this.body,
-      this.base64image});
+  const NewsTile({
+    super.key,
+    required this.id,
+    required this.title,
+    required this.date,
+    required this.body,
+    required this.photoBlob,
+  });
 
   final String id;
-  final String? base64image;
+  final List<String> photoBlob;
   final String date;
   final String title;
   final String body;
 
   @override
   Widget build(BuildContext context) {
+    final double tileSize = (MediaQuery.of(context).size.width - 80) / 2;
+    final imageCache =
+        Provider.of<NewsProvider>(context, listen: false).imageCache;
+
     return InkWell(
       onTap: () {
-        Navigator.of(context)
-            .pushNamed(NewsOverviewScreen.routename, arguments: {
-          "id": id,
-          "date": date,
-          "title": title,
-          "body": body,
-          "imageData": base64image,
-        });
+        Navigator.of(context).pushNamed(
+          NewsOverviewScreen.routename,
+          arguments: {
+            "id": id,
+            "date": date,
+            "title": title,
+            "body": body,
+            "photoBlob": photoBlob,
+          },
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -36,7 +47,7 @@ class NewsTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(5),
         ),
         width: MediaQuery.of(context).size.width,
-        height: (MediaQuery.of(context).size.width - 80) / 2,
+        height: tileSize,
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -55,18 +66,17 @@ class NewsTile extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(fontSize: 22),
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
-                    const SizedBox(
-                      height: 0.1,
-                    )
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
             ),
             Container(
-              height: (MediaQuery.of(context).size.width - 80) / 2,
-              width: (MediaQuery.of(context).size.width - 80) / 2,
+              height: tileSize,
+              width: tileSize,
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
                   topRight: Radius.circular(5),
@@ -74,16 +84,27 @@ class NewsTile extends StatelessWidget {
                 ),
               ),
               child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(5),
-                    bottomRight: Radius.circular(5),
-                  ),
-                  child: base64image != null
-                      ? Image.memory(
-                          base64Decode(base64image as String),
-                          fit: BoxFit.cover,
-                        )
-                      : null),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(5),
+                  bottomRight: Radius.circular(5),
+                ),
+                child: photoBlob.isNotEmpty
+                    ? PageView.builder(
+                        key: PageStorageKey(id),
+                        itemCount: photoBlob.length,
+                        itemBuilder: (context, index) {
+                          Uint8List bytes =
+                              getImage(imageCache, photoBlob[index]);
+                          return Image.memory(
+                            bytes,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.broken_image),
+                          );
+                        },
+                      )
+                    : const Center(child: Text("Kein Bild verfügbar")),
+              ),
             ),
           ],
         ),

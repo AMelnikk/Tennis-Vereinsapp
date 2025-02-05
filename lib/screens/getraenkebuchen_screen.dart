@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; // Importiere das Paket für Datum-Formatierung
+import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/providers/user_provider.dart';
 import '../providers/getraenkebuchen_provider.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -17,17 +20,37 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   List<Map<String, dynamic>> _buchungen = [];
 
   @override
+  @override
   void initState() {
     super.initState();
-    fetchUserBuchungen();
+    _loadUserData();
   }
 
-  Future<void> fetchUserBuchungen() async {
+  Future<void> _loadUserData() async {
+    // AuthProvider und UserProvider abrufen
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    String? uid = authProvider.userId.toString();
+
+    if (uid == null || uid.isEmpty) {
+      if (kDebugMode) print("Fehler: Keine gültige UID gefunden.");
+    }
+
+    // Benutzerinformationen abrufen
+    await userProvider.getUserData(uid);
+
+    String username = userProvider.name.text;
+
+    fetchUserBuchungen(username);
+  }
+
+  Future<void> fetchUserBuchungen(String user_name) async {
     try {
       final provider =
           Provider.of<GetraenkeBuchenProvider>(context, listen: false);
-      const userId = 'Oli'; // Benutzer-ID anpassen
-      final allBuchungen = await provider.fetchUserBuchungen(userId);
+
+      final allBuchungen = await provider.fetchUserBuchungen(user_name);
 
       setState(() {
         _buchungen = allBuchungen
@@ -51,6 +74,8 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   }
 
   Future<void> postGetraenke() async {
+    final userProvider = Provider.of<UserProvider>(context);
+
     try {
       setState(() {
         _isLoading = true;
@@ -58,7 +83,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
 
       final provider =
           Provider.of<GetraenkeBuchenProvider>(context, listen: false);
-      final statusCode = await provider.postGetraenke();
+      final statusCode = await provider.postGetraenke(context);
 
       setState(() {
         _isLoading = false;
@@ -70,7 +95,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
             const SnackBar(content: Text("Erfolgreich gebucht!")),
           );
         }
-        await fetchUserBuchungen(); // Liste aktualisieren
+        await fetchUserBuchungen(userProvider.name.text); // Liste aktualisieren
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -93,6 +118,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<GetraenkeBuchenProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
     final anzWasser = provider.anzWasser;
     final anzSoft = provider.anzSoft;
     final anzBier = provider.anzBier;
@@ -151,7 +177,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                   : Column(
                       children: [
                         Text(
-                          "Offener Saldo: ${_calculateOffenerSaldo().toStringAsFixed(2)} €",
+                          "Offener Saldo von ${userProvider.name.text}: ${_calculateOffenerSaldo().toStringAsFixed(2)} €",
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,

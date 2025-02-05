@@ -32,4 +32,29 @@ class UserProvider with ChangeNotifier {
       return 400;
     }
   }
+
+  // Methode zum Abrufen der Benutzerdaten
+  Future<void> getUserData(String uid) async {
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Users/$uid.json?");
+    try {
+      var response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        // Wenn die Anfrage erfolgreich ist, die Daten als Map zurückgeben
+        var userData = json.decode(response.body) as Map<String, dynamic>?;
+        if (userData != null) {
+          // Variablen mit den abgerufenen Daten füllen
+          platzbuchungLink.text = userData['platzbuchung_link'] ?? '';
+          name.text = userData['name'] ?? '';
+          uid = uid; // Sicherstellen, dass uid auch gefüllt wird
+          notifyListeners(); // Notify listeners, wenn die Daten geändert wurden
+        }
+      } else {
+        if (kDebugMode) print("Error: ${response.statusCode}");
+      }
+    } catch (error) {
+      if (kDebugMode) print("Error: $error");
+    }
+  }
 }

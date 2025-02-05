@@ -37,7 +37,7 @@ class ImpressumScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const Text(
-                "Vertretungsberechtigter Vorstand: Oliver Ströbel \nMobil: +4915254690802 \nE-Mail: tennis-weidenbach@t-online.de",
+                "Vertretungsberechtigter Vorstand: Christian Höger E-Mail: vorstand@tsv-weidenbach.de",
               ),
               const Space(),
               const Text(
@@ -45,7 +45,7 @@ class ImpressumScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const Text(
-                "Oliver Ströbel (Vertretungsberechtigter Vorstand)",
+                "Christian Höger (Vertretungsberechtigter Vorstand)",
               ),
               const Space(),
               Row(

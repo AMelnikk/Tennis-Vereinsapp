@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import './providers/user_provider.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import './add_team_game_screen.dart';
 import './add_termine_screen.dart';
 import './getraenke_summen_screen.dart';
@@ -7,7 +8,7 @@ import './getraenkedetails_screen.dart';
 import './add_team_screen.dart';
 import '../screens/add_user_screen.dart';
 import './add_news_screen.dart';
-import '.add_photo_screen.dart';
+import './add_photo_screen.dart';
 import '../widgets/admin_function.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -67,7 +68,7 @@ class AdminScreen extends StatelessWidget {
 
               // Nur für Admins anzeigen
               FutureBuilder<bool>(
-                future: isAdmin(context),
+                future: userProvider.isAdmin(context),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircularProgressIndicator(); // Ladeanzeige

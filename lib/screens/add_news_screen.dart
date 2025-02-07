@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/utils/image_helper.dart';
 import '../providers/news_provider.dart';
 import '../widgets/verein_appbar.dart';
 import 'package:intl/intl.dart'; // Für das Formatieren des Datums
@@ -33,7 +34,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
           data: ThemeData.light().copyWith(
             primaryColor: Colors.blue,
             hintColor: Colors.blue,
-            colorScheme: ColorScheme.light(primary: Colors.blue),
+            colorScheme: const ColorScheme.light(primary: Colors.blue),
             dialogBackgroundColor: Colors.white,
           ),
           child: child!,
@@ -185,7 +186,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           ),
                           TextButton.icon(
                             onPressed: () async {
-                              await newsProvider.pickAndUploadImages(
+                              newsProvider.photoBlob = await pickImages(
                                   messenger); // Bilder auswählen und speichern
                               setState(
                                   () {}); // UI aktualisieren, um die neuen Bilder sofort anzuzeigen

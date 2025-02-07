@@ -2,21 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/utils/image_helper.dart';
 import '../providers/news_provider.dart';
-import 'package:flutter/services.dart';
 
 class ImageDialog extends StatefulWidget {
   final List<String> photoBlob;
   final int initialIndex;
 
   const ImageDialog(
-      {Key? key, required this.photoBlob, required this.initialIndex})
-      : super(key: key);
+      {super.key, required this.photoBlob, required this.initialIndex});
 
   @override
-  _ImageDialogState createState() => _ImageDialogState();
+  ImageDialogState createState() => ImageDialogState();
 }
 
-class _ImageDialogState extends State<ImageDialog> with WidgetsBindingObserver {
+class ImageDialogState extends State<ImageDialog> with WidgetsBindingObserver {
   int currentIndex = 0;
   double _rotationAngle = 0.0; // Rotation des Bildes
 
@@ -75,7 +73,7 @@ class _ImageDialogState extends State<ImageDialog> with WidgetsBindingObserver {
           children: [
             // Bildanzeige mit Interaktivität und Rotation
             InteractiveViewer(
-              boundaryMargin: EdgeInsets.all(0), // Kein Rand
+              boundaryMargin: const EdgeInsets.all(0), // Kein Rand
               minScale: 0.1,
               maxScale: 4.0,
               child: Transform(

@@ -10,11 +10,13 @@ import '../widgets/verein_appbar.dart';
 class NewsOverviewScreen extends StatefulWidget {
   static const routename = '/news-overview';
 
+  const NewsOverviewScreen({super.key});
+
   @override
-  _NewsOverviewScreenState createState() => _NewsOverviewScreenState();
+  NewsOverviewScreenState createState() => NewsOverviewScreenState();
 }
 
-class _NewsOverviewScreenState extends State<NewsOverviewScreen> {
+class NewsOverviewScreenState extends State<NewsOverviewScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0; // Track the current page
 
@@ -37,7 +39,7 @@ class _NewsOverviewScreenState extends State<NewsOverviewScreen> {
           decoration: BoxDecoration(
             color: Colors
                 .grey[300], // Grauer Rand um den gesamten weißen Container
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           child: Column(
             children: [

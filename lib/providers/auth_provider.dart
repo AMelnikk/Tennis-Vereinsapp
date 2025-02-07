@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
+import 'package:provider/provider.dart';
+import '../models/user.dart';
+import '../providers/user_provider.dart';
 import '../models/http_exception.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -12,6 +16,7 @@ class AuthProvider with ChangeNotifier {
   DateTime? _expiryDate;
   String? _userId;
   String? placeBookingLink;
+  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   String? get writeToken {
     if (_expiryDate != null &&
@@ -31,108 +36,92 @@ class AuthProvider with ChangeNotifier {
     return _writeToken != null;
   }
 
-  Future<void> signIn(String email, String password) async {
-    {
-      final dbUrl = Uri.parse(
-          "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-      try {
-        final response = await http.post(
-          dbUrl,
-          body: json.encode(
-            {"email": email, "password": password, "returnSecureToken": true},
-          ),
-        );
-        final responseData = json.decode(response.body);
-        if (responseData["error"] != null) {
-          throw HttpException(message: responseData["error"]["message"]);
-        }
-        _writeToken = responseData["idToken"];
-        _userId = responseData["localId"];
-        _expiryDate = DateTime.now().add(
-          Duration(
-            seconds: int.parse(
-              responseData["expiresIn"],
-            ),
-          ),
-        );
-        storage.write(key: "email", value: email);
-        storage.write(key: "password", value: password);
+  Future<void> signIn(BuildContext context, email, String password) async {
+    final dbUrl = Uri.parse(
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
 
-        var linkResponse = await http.get(Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));
-        Map<String, dynamic>? placeBookingData =
-            await json.decode(linkResponse.body);
-        if (placeBookingData != null) {
-          placeBookingLink = placeBookingData["platzbuchung_link"];
-        }
-        if (kDebugMode) print(placeBookingLink);
+    try {
+      final response = await http.post(
+        dbUrl,
+        body: json.encode({
+          "email": email,
+          "password": password,
+          "returnSecureToken": true,
+        }),
+      );
 
-        notifyListeners();
-        if (response.statusCode < 300) {}
-      } catch (error) {
-        if (kDebugMode) print(error);
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode >= 400 || responseData["error"] != null) {
+        throw HttpException(message: responseData["error"]["message"]);
       }
+
+      _writeToken = responseData["idToken"];
+      _userId = responseData["localId"];
+      _expiryDate = DateTime.now().add(
+        Duration(seconds: int.parse(responseData["expiresIn"])),
+      );
+
+      // **SICHERE SPEICHERUNG**
+      await secureStorage.write(key: "email", value: email);
+      await secureStorage.write(
+          key: "password", value: password); // Sicherer als SharedPreferences
+      notifyListeners();
+    } catch (error) {
+      if (kDebugMode) print("Fehler beim Login: $error");
     }
   }
 
-  Future<void> signUp(String email, String password, String platzbuchungLink,
-      String name) async {
-    {
-      if (name.isEmpty) {
-        throw HttpException(message: "NAME_FEHLT");
-      }
-      final dbUrl = Uri.parse(
-          "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-      try {
-        final response = await http.post(
-          dbUrl,
-          body: json.encode(
-            {"email": email, "password": password, "returnSecureToken": true},
-          ),
-        );
+  Future<String> signUp(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      throw HttpException(message: "EMAIL oder PASSWORT FEHLT");
+    }
 
-        final responseData = json.decode(response.body);
-        if (responseData["error"] != null) {
-          throw HttpException(message: responseData["error"]["message"]);
-        }
-        _writeToken = responseData["idToken"];
-        _userId = responseData["localId"];
-        _expiryDate = DateTime.now().add(
-          Duration(
-            seconds: int.parse(
-              responseData["expiresIn"],
-            ),
-          ),
-        );
-        storage.write(key: "email", value: email);
-        storage.write(key: "password", value: password);
+    final signUpUrl = Uri.parse(
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
 
-        // var rest =
-        await http.put(
-          Uri.parse(
-              "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json?auth=$_writeToken"),
+    final signInUrl = Uri.parse(
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
+
+    try {
+      var response = await http.post(
+        signUpUrl,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "email": email,
+          "password": password,
+          "returnSecureToken": true,
+        }),
+      );
+
+      var responseData = json.decode(response.body);
+
+      if (response.statusCode >= 400 || responseData["error"] != null) {
+        // Falls Benutzer schon existiert, Sign-In versuchen
+        response = await http.post(
+          signInUrl,
+          headers: {"Content-Type": "application/json"},
           body: json.encode({
-            "name": name,
-            "platzbuchung_link": platzbuchungLink,
-            "Berechtigung": "Mitglied",
+            "email": email,
+            "password": password,
+            "returnSecureToken": true,
           }),
         );
-        // print(rest.statusCode);
+        responseData = json.decode(response.body);
 
-        var linkResponse = await http.get(Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Users/$_userId.json"));
-        Map<String, dynamic>? placeBookingData =
-            await json.decode(linkResponse.body);
-        if (placeBookingData != null) {
-          placeBookingLink = placeBookingData["platzbuchung_link"];
+        if (response.statusCode >= 400 || responseData["error"] != null) {
+          throw HttpException(message: responseData["error"]["message"]);
         }
-        // if (kDebugMode) print(placeBookingLink);
-
-        notifyListeners();
-        if (response.statusCode < 300) {}
-      } catch (error) {
-        rethrow;
       }
+
+      // **Token-basiertes Speichern statt Passwort-Speicherung**
+      await secureStorage.write(key: "idToken", value: responseData["idToken"]);
+      await secureStorage.write(
+          key: "refreshToken", value: responseData["refreshToken"]);
+
+      return responseData["localId"];
+    } catch (error) {
+      rethrow;
     }
   }
 

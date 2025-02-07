@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:verein_app/utils/app_utils.dart';
-import 'package:verein_app/utils/image_helper.dart';
 import '../models/news.dart';
 
 class NewsProvider with ChangeNotifier {
@@ -20,7 +17,7 @@ class NewsProvider with ChangeNotifier {
   var newsDateController = TextEditingController();
   String newsDate = '';
   final categoryController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
+
   String? lastId;
   bool hasMore = true;
   final Map<String, Uint8List> imageCache = {};
@@ -32,22 +29,6 @@ class NewsProvider with ChangeNotifier {
   ];
   String selectedCategory = "Allgemein"; // Standardkategorie
 
-  Future<void> pickAndUploadImages(ScaffoldMessengerState messenger) async {
-    try {
-      // Mehrere Bilder auswählen
-      final List<XFile> images = await _picker.pickMultiImage();
-
-      // Sicherstellen, dass images nicht null ist und mindestens ein Bild vorhanden ist
-      if (images.isNotEmpty) {
-        // Umwandlung der Bilder in Base64-Strings durch Aufruf der Hilfsmethode
-        photoBlob = await convertImagesToBase64(images);
-      } else {
-        appError(messenger, "Keine Bilder ausgewählt.");
-      }
-    } catch (e) {
-      appError(messenger, "Fehler beim Auswählen der Bilder: $e");
-    }
-  }
   // Methode zum Hochladen der Bilder als Blob in Firestore
   // Future<void> _storeImagesToFirestore(List<Uint8List> bytesList) async {
   //   try {
@@ -94,13 +75,10 @@ class NewsProvider with ChangeNotifier {
   }
 
   Future<String?> postNews() async {
-    if (newsDate == null) {
-      newsDate = DateFormat("dd.MM.yyyy").format(DateTime.now());
-    } else {
-      DateTime? parsedDate =
-          DateFormat("dd.MM.yyyy").parse(newsDateController.text);
-      newsDate = DateFormat("dd.MM.yyyy").format(parsedDate);
-    }
+    DateTime? parsedDate =
+        DateFormat("dd.MM.yyyy").parse(newsDateController.text);
+    newsDate = DateFormat("dd.MM.yyyy").format(parsedDate);
+
     try {
       // Konvertiere das Bild in Base64
 

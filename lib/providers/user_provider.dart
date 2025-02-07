@@ -67,15 +67,16 @@ class UserProvider with ChangeNotifier {
   }
 
   // Methode zum Hinzufügen eines Benutzers (posten)
-  Future<void> postUser(BuildContext context, User postUser) async {
+  Future<void> postUser(
+      BuildContext context, User postUser, String _tok) async {
     final messenger = ScaffoldMessenger.of(context);
     // Null-Prüfung für uid und Token
-    if (postUser.uid.isEmpty || _token == null || _token!.isEmpty) {
+    if (postUser.uid.isEmpty || _tok == null || _tok!.isEmpty) {
       if (kDebugMode) print("❌ Fehler: UID oder Token fehlt.");
     }
 
     final urlUser = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Users/${postUser.uid}.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/Users/${postUser.uid}.json?auth=$_tok");
 
     try {
       // HTTP Request ausführen

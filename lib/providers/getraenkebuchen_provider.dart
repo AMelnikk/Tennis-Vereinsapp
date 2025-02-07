@@ -115,7 +115,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
     }
 
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe.json?");
+        "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe.json?auth=$_token");
 
     try {
       final response = await http.get(url);

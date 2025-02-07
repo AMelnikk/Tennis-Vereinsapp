@@ -72,7 +72,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<String> signUp(String email, String password) async {
+  Future<Map> signUp(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
       throw HttpException(message: "EMAIL oder PASSWORT FEHLT");
     }
@@ -119,7 +119,7 @@ class AuthProvider with ChangeNotifier {
       await secureStorage.write(
           key: "refreshToken", value: responseData["refreshToken"]);
 
-      return responseData["localId"];
+      return responseData;
     } catch (error) {
       rethrow;
     }

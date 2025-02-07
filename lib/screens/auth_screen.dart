@@ -82,10 +82,16 @@ class _AuthScreenState extends State<AuthScreen> {
       UserProvider uP = Provider.of<UserProvider>(context, listen: false);
       AuthProvider aP = Provider.of<AuthProvider>(context, listen: false);
       User newUSer = User.empty();
-      newUSer.uid = await aP.signUp(email.text, password.text);
-      newUSer.nachname = email.text;
+      if (nachname.text.isEmpty) {
+        newUSer.nachname = email.text;
+      } else {
+        newUSer.nachname = nachname.text;
+      }
+      newUSer.vorname = vorname.text;
       newUSer.role = "Mitglied";
-      uP.postUser(context, newUSer);
+      Map rData = await aP.signUp(email.text, password.text);
+      newUSer.uid = rData["localId"];
+      uP.postUser(context, newUSer, rData["idToken"]);
       Future.delayed(const Duration(milliseconds: 500));
       if (mounted && widget.pop) {
         Navigator.of(context).pop();

@@ -63,10 +63,12 @@ class _AddUserScreenState extends State<AddUserScreen> {
           return;
         }
 
-        newUser.uid = await authProvider.signUp(
+        Map rData = await authProvider.signUp(
             "${newUser.nachname}_${newUser.vorname}@example.com", 'User@1234');
+        newUser.uid = rData["localId"];
+        userProvider.postUser(context, newUser, rData["idToken"]);
       }
-      userProvider.postUser(context, newUser);
+
       // **Benutzer neu laden**
       userProvider.getAllUsers();
     } catch (error) {

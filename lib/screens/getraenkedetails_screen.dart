@@ -215,7 +215,8 @@ class _GetraenkeBuchungenDetailsScreenState
                           _applyFilters();
                         });
                       },
-                      items: _users.map<DropdownMenuItem<String>>((String value) {
+                      items:
+                          _users.map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -233,7 +234,8 @@ class _GetraenkeBuchungenDetailsScreenState
                           _applyFilters();
                         });
                       },
-                      items: _years.map<DropdownMenuItem<String>>((String value) {
+                      items:
+                          _years.map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),

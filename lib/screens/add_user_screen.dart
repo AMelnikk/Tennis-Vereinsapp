@@ -38,6 +38,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     userProvider.setToken(authProvider.writeToken.toString());
     await userProvider.getUserData(authProvider.userId.toString());
     userProvider.getAllUsers();
+    setState(() {}); // UI wird aktualisiert
   }
 
   void _saveUser() async {
@@ -56,8 +57,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     try {
       // **Warten, bis signUp abgeschlossen ist**
-      if ((userProvider.user.uid ?? "").isNotEmpty &&
-          (newUser.uid ?? "").isEmpty) {
+      if (newUser.uid.isEmpty) {
         if (newUser.nachname.isEmpty || newUser.vorname.isEmpty) {
           appError(messenger, "Vorname und Nachname müssen ausgefüllt sein.");
           return;
@@ -67,10 +67,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
             "${newUser.nachname}_${newUser.vorname}@example.com", 'User@1234');
         newUser.uid = rData["localId"];
         userProvider.postUser(context, newUser, rData["idToken"]);
+      } else {
+        userProvider.postUser(
+            context, newUser, authProvider.writeToken.toString());
       }
-
       // **Benutzer neu laden**
       userProvider.getAllUsers();
+      setState(() {}); // UI wird aktualisiert
     } catch (error) {
       appError(messenger, "Fehler beim Anlegen des Users: $error");
     }
@@ -78,10 +81,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   void _applyFilters() {
     Provider.of<UserProvider>(context, listen: false).getFilteredUsers(
-      _selectedFilterRole == "Alle" ? "" : _selectedFilterRole,
-      _nameFilter.text,
-      "", // Nachname optional
-    );
+        _selectedFilterRole == "Alle" ? "" : _selectedFilterRole,
+        _nameFilter.text);
   }
 
   @override
@@ -165,7 +166,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     _vornameController.clear();
                     _nachnameController.clear();
                     _platzbuchungController.clear();
-                    _selectedRole = "Mitglied";
                   });
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
@@ -230,7 +230,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       _vornameController.text = user.vorname;
                       _nachnameController.text = user.nachname;
                       _platzbuchungController.text = user.platzbuchungLink;
-                      _selectedRole = user.role;
+
+                      if ([
+                        "Mitglied",
+                        "Admin",
+                        "Abteilungsleitung",
+                        "Mannschaftsführer"
+                      ].contains(user.role)) {
+                        _selectedRole = user.role;
+                      } else {
+                        _selectedRole = "Mitglied"; // Fallback-Wert
+                        print(
+                            "⚠️ Unbekannte Rolle: ${user.role}, Standardwert 'Mitglied' gesetzt.");
+                      }
                     });
                     userProvider.user = user;
                   },

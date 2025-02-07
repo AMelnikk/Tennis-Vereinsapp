@@ -135,10 +135,6 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> getAllUsers() async {
-    //if (allUsers.isNotEmpty) {
-    //  return; // Falls schon geladen, nicht erneut abrufen
-    // }
-
     final urlUser = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/Users/${user.uid}.json?auth=$_token");
 
@@ -168,7 +164,7 @@ class UserProvider with ChangeNotifier {
                   });
 
                   allUsers = allUsersTemp;
-                  notifyListeners();
+                  filteredUsers = List.from(allUsersTemp); // Direkt setzen!
                 }
               } else {
                 throw Exception(
@@ -181,7 +177,6 @@ class UserProvider with ChangeNotifier {
             // Falls kein Admin, nur eigene Daten laden
             allUsers = [User.fromJson(userData, user.uid)];
             filteredUsers = allUsers;
-            notifyListeners();
           }
         }
       } else {
@@ -191,35 +186,18 @@ class UserProvider with ChangeNotifier {
     } catch (error) {
       print("❌ Fehler beim Abrufen der Benutzerdaten: $error");
     }
+
+    notifyListeners(); // Immer aufrufen!
   }
 
-  // Filter-Methode für Benutzer mit Berechtigung, Vorname und Nachname
-  void getFilteredUsers(String role, String vorname, String nachname) {
-    final neueListe = allUsers.where((user) {
-      bool matchesRole = true;
-      bool matchesVorname = true;
-      bool matchesNachname = true;
-
-      if (role.isNotEmpty && role != 'Alle') {
-        matchesRole = user.role == role;
-      }
-
-      if (vorname.isNotEmpty) {
-        matchesVorname =
-            user.vorname.toLowerCase().contains(vorname.toLowerCase());
-      }
-
-      if (nachname.isNotEmpty) {
-        matchesNachname =
-            user.nachname.toLowerCase().contains(nachname.toLowerCase());
-      }
-
-      return matchesRole && matchesVorname && matchesNachname;
+  void getFilteredUsers(String role, String name) {
+    filteredUsers = allUsers.where((user) {
+      return (role.isEmpty || user.role == role) &&
+              (name.isEmpty ||
+                  user.vorname.toLowerCase().contains(name.toLowerCase())) ||
+          (name.isEmpty ||
+              user.nachname.toLowerCase().contains(name.toLowerCase()));
     }).toList();
-
-    if (!listEquals(filteredUsers, neueListe)) {
-      filteredUsers = neueListe;
-      notifyListeners();
-    }
+    notifyListeners(); // 🔥 WICHTIG
   }
 }

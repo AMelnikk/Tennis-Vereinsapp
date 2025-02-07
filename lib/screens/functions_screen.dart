@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/getraenkebuchen_screen.dart';
 import './place_booking_screen.dart';
-import './photo_gallery_screen.dart';
+import 'photo_gallery_screen_Version2.dart';
 import './trainers_screen.dart';
 import './documents_screen.dart';
 import 'team_screen.dart';

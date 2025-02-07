@@ -20,9 +20,9 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   List<Map<String, dynamic>> _buchungen = [];
 
   @override
-  @override
   void initState() {
     super.initState();
+
     _loadUserData();
   }
 
@@ -30,27 +30,29 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
     // AuthProvider und UserProvider abrufen
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-
+    final getraenkeProvider =
+        Provider.of<GetraenkeBuchenProvider>(context, listen: false);
     String? uid = authProvider.userId.toString();
 
-    if (uid == null || uid.isEmpty) {
+    if (uid.isEmpty) {
       if (kDebugMode) print("Fehler: Keine gültige UID gefunden.");
     }
 
     // Benutzerinformationen abrufen
     await userProvider.getUserData(uid);
 
-    String username = userProvider.name.text;
-
-    fetchUserBuchungen(username);
+    getraenkeProvider.username =
+        "${userProvider.user.nachname} ${userProvider.user.vorname}";
+    getraenkeProvider.getAllBuchungen();
+    fetchUserBuchungen();
   }
 
-  Future<void> fetchUserBuchungen(String user_name) async {
+  Future<void> fetchUserBuchungen() async {
     try {
       final provider =
           Provider.of<GetraenkeBuchenProvider>(context, listen: false);
 
-      final allBuchungen = await provider.fetchUserBuchungen(user_name);
+      final allBuchungen = await provider.fetchUserBuchungen();
 
       setState(() {
         _buchungen = allBuchungen
@@ -74,12 +76,12 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
   }
 
   Future<void> postGetraenke() async {
-    final userProvider = Provider.of<UserProvider>(context);
-
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
 
       final provider =
           Provider.of<GetraenkeBuchenProvider>(context, listen: false);
@@ -95,7 +97,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
             const SnackBar(content: Text("Erfolgreich gebucht!")),
           );
         }
-        await fetchUserBuchungen(userProvider.name.text); // Liste aktualisieren
+        await fetchUserBuchungen(); // Liste aktualisieren
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +179,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                   : Column(
                       children: [
                         Text(
-                          "Offener Saldo von ${userProvider.name.text}: ${_calculateOffenerSaldo().toStringAsFixed(2)} €",
+                          "Offener Saldo von ${userProvider.user.vorname}: ${_calculateOffenerSaldo().toStringAsFixed(2)} €",
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,

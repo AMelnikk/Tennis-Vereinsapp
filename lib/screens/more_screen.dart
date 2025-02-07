@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import './datenschutz_screen.dart';
 import './auth_screen.dart';
 import './impressum_screen.dart';
@@ -28,11 +29,12 @@ class MoreScreen extends StatelessWidget {
             assetImage: "assets/images/Impressum.png",
           ),
           MoreTile(
-              function: () {
-                Navigator.of(context).pushNamed(DatenschutzScreen.routename);
-              },
-              assetImage: "assets/images/Datenschutz.png"),
-          if (Provider.of<AuthProvider>(context).isSignedIn == false)
+            function: () {
+              Navigator.of(context).pushNamed(DatenschutzScreen.routename);
+            },
+            assetImage: "assets/images/Datenschutz.png",
+          ),
+          if (!Provider.of<AuthProvider>(context).isSignedIn)
             MoreTile(
               function: () {
                 Navigator.of(context).pushNamed(AuthScreen.routeName);
@@ -41,16 +43,28 @@ class MoreScreen extends StatelessWidget {
             ),
           if (Provider.of<AuthProvider>(context).isSignedIn)
             MoreTile(
-                function: Provider.of<AuthProvider>(context).signOut,
-                assetImage: "assets/images/Abmelden.png"),
-          if (Provider.of<AuthProvider>(context).userId ==
-              "UvqMZwTqpcYcLUIAe0qg90UNeUe2")
-            MoreTile(
-              function: () {
-                Navigator.of(context).pushNamed(AdminScreen.routename);
-              },
-              assetImage: "assets/images/Admin-Funktionen.png",
+              function: Provider.of<AuthProvider>(context).signOut,
+              assetImage: "assets/images/Abmelden.png",
             ),
+          // FutureBuilder für Admin-Button
+          FutureBuilder<bool>(
+            future: Provider.of<UserProvider>(context, listen: false)
+                .isAdminOrMannschaftsfuehrer(context),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(); // Oder ein Lade-Icon
+              }
+              if (snapshot.hasError || !(snapshot.data ?? false)) {
+                return SizedBox(); // Falls kein Admin oder Fehler → nichts anzeigen
+              }
+              return MoreTile(
+                function: () {
+                  Navigator.of(context).pushNamed(AdminScreen.routename);
+                },
+                assetImage: "assets/images/Admin-Funktionen.png",
+              );
+            },
+          ),
         ],
       ),
     );

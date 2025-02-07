@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/models/user.dart';
+import 'package:verein_app/providers/user_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';
 import '../models/http_exception.dart';
@@ -21,8 +23,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final email = TextEditingController();
   final password = TextEditingController();
   final platzbuchungLink = TextEditingController();
-  final name = TextEditingController();
-
+  final nachname = TextEditingController();
+  final vorname = TextEditingController();
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -47,7 +49,7 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       await Provider.of<AuthProvider>(context, listen: false)
-          .signIn(email.text, password.text);
+          .signIn(context, email.text, password.text);
       Future.delayed(const Duration(milliseconds: 500));
       if (mounted && widget.pop) {
         Navigator.of(context).pop();
@@ -77,14 +79,19 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
     });
     try {
-      await Provider.of<AuthProvider>(context, listen: false)
-          .signUp(email.text, password.text, platzbuchungLink.text, name.text);
+      UserProvider uP = Provider.of<UserProvider>(context, listen: false);
+      AuthProvider aP = Provider.of<AuthProvider>(context, listen: false);
+      User newUSer = User.empty();
+      newUSer.uid = await aP.signUp(email.text, password.text);
+      newUSer.nachname = email.text;
+      newUSer.role = "Mitglied";
+      uP.postUser(context, newUSer);
       Future.delayed(const Duration(milliseconds: 500));
       if (mounted && widget.pop) {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {
-      if(kDebugMode) print(error.toString());
+      if (kDebugMode) print(error.toString());
       var errorMessage = "Sie können nicht authentifiziert werden";
       if (error.toString().contains("INVALID_EMAIL")) {
         errorMessage = "Email ist falsch";
@@ -94,8 +101,7 @@ class _AuthScreenState extends State<AuthScreen> {
         errorMessage =
             "Passwort ist zu kurz: Es muss wenigstens 6 Zeichen erhalten";
       } else if (error.toString().contains("NAME_FEHLT")) {
-        errorMessage =
-            "Name fehlt";
+        errorMessage = "Name fehlt";
       }
       _showErrorDialog(errorMessage);
     } catch (error) {
@@ -134,7 +140,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   controller: email,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
-                    labelText: "Email",
+                    labelText: "Email (= Anmeldename)",
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                 ),
@@ -195,13 +201,32 @@ class _AuthScreenState extends State<AuthScreen> {
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                child: TextFormField(
-                  controller: name,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Name",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                child: Row(
+                  children: [
+                    // Vorname TextField
+                    Expanded(
+                      child: TextFormField(
+                        controller: vorname,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Vorname",
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10), // Add spacing between the fields
+                    // Nachname TextField
+                    Expanded(
+                      child: TextFormField(
+                        controller: nachname,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Nachname",
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Padding(
@@ -211,7 +236,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   controller: email,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
-                    labelText: "Email",
+                    labelText: "Email (= Anmeldename)",
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                 ),
@@ -233,7 +258,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                 child: TextFormField(
-                  // obscureText: true,
                   controller: platzbuchungLink,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
@@ -243,10 +267,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               ElevatedButton(
-                  onPressed: () async {
-                    await signUp();
-                  },
-                  child: const Text("registrieren")),
+                onPressed: () async {
+                  await signUp();
+                },
+                child: const Text("registrieren"),
+              ),
             ],
           ),
           TextButton(

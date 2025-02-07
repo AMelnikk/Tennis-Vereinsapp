@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/providers/user_provider.dart';
 import 'package:verein_app/utils/app_utils.dart';
 
 class GetraenkeBuchenProvider with ChangeNotifier {
@@ -60,6 +57,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   // Methode zum Absenden der Getränkedaten
   Future<int> postGetraenke(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+
     if (_token == null) {
       if (kDebugMode) print("Token fehlt");
       return 400;
@@ -70,9 +68,10 @@ class GetraenkeBuchenProvider with ChangeNotifier {
 
     try {
       if (username.isEmpty) {
-        if (kDebugMode)
+        if (kDebugMode) {
           appError(
               messenger, "Fehler: Benutzername konnte nicht geladen werden.");
+        }
         return 400;
       }
 
@@ -143,10 +142,10 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   }
 
   // Methode zum Abrufen der Buchungen für einen spezifischen Benutzer
-  Future<List<Map<String, dynamic>>> fetchUserBuchungen(String userId) async {
+  Future<List<Map<String, dynamic>>> fetchUserBuchungen() async {
     final allBuchungen = await getAllBuchungen();
     return allBuchungen
-        .where((buchung) => buchung['username'] == userId)
+        .where((buchung) => buchung['username'] == username)
         .toList();
   }
 

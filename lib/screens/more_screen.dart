@@ -44,7 +44,7 @@ class MoreScreen extends StatelessWidget {
                 function: Provider.of<AuthProvider>(context).signOut,
                 assetImage: "assets/images/Abmelden.png"),
           if (Provider.of<AuthProvider>(context).userId ==
-              "UvqMZwTqpcYcLUIAe0qg90UNeUe2")
+              "uEbTVCum2wNt4pNPDKIrYlZHC0D3")
             MoreTile(
               function: () {
                 Navigator.of(context).pushNamed(AdminScreen.routename);

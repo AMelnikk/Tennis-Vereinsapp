@@ -84,8 +84,8 @@ class _AuthScreenState extends State<AuthScreen> {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {
-      if(kDebugMode) print(error.toString());
-      var errorMessage = "Sie können nicht authentifiziert werden";
+      if(kDebugMode) print("error: ${error.toString()}");
+      var errorMessage = "Sie könnten nicht registriert werden. Bitte versuchen sie es später";
       if (error.toString().contains("INVALID_EMAIL")) {
         errorMessage = "Email ist falsch";
       } else if (error.toString().contains("MISSING_PASSWORD")) {

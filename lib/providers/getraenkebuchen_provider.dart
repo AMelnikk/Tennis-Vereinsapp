@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 
 class GetraenkeBuchenProvider with ChangeNotifier {
   GetraenkeBuchenProvider(this._token);
@@ -53,20 +58,27 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   }
 
   // Methode zum Absenden der Getränkedaten
-  Future<int> postGetraenke() async {
-    if (_token == null || _token.isEmpty) {
+  Future<int> postGetraenke(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+    if (_token == null) {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final date = DateTime.now().toIso8601String();
-    const username = 'Oli'; // Benutzername kann dynamisch gesetzt werden
-
-    final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/Getraenke_$timestamp.json?auth=$_token");
 
     try {
+      if (username.isEmpty) {
+        if (kDebugMode)
+          appError(
+              messenger, "Fehler: Benutzername konnte nicht geladen werden.");
+        return 400;
+      }
+
+      final url = Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe/Getraenke_$timestamp.json?auth=$_token");
+
       final response = await http.put(
         url,
         body: json.encode({
@@ -104,7 +116,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
     }
 
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe.json?");
 
     try {
       final response = await http.get(url);
@@ -146,7 +158,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
     }
 
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/$buchungId.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe/$buchungId.json?auth=$_token");
 
     try {
       final response = await http.patch(
@@ -176,7 +188,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
     }
 
     final url = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/GetrankeListe/$buchungId.json?auth=$_token");
+        "https://db-teg-default-rtdb.firebaseio.com/GetränkeListe/$buchungId.json?auth=$_token");
 
     try {
       final response = await http.delete(url);

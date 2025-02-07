@@ -37,6 +37,8 @@ dependencies:
   file_picker: ^5.0.1
   firebase_auth_web: ^5.8.13
   firebase_core: ^3.10.1
+  firebase_storage: ^12.4.1
+  firebase_auth: ^5.4.1
   table_calendar: ^3.0.9
   cupertino_icons: ^1.0.6
   http: ^1.2.2
@@ -51,7 +53,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   excel: ^2.0.0
   share_plus: ^10.1.4
-  firebase_storage: ^12.4.1
+  
 
 dev_dependencies:
   flutter_test:

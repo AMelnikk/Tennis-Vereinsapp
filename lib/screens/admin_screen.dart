@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import './add_team_game_screen.dart';
 import './add_termine_screen.dart';
 import './getraenke_summen_screen.dart';
@@ -16,62 +18,107 @@ class AdminScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     return Scaffold(
       appBar: VereinAppbar(),
       body: Padding(
         padding: const EdgeInsets.all(10),
         child: SingleChildScrollView(
-          // Wrap the Column with SingleChildScrollView
           child: Column(
             children: [
-              AdminFunction(
-                  function: () {
-                    Navigator.of(context).pushNamed(AddNewsScreen.routename);
-                  },
-                  text: "Neuigkeiten hinzufügen"),
-              AdminFunction(
-                  function: () {
-                    Navigator.of(context).pushNamed(AddPhotoScreen.routename);
-                  },
-                  text: "Fotos hinzufügen"),
-              AdminFunction(
-                function: () {
-                  Navigator.of(context)
-                      .pushNamed(AddMannschaftScreen.routename);
+              // Anzeigen für Admin und Mannschaftsführer
+              FutureBuilder<bool>(
+                future: userProvider.isAdminOrMannschaftsfuehrer(context),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(); // Ladeanzeige
+                  }
+
+                  if (snapshot.data == true) {
+                    return Column(
+                      children: [
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddNewsScreen.routename);
+                          },
+                          text: "Neuigkeiten hinzufügen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddPhotoScreen.routename);
+                          },
+                          text: "Fotos hinzufügen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddMannschaftScreen.routename);
+                          },
+                          text: "Mannschaft hinzufügen",
+                        ),
+                      ],
+                    );
+                  } else {
+                    return SizedBox(); // Wenn der Benutzer nicht Admin oder Mannschaftsführer ist, nichts anzeigen
+                  }
                 },
-                text: "Mannschaft hinzufügen",
               ),
-              AdminFunction(
-                function: () {
-                  Navigator.of(context).pushNamed(AddTermineScreen.routename);
+
+              // Nur für Admins anzeigen
+              FutureBuilder<bool>(
+                future: userProvider.isAdmin(context),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(); // Ladeanzeige
+                  }
+
+                  if (snapshot.data == true) {
+                    return Column(
+                      children: [
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddTermineScreen.routename);
+                          },
+                          text: "Termine hochladen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddLigaSpieleScreen.routename);
+                          },
+                          text: "Ligaspiele hochladen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddUserScreen.routename);
+                          },
+                          text: "Nutzer hinzufügen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context).pushNamed(
+                                GetraenkeBuchungenDetailsScreen.routename);
+                          },
+                          text: "Alle Getränkebuchungen Details",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(GetraenkeSummenScreen.routename);
+                          },
+                          text: "Getränke Summen",
+                        ),
+                      ],
+                    );
+                  } else {
+                    return SizedBox(); // Wenn der Benutzer kein Admin ist, nichts anzeigen
+                  }
                 },
-                text: "Termine hochladen",
               ),
-              AdminFunction(
-                function: () {
-                  Navigator.of(context)
-                      .pushNamed(AddLigaSpieleScreen.routename);
-                },
-                text: "Ligaspiele hochladen",
-              ),
-              AdminFunction(
-                  function: () {
-                    Navigator.of(context).pushNamed(AddUserScreen.routename);
-                  },
-                  text: "Nutzer hinzufügen"),
-              AdminFunction(
-                  function: () {
-                    Navigator.of(context)
-                        .pushNamed(GetraenkeBuchungenDetailsScreen.routename);
-                  },
-                  text: "Alle Getränkebuchungen Details"),
-              AdminFunction(
-                function: () {
-                  Navigator.of(context)
-                      .pushNamed(GetraenkeSummenScreen.routename);
-                },
-                text: "Getränke Summen",
-              )
             ],
           ),
         ),

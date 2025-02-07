@@ -166,7 +166,7 @@ class LigaSpieleProvider with ChangeNotifier {
     isLoading = true;
     try {
       final url = Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json");
+          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json?auth=$_token");
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);

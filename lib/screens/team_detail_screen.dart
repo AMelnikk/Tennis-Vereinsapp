@@ -1,14 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:verein_app/models/news.dart';
 import 'package:verein_app/models/season.dart';
 import 'package:verein_app/models/team.dart';
 import 'package:verein_app/models/tennismatch.dart';
+import 'package:verein_app/providers/news_provider.dart';
 import 'package:verein_app/providers/season_provider.dart';
 import 'package:verein_app/providers/team_result_provider.dart';
-import 'package:verein_app/utils/app_colors.dart';
+import 'package:verein_app/screens/news_overview_screen.dart';
 import 'package:verein_app/utils/app_utils.dart';
+import 'package:verein_app/widgets/match_row.dart';
 
 class TeamDetailScreen extends StatefulWidget {
   static const routename = "/team-detail";
@@ -53,14 +57,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         child: Column(
           children: [
             // Foto Container
-            if (team.photoBlob != null && team.photoBlob!.isNotEmpty)
+            if (team.photoBlob.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(
                     vertical: 4), // Minimaler Abstand
                 child: Image.memory(
-                  team.photoBlob!,
-                  width: 600, // Breiter
-                  height: 300, // Höhe beibehalten
+                  base64Decode(team.photoBlob[0]),
+                  width: 450, // Breiter
+                  height: 250, // Höhe beibehalten
                   fit: BoxFit.contain, // Seitenverhältnis beibehalten
                 ),
               ),
@@ -226,31 +230,35 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
 
   Future<Widget> getMannschaftsSpiele(
       int activeTab, String mannschaftName, SaisonData saisonData) async {
+    LigaSpieleProvider ligaProvider =
+        Provider.of<LigaSpieleProvider>(context, listen: false);
+
     if (activeTab == 0) {
       List<TennisMatch> mannschaftsSpiele = [];
+      List<String> spielberichtIds =
+          []; // Hier speichern wir die IDs der Spielberichte
 
-      if (saisonData.jahr != -1) {
-        List<TennisMatch> spieleErstesJahr =
-            await Provider.of<LigaSpieleProvider>(context, listen: false)
-                .getLigaSpieleForMannschaft(
-                    saisonData.jahr, mannschaftName, saisonData.key);
-        mannschaftsSpiele.addAll(spieleErstesJahr);
+      try {
+        await ligaProvider.loadLigaSpieleForSeason(saisonData);
+        mannschaftsSpiele = ligaProvider.getFilteredSpiele(
+          saisonKey: saisonData.key,
+          jahr: null,
+          altersklasse: mannschaftName,
+        );
+
+        // **Sammle die IDs der Spielberichte**
+        for (var spiel in mannschaftsSpiele) {
+          if (spiel.spielbericht.isNotEmpty) {
+            spielberichtIds.add(spiel.spielbericht);
+          }
+        }
+      } catch (e) {
+        return const Center(child: Text("Fehler beim Laden der Spiele."));
       }
 
-      // Statt innerhalb der async-Methode auf den BuildContext zuzugreifen,
-      // prüfen wir hier nach der asynchronen Operation, ob das Widget noch im Baum ist
-      if (!mounted) return Container(); // Return an empty widget if not mounted
+      if (!mounted) return Container();
 
-      if (saisonData.jahr2 != -1) {
-        List<TennisMatch> spieleZweitesJahr =
-            await Provider.of<LigaSpieleProvider>(context, listen: false)
-                .getLigaSpieleForMannschaft(
-                    saisonData.jahr2, mannschaftName, saisonData.key);
-        mannschaftsSpiele.addAll(spieleZweitesJahr);
-      }
-
-      if (!mounted) return Container(); // Check again before returning
-
+      // **Kein Spiel gefunden**
       if (mannschaftsSpiele.isEmpty) {
         return Container(
           margin: const EdgeInsets.all(16),
@@ -263,152 +271,98 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
         );
       }
 
-      return Center(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const BouncingScrollPhysics(),
-            itemCount: mannschaftsSpiele.length,
-            itemBuilder: (context, index) {
-              TennisMatch spiel = mannschaftsSpiele[index];
+      // **Baue das UI mit Spielen + Spielberichten**
+      return Column(
+        children: [
+          Center(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: mannschaftsSpiele.length,
+                itemBuilder: (context, index) {
+                  TennisMatch spiel = mannschaftsSpiele[index];
 
-              String heim = spiel.heim == "TeG Altmühlgrund"
-                  ? spiel.altersklasse
-                  : spiel.heim;
-              String gast = spiel.gast == "TeG Altmühlgrund"
-                  ? spiel.altersklasse
-                  : spiel.gast;
-
-              Color ergebnisFarbe =
-                  getErgebnisCellColor(spiel.ergebnis, spiel.heim, spiel.gast);
-
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Heim Box (35% der Gesamtbreite)
-                  Expanded(
-                    flex: 40,
-                    child: Container(
-                      height: 60,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 0), // Kleines Padding für Text
-                      decoration: BoxDecoration(
-                        color: heim == team.mannschaft
-                            ? Colors.blueAccent
-                            : Colors.white,
-                        border: Border.all(color: Colors.black, width: 0.5),
-                      ),
-                      alignment: Alignment.centerLeft, // Linksbündig
-                      child: Text(
-                        " $heim",
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                  // Ergebnis Box (20% der Gesamtbreite)
-                  Expanded(
-                    flex: 20,
-                    child: Container(
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: ergebnisFarbe,
-                        border: Border.all(color: Colors.black, width: 0.5),
-                      ),
-                      alignment: Alignment.center, // Zentriert
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (spiel.ergebnis.isEmpty) ...[
-                            Text(
-                              DateFormat('dd.MM.yy').format(spiel.datum),
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                            Text(
-                              spiel.uhrzeit,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w300,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ],
-                          if (spiel.ergebnis.isNotEmpty) ...[
-                            Text(
-                              spiel.ergebnis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                            Text(
-                              DateFormat('dd.MM.yy').format(spiel.datum),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w300,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Gast Box (35% der Gesamtbreite)
-                  Expanded(
-                    flex: 40,
-                    child: Container(
-                      height: 60,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 0), // Kleines Padding für Text
-                      decoration: BoxDecoration(
-                        color: gast == team.mannschaft
-                            ? Colors.blueAccent
-                            : Colors.white,
-                        border: Border.all(color: Colors.black, width: 0.5),
-                      ),
-                      alignment: Alignment.centerLeft, // Linksbündig
-                      child: Text(
-                        " $gast",
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+                  return MatchRow(
+                    spiel: spiel,
+                    teamName: mannschaftName,
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+
+          // **Spielberichte unterhalb der Spiele anzeigen**
+          if (spielberichtIds.isNotEmpty)
+            getMannschaftsSpielberichte(spielberichtIds),
+        ],
       );
     }
 
-    return Container(); // Fallback für andere Tabs
+    return Container(); // Falls ein anderer Tab aktiv ist
+  }
+
+  Widget getMannschaftsSpielberichte(List<String> spielberichtIds) {
+    NewsProvider newsProvider =
+        Provider.of<NewsProvider>(context, listen: false);
+    return FutureBuilder<List<News>>(
+      future: newsProvider
+          .loadMannschaftsNews(spielberichtIds), // IDs der Spielberichte
+      builder: (context, newsSnapshot) {
+        if (newsSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (newsSnapshot.hasError) {
+          return Center(child: Text('Fehler: ${newsSnapshot.error}'));
+        } else if (newsSnapshot.hasData && newsSnapshot.data!.isNotEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  "Spielberichte",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: newsSnapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final news = newsSnapshot.data![index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(news.title),
+                      subtitle: Text(news.date),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          NewsOverviewScreen
+                              .routename, // Korrekte Nutzung des statischen Routennamens
+                          arguments: {
+                            // Korrekte Verwendung des routename
+                            "id": news.id,
+                            "title": news.title,
+                            "body": news.body,
+                            "date": news.date,
+                            "author": news.author,
+                            "category": news.category,
+                            "photoBlob": news.photoBlob,
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        } else {
+          return const Center(child: Text('Keine Spielberichte verfügbar'));
+        }
+      },
+    );
   }
 
   Widget getSpieler(int activeTab) {

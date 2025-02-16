@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/popUps/show_images_dialog.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/screens/add_news_screen.dart';
 import 'package:verein_app/utils/image_helper.dart';
 import '../providers/news_provider.dart';
 import '../providers/auth_provider.dart';
@@ -20,6 +22,25 @@ class NewsOverviewScreenState extends State<NewsOverviewScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0; // Track the current page
 
+  bool? _isAdmin;
+
+  @override
+  void initState() {
+    super.initState();
+    // Den Admin-Status einmalig beim Initialisieren laden
+    _loadAdminStatus();
+  }
+
+  // Admin-Status einmalig laden
+  Future<void> _loadAdminStatus() async {
+    bool isAdmin = await Provider.of<UserProvider>(context, listen: false)
+        .isAdmin(context);
+    setState(() {
+      _isAdmin = isAdmin;
+    });
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)?.settings.arguments as Map;
@@ -29,16 +50,17 @@ class NewsOverviewScreenState extends State<NewsOverviewScreen> {
     final imageCache =
         Provider.of<NewsProvider>(context, listen: false).imageCache;
 
+    final String currentUser =
+        Provider.of<AuthProvider>(context, listen: false).userId.toString();
+
     return Scaffold(
       appBar: VereinAppbar(),
       body: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 10), // Seitlicher Rand für den grauen Container
+        padding: const EdgeInsets.symmetric(horizontal: 10), // Seitlicher Rand
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors
-                .grey[300], // Grauer Rand um den gesamten weißen Container
+            color: Colors.grey[300], // Grauer Rand
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           child: Column(
@@ -48,7 +70,6 @@ class NewsOverviewScreenState extends State<NewsOverviewScreen> {
 
               // Bereich für den Text (nimmt den verbleibenden Platz nach dem Bild ein)
               Expanded(
-                // Diese Zeile sorgt dafür, dass der Textbereich den restlichen Platz einnimmt
                 child: SingleChildScrollView(
                   child: Container(
                     color: Colors.white, // Weißer Container für den Inhalt
@@ -57,19 +78,62 @@ class NewsOverviewScreenState extends State<NewsOverviewScreen> {
                         // Bereich für den Titel, Datum und Text
                         buildTextSection(arguments),
 
-                        // Wenn der Benutzer der Admin ist, Button zum Löschen
-                        if (Provider.of<AuthProvider>(context).isSignedIn &&
-                            Provider.of<AuthProvider>(context).userId ==
-                                "UvqMZwTqpcYcLUIAe0qg90UNeUe2")
-                          IconButton(
-                            onPressed: () {
-                              Provider.of<NewsProvider>(context, listen: false)
-                                  .deleteNews(arguments["id"]);
-                              Navigator.of(context).pop();
-                            },
-                            icon: const Icon(Icons.delete_outline_rounded,
-                                color: Color.fromARGB(255, 104, 23, 18)),
-                          ),
+                        // Wenn der Admin-Status bereits geladen wurde
+                        if (_isAdmin != null) ...[
+                          if (_isAdmin == true ||
+                              currentUser == arguments["author"]) ...[
+                            // Row für Edit und Delete Buttons nebeneinander
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Edit-Button nur für Admins oder den Autor der Nachricht
+                                IconButton(
+                                  onPressed: () async {
+                                    final newsProvider =
+                                        Provider.of<NewsProvider>(context,
+                                            listen: false);
+
+                                    // Setze die Werte im newsProvider, um sie zu bearbeiten
+                                    newsProvider.newsId = arguments["id"];
+
+                                    // Navigiere zum AddNewsScreen und übergebe die News ID zur Bearbeitung
+                                    final newsId = await Navigator.push<String>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const AddNewsScreen(),
+                                      ),
+                                    );
+
+                                    // Falls eine neue News ID zurückgegeben wird, setze diese
+                                    if (newsId != null && newsId.isNotEmpty) {
+                                      setState(() {
+                                        // Hier kannst du den Status aktualisieren
+                                        arguments["id"] = newsId;
+                                      });
+                                    }
+                                    newsProvider.clearNews();
+                                  },
+                                  icon: const Icon(Icons.edit_rounded),
+                                ),
+                                // Delete-Button nur für Admins
+                                if (_isAdmin == true)
+                                  IconButton(
+                                    onPressed: () {
+                                      Provider.of<NewsProvider>(context,
+                                              listen: false)
+                                          .deleteNews(arguments["id"]);
+                                      Navigator.of(context).pop();
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Color.fromARGB(255, 104, 23, 18),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ],
                     ),
                   ),

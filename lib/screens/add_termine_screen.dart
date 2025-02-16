@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -43,20 +44,30 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
             for (var row in rows.skip(1)) {
               // Erste Zeile überspringen (Überschriften)
               if (row.length >= 5) {
-                // Überprüfen, ob genügend Spalten vorhanden sind
-                final datumString = row[0]?.value?.toString() as String;
-                final title = row[1]?.value?.toString() ?? '';
-                final category = row[2]?.value?.toString() ?? '';
-                final details = row[3]?.value?.toString() ?? '';
-                final query = row[4]?.value?.toString() ?? '';
+                final datumString = row[0]?.value?.toString() ?? '';
+                final dateFormat = DateFormat('HH:mm');
+                final uhrzeitVon =
+                    row[1]?.value?.toString().split(':').take(2).join(':') ??
+                        '';
+                final uhrzeitBis =
+                    row[2]?.value?.toString().split(':').take(2).join(':') ??
+                        '';
+                final title = row[3]?.value?.toString() ?? '';
+                final category = row[4]?.value?.toString() ?? '';
+                final details = row[5]?.value?.toString() ?? '';
+                final query =
+                    row.length > 5 ? row[6]?.value?.toString() ?? '' : '';
 
-                final datum = DateTime.tryParse(datumString);
+                // Datum parsen
+                DateTime? datum = DateTime.tryParse(datumString);
 
                 if (datum != null) {
                   // Umwandeln in CalendarEvent
                   termine.add(CalendarEvent(
                     id: 0,
                     date: datum,
+                    von: uhrzeitVon,
+                    bis: uhrzeitBis,
                     title: title,
                     description: details,
                     category: category,

@@ -20,6 +20,7 @@ import 'screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
 import './screens/add_team_game_screen.dart';
+import './screens/add_team_result.dart';
 import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
@@ -129,7 +130,7 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsOverviewScreen.routename: (ctx) => NewsOverviewScreen(),
+              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
@@ -147,6 +148,8 @@ class MyApp extends StatelessWidget {
               AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
               AddLigaSpieleScreen.routename: (ctx) =>
                   const AddLigaSpieleScreen(),
+              AddTeamResultScreen.routename: (ctx) =>
+                  const AddTeamResultScreen(),
             },
           ),
         ),

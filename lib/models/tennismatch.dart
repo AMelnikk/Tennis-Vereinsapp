@@ -5,34 +5,33 @@ import 'package:intl/intl.dart';
 
 class TennisMatch {
   final String id;
-  final DateTime datum;
-  final String uhrzeit;
+  DateTime datum;
+  String uhrzeit;
   final String altersklasse;
   final String spielklasse;
   final String gruppe;
   final String heim;
   final String gast;
   final String spielort;
-  final String ergebnis;
+  String ergebnis;
   final String saison;
-  final String spielbericht;
+  String spielbericht;
   final Uint8List? photoBlobSB;
 
-  TennisMatch({
-    required this.id,
-    required this.datum,
-    required this.uhrzeit,
-    required this.altersklasse,
-    required this.spielklasse,
-    required this.gruppe,
-    required this.heim,
-    required this.gast,
-    required this.spielort,
-    required this.saison,
-    required this.ergebnis,
-    required this.spielbericht,
-    required this.photoBlobSB,
-  });
+  TennisMatch(
+      {required this.id,
+      required this.datum,
+      required this.uhrzeit,
+      required this.altersklasse,
+      required this.spielklasse,
+      required this.gruppe,
+      required this.heim,
+      required this.gast,
+      required this.spielort,
+      required this.saison,
+      required this.ergebnis,
+      required this.spielbericht,
+      required this.photoBlobSB});
 
   Map<String, dynamic> toJson(
       {bool includeErgebnis = false,
@@ -64,5 +63,24 @@ class TennisMatch {
     }
 
     return jsonMap;
+  }
+
+  factory TennisMatch.empty() {
+    return TennisMatch(
+      id: '',
+      datum:
+          DateTime.now(), // Datum als DateTime, nicht als formatierter String
+      uhrzeit: '',
+      altersklasse: '',
+      spielklasse: '',
+      gruppe: '',
+      heim: '',
+      gast: '',
+      spielort: '',
+      ergebnis: '',
+      saison: '',
+      spielbericht: '',
+      photoBlobSB: null, // Kein Bild vorhanden, daher null
+    );
   }
 }

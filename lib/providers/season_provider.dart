@@ -61,11 +61,27 @@ class SaisonProvider with ChangeNotifier {
     }
   }
 
+  // Sortiere die Saisons, wenn sie abgerufen werden
+  void _sortSaisons() {
+    saisons.sort((a, b) {
+      final aJahr = a.jahr2 != -1 ? a.jahr2 : a.jahr;
+      final bJahr = b.jahr2 != -1 ? b.jahr2 : b.jahr;
+
+      if (aJahr != bJahr) {
+        return bJahr.compareTo(aJahr); // Neueste Saison zuerst
+      } else {
+        return b.jahr.compareTo(
+            a.jahr); // Zweites Jahr wird verglichen, falls Jahr1 gleich
+      }
+    });
+  }
+
   Future<List<SaisonData>> getAllSeasons() async {
     // Sicherstellen, dass die Daten geladen sind
     if (!dataLoaded) {
       await loadSaisons();
     }
+    _sortSaisons();
     return saisons;
   }
 

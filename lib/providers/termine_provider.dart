@@ -9,7 +9,8 @@ class TermineProvider with ChangeNotifier {
   TermineProvider(this._token);
 
   final String? _token;
-  List<CalendarEvent> events = [];
+  Map<int, List<CalendarEvent>> eventsCache = {}; // Termine und LigaSpiele
+
   bool isLoading = false;
 
   Future<int> saveTermineToFirebase(List<CalendarEvent> termine) async {
@@ -95,6 +96,8 @@ class TermineProvider with ChangeNotifier {
           body: json.encode({
             'id': eventId,
             'date': DateFormat('yyyy-MM-dd').format(termin.date),
+            'von': termin.von,
+            'bis': termin.bis,
             'title': termin.title,
             'category': termin.category,
             'details': termin.description,
@@ -155,6 +158,8 @@ class TermineProvider with ChangeNotifier {
       body: json.encode({
         'id': newId,
         'date': DateFormat('yyyy-MM-dd').format(termin.date),
+        'von': termin.von,
+        'bis': termin.bis,
         'title': termin.title,
         'category': termin.category,
         'details': termin.description,
@@ -178,8 +183,9 @@ class TermineProvider with ChangeNotifier {
   }
 
   /// Lädt die Termine vom Server (z. B. Firebase) und speichert sie in der Liste
-  Future<void> loadEvents(int jahr) async {
+  Future<List<CalendarEvent>> loadEvents(int jahr) async {
     isLoading = true;
+    List<CalendarEvent> termine = [];
     List<Map<String, dynamic>> data = [];
 
     try {
@@ -212,12 +218,14 @@ class TermineProvider with ChangeNotifier {
       }
 
       // Events aus den validen Daten erstellen
-      events = data.map((eventData) {
+      termine = data.map((eventData) {
         return CalendarEvent(
           id: eventData['id'] is int
               ? eventData['id']
               : 0, // Sicherstellen, dass die ID ein int ist
           date: DateTime.tryParse(eventData['date'] ?? '') ?? DateTime.now(),
+          von: eventData['von'] ?? '',
+          bis: eventData['bis'] ?? '',
           title: eventData['title'] ?? 'Kein Titel',
           description: eventData['details'] ?? '',
           category: eventData['category'] ?? '',
@@ -226,10 +234,12 @@ class TermineProvider with ChangeNotifier {
       }).toList();
     } catch (error) {
       debugPrint("❌ Fehler beim Laden der Termine: $error");
-      events = [];
+      termine = [];
     } finally {
       isLoading = false;
       notifyListeners();
     }
+
+    return termine; // Rückgabe der geladenen Termine
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:verein_app/models/season.dart';
 import '../models/calendar_event.dart';
 import '../models/tennismatch.dart';
 
@@ -10,172 +10,62 @@ class LigaSpieleProvider with ChangeNotifier {
   LigaSpieleProvider(this._token);
 
   final String? _token;
-  List<TennisMatch> ligaSpiele = [];
-  int jahrDerLigaspiele = 0;
+  final Map<int, List<TennisMatch>> _cachedLigaSpiele = {}; // Cache
+  final Map<int, Future<void>> _loadingFutures =
+      {}; // Läuft bereits eine Anfrage?
+
   bool isLoading = false;
 
-  bool updateRequired(int jahr) {
-    if (ligaSpiele.isNotEmpty && jahrDerLigaspiele == jahr) {
-      return false;
-    } else {
-      return true;
-    }
+  List<TennisMatch> getLigaSpiele(int jahr) {
+    return _cachedLigaSpiele[jahr] ?? [];
   }
 
-  List<CalendarEvent> getLigaSpieleAsEvents(int jahr) {
-    List<CalendarEvent> events = [];
-
-    if (updateRequired(jahr)) {
-      loadLigaSpiele(jahr);
+  /// **Sicherstellen, dass die Ligaspiele für ein bestimmtes Jahr geladen sind.**
+  Future<void> ensureLigaSpieleGeladen(int jahr) async {
+    // Wenn die Daten bereits geladen werden, dann warte darauf.
+    if (_loadingFutures.containsKey(jahr)) {
+      await _loadingFutures[jahr];
+      return; // Falls die Daten schon geladen werden, einfach zurückkehren
     }
 
-    for (var spiel in ligaSpiele) {
-      DateTime? spielDatum = spiel.datum;
-      if (spielDatum.year != jahr) {
-        continue;
-      }
-
-      // Beispiel: Heimspiel prüfen
-      bool istHeimspiel = spiel.heim == "TeG Altmühlgrund";
-
-      // Erstelle das Event
-      CalendarEvent event = CalendarEvent(
-        id: int.tryParse(spiel.id) ?? 0,
-        title: "${istHeimspiel ? "🏠 " : ""}${spiel.altersklasse}",
-        date: spielDatum, // Wir nutzen hier das geparste Datum
-        category: "Ligaspiel",
-        description:
-            "Gruppe: ${spiel.gruppe}\n\n${spiel.heim} vs ${spiel.gast}\n\nSpielort: ${spiel.spielort}\nUhrzeit: ${spiel.uhrzeit}",
-        query: "",
-      );
-
-      events.add(event);
-    }
-    return events;
+    // Wenn noch nicht geladen, initialisiere den Ladeprozess und speichere die Future.
+    _loadingFutures[jahr] = loadLigaSpieleForYear(jahr);
+    await _loadingFutures[
+        jahr]; // Warten bis die Daten vollständig geladen sind.
   }
 
-  Future<List<TennisMatch>> getLigaSpieleForMannschaft(
-      int jahr, String mannschaftName, String saisonKey) async {
-    // Lade Liga-Spiele für das Jahr (asynchron)
-    if (updateRequired(jahr)) {
-      await loadLigaSpiele(jahr);
+  /// **Lädt die Ligaspiele für ein bestimmtes Jahr nur einmal und cached sie.**
+  Future<List<TennisMatch>> loadLigaSpieleForYear(int jahr) async {
+    // Prüfen, ob die Daten bereits im Cache vorhanden sind
+    if (_cachedLigaSpiele.containsKey(jahr)) {
+      return _cachedLigaSpiele[
+          jahr]!; // Wenn die Daten schon im Cache sind, zurückgeben.
     }
 
-    // Filtern der Liga-Spiele nach Mannschaftsname in Altersklasse
-    return ligaSpiele
-        .where((spiel) =>
-            spiel.altersklasse.trim().toUpperCase() ==
-                mannschaftName.trim().toUpperCase() &&
-            spiel.saison == saisonKey)
-        .toList();
-  }
-
-  Future<int> saveLigaSpiele(List<TennisMatch> spiele) async {
-    if (_token == null || _token.isEmpty) {
-      return 400; // Fehler: Kein Token vorhanden
-    }
+    // URL für die API-Anfrage
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json?auth=$_token");
 
     try {
-      for (var spiel in spiele) {
-        final DateTime spielDatum = spiel.datum;
-        final jahr = spielDatum.year;
-        final url = Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token");
-
-        // Überprüfen, ob das Spiel schon existiert
-        final existingResponse = await http.get(url);
-
-        // Hier wird existingData nur einmal definiert
-        Map<String, dynamic>? existingData;
-
-        // Wenn der Response einen Körper hat und er erfolgreich dekodiert wird
-        if (existingResponse.statusCode == 200 &&
-            existingResponse.body.isNotEmpty) {
-          try {
-            existingData = json.decode(existingResponse.body);
-          } catch (e) {
-            debugPrint("Fehler beim Dekodieren der vorhandenen Daten: $e");
-            existingData = null;
-          }
-        }
-
-        if (existingData != null) {
-          // Hier kombinieren wir die vorhandenen Daten mit den neuen Daten
-          final updatedData = {
-            ...existingData,
-            ...spiel.toJson(
-                includeErgebnis: false,
-                includeSpielbericht: false, // Wird nicht ins JSON aufgenommen
-                includePhotoBlob: false),
-          }; // Nur die Felder aktualisieren, die sich geändert haben
-
-          // Update mit PATCH statt PUT
-          final updateResponse = await http.patch(
-            url,
-            body: json.encode(updatedData),
-            headers: {'Content-Type': 'application/json'},
-          );
-
-          if (updateResponse.statusCode != 200) {
-            debugPrint("Fehler beim Aktualisieren von Spiel ID: ${spiel.id}");
-            return updateResponse.statusCode;
-          }
-        } else {
-          // Wenn das Spiel nicht existiert, speichern wir es komplett neu
-          final response = await http.put(
-            url,
-            body: json.encode(spiel.toJson(
-              includeErgebnis: true,
-              includeSpielbericht: true,
-              includePhotoBlob: true,
-            )),
-            headers: {'Content-Type': 'application/json'},
-          );
-
-          if (response.statusCode != 200) {
-            debugPrint("Fehler beim Speichern von Spiel ID: ${spiel.id}");
-            return response.statusCode;
-          }
-        }
-      }
-      return 200; // Erfolgreich
-    } on SocketException {
-      debugPrint("Netzwerkfehler beim Speichern der Ligaspiele");
-      return 500; // Netzwerkfehler
-    } catch (error) {
-      debugPrint("Fehler beim Speichern der Ligaspiele: $error");
-      return 400; // Allgemeiner Fehler
-    }
-  }
-
-  DateTime? parseDate(String dateStr) {
-    try {
-      // Erstelle ein DateFormat für "dd.MM.yyyy"
-      DateFormat format = DateFormat('dd.MM.yyyy');
-      DateTime parsedDate = format.parse(dateStr);
-      return parsedDate;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Lädt die Ligaspiele vom Server (z. B. Firebase)
-  /// Lädt die Ligaspiele und gibt sie als CalendarEvent für das Jahr zurück
-  // Lädt die Ligaspiele vom Server (z. B. Firebase)
-  Future<void> loadLigaSpiele(int jahr) async {
-    isLoading = true;
-    try {
-      final url = Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr.json?auth=$_token");
       final response = await http.get(url);
+
       if (response.statusCode == 200) {
-        final dynamic data = json.decode(response.body);
+        final data = json.decode(response.body);
+
         if (data is Map<String, dynamic>) {
-          ligaSpiele = data.entries.map((entry) {
+          // Ligaspiele aus der API-Antwort extrahieren und in eine Liste umwandeln
+          final spiele = data.entries.map((entry) {
             final spielData = entry.value;
-            final String datumString = spielData['datum']; // "19.10.2024"
-            final DateFormat dateFormat = DateFormat("dd.MM.yyyy");
-            final DateTime spielDate = dateFormat.parse(datumString);
+
+            // Sicherheitsvorkehrungen beim Parsen des Datums
+            DateTime spielDate;
+            try {
+              spielDate = DateFormat("dd.MM.yyyy").parse(spielData['datum']);
+            } catch (e) {
+              debugPrint(
+                  "Fehler beim Parsen des Datums: ${spielData['datum']}");
+              spielDate = DateTime.now(); // Default-Wert im Fehlerfall
+            }
 
             return TennisMatch(
               id: spielData['id'] ?? 'Unknown',
@@ -190,21 +80,176 @@ class LigaSpieleProvider with ChangeNotifier {
               ergebnis: spielData['ergebnis'] ?? '',
               saison: spielData['saison'] ?? '',
               spielbericht: spielData['spielbericht'] ?? '',
-              photoBlobSB: spielData['photoBlob'],
+              photoBlobSB: null,
             );
           }).toList();
+
+          // Ligaspiele nach Datum aufsteigend sortieren
+          spiele.sort((a, b) => a.datum.compareTo(b.datum));
+
+          // Speichern der geladenen Spiele im Cache
+          _cachedLigaSpiele[jahr] = spiele;
+          return spiele;
         } else {
-          ligaSpiele = [];
+          return []; // Falls das Datenformat nicht passt
         }
       } else {
-        throw Exception("Fehler beim Laden der Ligaspiele");
+        throw Exception(
+            "Fehler beim Laden der Ligaspiele für Jahr $jahr, StatusCode: ${response.statusCode}");
       }
     } catch (error) {
       debugPrint("Fehler beim Laden der Ligaspiele: $error");
-      ligaSpiele = [];
+      return []; // Rückgabe einer leeren Liste im Fehlerfall
+    }
+  }
+
+  Future<void> loadLigaSpieleForSeason(SaisonData saisonData) async {
+    final jahr1 = saisonData.jahr;
+    final jahr2 = saisonData.jahr2;
+
+    // Überprüfen, ob das Startjahr gültig ist
+    if (jahr1 == -1) {
+      return; // Kein gültiges Startjahr
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      // Ligaspiele für das Startjahr laden (wird bereits von _loadLigaSpieleForYear überprüft und gecached)
+      await loadLigaSpieleForYear(jahr1);
+
+      // Wenn ein Endjahr vorhanden ist, auch dieses Jahr laden
+      if (jahr2 != -1) {
+        await loadLigaSpieleForYear(jahr2);
+      }
+    } catch (e) {
+      debugPrint(
+          "Fehler beim Laden der Ligaspiele für Saison ${saisonData.key}: $e");
     } finally {
       isLoading = false;
-      jahrDerLigaspiele = jahr;
+      notifyListeners();
+    }
+  }
+
+  /// **Filtert Ligaspiele nach Saison, Jahr oder Altersklasse**
+  List<TennisMatch> getFilteredSpiele(
+      {String? saisonKey, int? jahr, String? altersklasse}) {
+    List<TennisMatch> filteredSpiele;
+
+    if (jahr != null && _cachedLigaSpiele.containsKey(jahr)) {
+      filteredSpiele = _cachedLigaSpiele[jahr]!.where((spiel) {
+        final bool matchSaison = saisonKey == null || spiel.saison == saisonKey;
+        final bool matchAltersklasse = altersklasse == null ||
+            altersklasse == "Alle" ||
+            spiel.altersklasse == altersklasse;
+        return matchSaison && matchAltersklasse;
+      }).toList();
+    } else {
+      // Falls kein spezifisches Jahr angegeben oder noch nicht geladen wurde
+      filteredSpiele =
+          _cachedLigaSpiele.values.expand((spiele) => spiele).where((spiel) {
+        final bool matchSaison = saisonKey == null || spiel.saison == saisonKey;
+        final bool matchJahr = jahr == null || spiel.datum.year == jahr;
+        final bool matchAltersklasse = altersklasse == null ||
+            altersklasse == "Alle" ||
+            spiel.altersklasse == altersklasse;
+        return matchSaison && matchJahr && matchAltersklasse;
+      }).toList();
+    }
+
+    // Sortiere die gefilterten Spiele nach Datum aufsteigend
+    filteredSpiele.sort((a, b) => a.datum.compareTo(b.datum));
+
+    return filteredSpiele;
+  }
+
+  List<CalendarEvent> getLigaSpieleAsEvents(int jahr) {
+    if (!_cachedLigaSpiele.containsKey(jahr)) {
+      return [];
+    }
+
+    return _cachedLigaSpiele[jahr]!.map((spiel) {
+      bool istHeimspiel = spiel.heim == "TeG Altmühlgrund";
+      return CalendarEvent(
+        id: int.tryParse(spiel.id) ?? 0,
+        title: "${istHeimspiel ? "🏠 " : ""}${spiel.altersklasse}",
+        date: DateTime(
+          spiel.datum.year,
+          spiel.datum.month,
+          spiel.datum.day,
+          int.parse(spiel.uhrzeit.split(":")[0]), // Stunde extrahieren
+          int.parse(spiel.uhrzeit.split(":")[1]), // Minute extrahieren
+        ),
+        von: spiel.uhrzeit,
+        bis:
+            "${int.parse(spiel.uhrzeit.split(":")[0]) + 5}:${int.parse(spiel.uhrzeit.split(":")[1])}", // Minute extrahieren
+        category: "Ligaspiel",
+        description:
+            "Gruppe: ${spiel.gruppe}\n\n${spiel.heim} vs ${spiel.gast}\n\nSpielort: ${spiel.spielort}\nUhrzeit: ${spiel.uhrzeit}",
+        query: "",
+      );
+    }).toList();
+  }
+
+  bool updateRequired(int jahr) {
+    return !_cachedLigaSpiele.containsKey(jahr);
+  }
+
+  Future<int> saveLigaSpiele(List<TennisMatch> spiele) async {
+    if (_token == null || _token.isEmpty) return 400;
+
+    try {
+      for (var spiel in spiele) {
+        final jahr = spiel.datum.year;
+        final url = Uri.parse(
+            "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token");
+        final response = await http.put(
+          url,
+          body: json.encode(spiel.toJson(
+            includeErgebnis: true,
+            includeSpielbericht: true,
+            includePhotoBlob: true,
+          )),
+          headers: {'Content-Type': 'application/json'},
+        );
+
+        if (response.statusCode != 200) {
+          debugPrint("Fehler beim Speichern von Spiel ID: ${spiel.id}");
+          return response.statusCode;
+        }
+      }
+      return 200;
+    } catch (error) {
+      debugPrint("Fehler beim Speichern der Ligaspiele: $error");
+      return 400;
+    }
+  }
+
+  Future<int> updateLigaSpiel(TennisMatch spiel) async {
+    if (_token == null || _token.isEmpty) return 400;
+
+    try {
+      final jahr = spiel.datum.year;
+      final url = Uri.parse(
+          "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token");
+      final updateResponse = await http.patch(
+        url,
+        body: json.encode({"ergebnis": spiel.ergebnis}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (updateResponse.statusCode == 200) {
+        _cachedLigaSpiele.remove(jahr); // Cache für das Jahr invalidieren
+        await loadLigaSpieleForYear(jahr);
+        notifyListeners();
+        return 200;
+      } else {
+        return updateResponse.statusCode;
+      }
+    } catch (error) {
+      debugPrint("Fehler beim Aktualisieren des Ergebnisses: $error");
+      return 400;
     }
   }
 }

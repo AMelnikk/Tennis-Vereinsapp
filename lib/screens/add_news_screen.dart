@@ -1,14 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/utils/image_helper.dart';
+import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
+import 'package:verein_app/widgets/build_photo_selector2.dart';
 import '../providers/news_provider.dart';
 import '../widgets/verein_appbar.dart';
 import 'package:intl/intl.dart'; // Für das Formatieren des Datums
 
 class AddNewsScreen extends StatefulWidget {
   const AddNewsScreen({super.key});
+
   static const routename = "/add-news-screen";
 
   @override
@@ -35,7 +36,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
             primaryColor: Colors.blue,
             hintColor: Colors.blue,
             colorScheme: const ColorScheme.light(primary: Colors.blue),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -45,14 +46,34 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
     if (pickedDate != null) {
       setState(() {
         np.newsDateController.text =
-            DateFormat("dd.MM.yyyy", "de_DE").format(pickedDate);
+            DateFormat("dd.MM.yyyy", "de_DE").format(pickedDate!);
       });
     }
   }
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+      if (newsProvider.newsId.isNotEmpty) {
+        newsProvider.loadNews(newsProvider.newsId);
+      } else {
+        newsProvider.newsDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
+        newsProvider.updateCategory("Allgemein");
+        newsProvider.newsId = '';
+        newsProvider.newsDateController.text =
+            DateFormat('dd.MM.yyyy').format(DateTime.now());
+        newsProvider.body.text = '';
+        newsProvider.photoBlob = [];
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
 
     return Scaffold(
@@ -60,167 +81,115 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text("News hinzufügen",
-                        style: TextStyle(fontSize: 20)),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Text("News hinzufügen", style: TextStyle(fontSize: 20)),
 
-                    // Datum Eingabefeld
-                    TextFormField(
-                      controller: newsProvider.newsDateController,
-                      decoration: const InputDecoration(
-                        labelText: "Datum",
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      readOnly:
-                          true, // Nur Lesezugriff, um den Kalender zu verwenden
-                      onTap: () => _selectDate(
-                          newsProvider, context), // Kalender öffnen bei Klick
+                  // Datum Eingabefeld
+                  TextFormField(
+                    controller: newsProvider.newsDateController,
+                    decoration: const InputDecoration(
+                      labelText: "Datum",
+                      suffixIcon: Icon(Icons.calendar_today),
                     ),
+                    readOnly: true,
+                    onTap: () => _selectDate(newsProvider, context),
+                  ),
 
-                    // Titel Eingabefeld
-                    TextFormField(
-                      decoration: const InputDecoration(label: Text("Titel")),
-                      controller: newsProvider.title,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                  // Titel Eingabefeld mit externer Methode
+                  buildTextFormField(
+                    "Titel",
+                    controller: newsProvider.title,
+                  ),
 
-                    // Textfeld für Body
-                    TextFormField(
-                      decoration: const InputDecoration(label: Text("Text")),
-                      controller: newsProvider.body,
-                      maxLines: 5,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                  // Textfeld für Body mit externer Methode
+                  buildTextFormField(
+                    "Text",
+                    controller: newsProvider.body,
+                  ),
 
-                    // Dropdown für Kategorie
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Kategorie:",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                          DropdownButton<String>(
-                            value: isCustomCategory
-                                ? null
-                                : newsProvider.selectedCategory,
-                            items:
-                                newsProvider.categories.map((String category) {
-                              return DropdownMenuItem<String>(
-                                value: category,
-                                child: Text(category),
-                              );
-                            }).toList()
-                                  ..add(
-                                    const DropdownMenuItem<String>(
-                                      value: "Andere",
-                                      child: Text("Andere (bitte eingeben)"),
-                                    ),
-                                  ),
-                            onChanged: (String? newValue) {
+                  // Dropdown für Kategorie mit externer Methode
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildDropdownField(
+                          label: "Kategorie",
+                          value: isCustomCategory
+                              ? ""
+                              : newsProvider.selectedCategory,
+                          items: [
+                            ...newsProvider.categories,
+                            "Andere",
+                          ],
+                          onChanged: (String? newValue) {
+                            setState(() {
                               if (newValue == "Andere") {
-                                setState(() {
-                                  isCustomCategory = true;
-                                  newsProvider.updateCategory("");
-                                });
+                                isCustomCategory = true;
+                                newsProvider.updateCategory("");
                               } else {
-                                setState(() {
-                                  isCustomCategory = false;
-                                  newsProvider.updateCategory(newValue!);
-                                });
+                                isCustomCategory = false;
+                                newsProvider.updateCategory(newValue!);
                               }
-                            },
-                          ),
-                          if (isCustomCategory)
-                            TextFormField(
-                              controller: categoryController,
-                              decoration: const InputDecoration(
-                                  label: Text("Eigene Kategorie")),
-                              onChanged: (value) {
-                                newsProvider.updateCategory(value);
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Bild-Auswahl
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 80, // Kleinere Vorschau
-                              child: newsProvider.photoBlob.isEmpty
-                                  ? const Center(
-                                      child: Text("Keine Bilder ausgewählt"))
-                                  : ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: newsProvider.photoBlob.length,
-                                      itemBuilder: (context, index) {
-                                        final imageBytes = base64Decode(
-                                            newsProvider.photoBlob[index]);
-
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 5),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            child: Image.memory(
-                                              imageBytes,
-                                              fit: BoxFit.cover,
-                                              width: 80,
-                                              height: 80,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: () async {
-                              newsProvider.photoBlob = await pickImages(
-                                  messenger); // Bilder auswählen und speichern
-                              setState(
-                                  () {}); // UI aktualisieren, um die neuen Bilder sofort anzuzeigen
-                            },
-                            icon: const Icon(Icons.photo),
-                            label: const Text("Fotos wählen",
-                                style: TextStyle(fontSize: 20)),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Button zum Hochladen
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 30),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          setState(() => _isLoading = true);
-                          await newsProvider.postNews();
-                          setState(() => _isLoading = false);
-                          messenger.showSnackBar(const SnackBar(
-                              content: Text("News erfolgreich hochgeladen!")));
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          width: double.infinity,
-                          height: 50,
-                          child: const Text("News Hochladen",
-                              style: TextStyle(fontSize: 20)),
+                            });
+                          },
                         ),
-                      ),
+                        if (isCustomCategory)
+                          buildTextFormField(
+                            "Eigene Kategorie",
+                            controller: categoryController,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Bitte eine Kategorie eingeben";
+                              }
+                              return null;
+                            },
+                          ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Fotoauswahl
+                  PhotoSelector(
+                    onImagesSelected: (List<String> images) {
+                      setState(() {
+                        newsProvider.photoBlob = images;
+                      });
+                    },
+                  ),
+
+                  // Button zum Hochladen
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 30),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+
+                        String newsId = await newsProvider.postNews(
+                          newsProvider.newsId,
+                          authProvider.userId.toString(),
+                        );
+
+                        newsProvider.newsId = newsId;
+                        setState(() => _isLoading = false);
+
+                        messenger.showSnackBar(
+                          const SnackBar(
+                              content: Text("News erfolgreich hochgeladen!")),
+                        );
+
+                        if (newsId.isNotEmpty) {
+                          Navigator.pop(context, newsId);
+                        }
+
+                        newsProvider.clearNews();
+                      },
+                      child: const Text("News Hochladen"),
+                    ),
+                  ),
+                ],
               ),
             ),
     );

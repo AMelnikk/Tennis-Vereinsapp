@@ -7,7 +7,9 @@ import 'package:verein_app/popUps/calender_show_day_events_popup.dart';
 import 'package:verein_app/popUps/calender_show_event_details_popup.dart';
 import 'package:verein_app/providers/team_result_provider.dart';
 import 'package:verein_app/providers/termine_provider.dart';
+import 'package:verein_app/screens/calender_list_screen.dart';
 import 'package:verein_app/utils/app_colors.dart';
+import 'package:verein_app/widgets/calender_buttons.dart';
 import 'package:verein_app/widgets/verein_appbar.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -21,7 +23,6 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _selectedDay;
   late DateTime _focusedDay;
-  List<CalendarEvent> calendarEvents = [];
 
   @override
   void initState() {
@@ -31,26 +32,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
     int jahr = _focusedDay.year;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        final termineProvider =
-            Provider.of<TermineProvider>(context, listen: false);
-        final ligaSpieleProvider =
-            Provider.of<LigaSpieleProvider>(context, listen: false);
+      loadTermine(jahr);
+    });
+  }
 
-        await termineProvider.loadEvents(jahr);
-        await ligaSpieleProvider.loadLigaSpiele(jahr);
+  loadTermine(int jahr) async {
+    try {
+      final termineProvider =
+          Provider.of<TermineProvider>(context, listen: false);
+      final ligaSpieleProvider =
+          Provider.of<LigaSpieleProvider>(context, listen: false);
 
+      // Zuerst prüfen, ob die Events für das Jahr bereits geladen sind
+      if (!termineProvider.eventsCache.containsKey(jahr)) {
+        List<CalendarEvent> terminEvents =
+            await termineProvider.loadEvents(jahr);
+        // Liga-Spiele ebenfalls laden
+        await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
+        List<CalendarEvent> lsEvents =
+            ligaSpieleProvider.getLigaSpieleAsEvents(jahr);
         // Alle Events zusammenführen
         setState(() {
-          calendarEvents = [
-            ...termineProvider.events,
-            ...ligaSpieleProvider.getLigaSpieleAsEvents(jahr),
+          List<CalendarEvent> calendarEvents = [
+            ...terminEvents,
+            ...lsEvents,
           ];
+          termineProvider.eventsCache[jahr] = calendarEvents;
         });
-      } catch (e) {
-        debugPrint("Fehler beim Laden der Events: $e");
+        // Events für das Jahr im Cache speichern
       }
-    });
+    } catch (e) {
+      debugPrint("Fehler beim Laden der Events: $e");
+    }
   }
 
   @override
@@ -121,6 +134,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _focusedDay.year,
             _focusedDay.month - 1,
           );
+          loadTermine(_focusedDay.year);
         });
       },
     );
@@ -138,6 +152,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _focusedDay.year,
             _focusedDay.month + 1,
           );
+          loadTermine(_focusedDay.year);
         });
       },
     );
@@ -169,12 +184,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
       calendarStyle: _buildCalendarStyle(),
       calendarBuilders: CalendarBuilders(
         defaultBuilder: (context, day, focusedDay) {
-          final eventsForDay = calendarEvents
-              .where((event) =>
-                  event.date.year == day.year &&
-                  event.date.month == day.month &&
-                  event.date.day == day.day)
-              .toList();
+          final List<CalendarEvent> eventsForDay =
+              calendarProvider.eventsCache[day.year] != null
+                  ? calendarProvider.eventsCache[day.year]!
+                      .where((event) =>
+                          event.date.year == day.year &&
+                          event.date.month == day.month &&
+                          event.date.day == day.day)
+                      .toList()
+                  : [];
           bool isOutsideCurrentMonth = day.month != _focusedDay.month;
 
           return _buildDayCell(day, eventsForDay, isOutsideCurrentMonth);
@@ -344,67 +362,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildNavigationButtons(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildMonthViewButton(context),
-        const SizedBox(width: 16),
-        _buildListViewButton(context),
-      ],
-    );
-  }
-
-  Widget _buildMonthViewButton(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(0),
-        ),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-      ),
-      onPressed: () {
-        // Navigate to month view
+    return CalendarViewSwitcher(
+      onMonthViewPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const CalendarScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const CalendarScreen()),
         );
       },
-      child: const Text(
-        'Monat',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildListViewButton(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(),
-        ),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-      ),
-      onPressed: () {
-        // Navigate to list view
+      onListViewPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const CalendarScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const CalenderListScreen()),
         );
       },
-      child: const Text(
-        'Liste',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
   }
 

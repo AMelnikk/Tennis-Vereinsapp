@@ -17,13 +17,12 @@ class UserProvider with ChangeNotifier {
   UserProvider(this._token);
 
   Future<bool> _isRole(BuildContext context, List<String> roles) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    userProvider.setToken(authProvider.writeToken.toString());
-    await userProvider.getUserData(authProvider.userId.toString());
+    setToken(authProvider.writeToken.toString());
+    await getUserData(authProvider.userId.toString());
 
-    return roles.contains(userProvider.user.role);
+    return roles.contains(user.role);
   }
 
   Future<bool> isAdminOrMannschaftsfuehrer(BuildContext context) async {
@@ -67,16 +66,15 @@ class UserProvider with ChangeNotifier {
   }
 
   // Methode zum Hinzufügen eines Benutzers (posten)
-  Future<void> postUser(
-      BuildContext context, User postUser, String _tok) async {
+  Future<void> postUser(BuildContext context, User postUser, String tok) async {
     final messenger = ScaffoldMessenger.of(context);
     // Null-Prüfung für uid und Token
-    if (postUser.uid.isEmpty || _tok == null || _tok!.isEmpty) {
+    if (postUser.uid.isEmpty || tok.isEmpty) {
       if (kDebugMode) print("❌ Fehler: UID oder Token fehlt.");
     }
 
     final urlUser = Uri.parse(
-        "https://db-teg-default-rtdb.firebaseio.com/Users/${postUser.uid}.json?auth=$_tok");
+        "https://db-teg-default-rtdb.firebaseio.com/Users/${postUser.uid}.json?auth=$tok");
 
     try {
       // HTTP Request ausführen
@@ -171,7 +169,7 @@ class UserProvider with ChangeNotifier {
                     'Failed to load all users. Status: ${allUsersResponse.statusCode}');
               }
             } catch (error) {
-              print("❌ Fehler beim Abrufen aller Benutzer: $error");
+              //print("❌ Fehler beim Abrufen aller Benutzer: $error");
             }
           } else {
             // Falls kein Admin, nur eigene Daten laden
@@ -184,7 +182,7 @@ class UserProvider with ChangeNotifier {
             'Failed to load user. Status: ${userResponse.statusCode}');
       }
     } catch (error) {
-      print("❌ Fehler beim Abrufen der Benutzerdaten: $error");
+      //print("❌ Fehler beim Abrufen der Benutzerdaten: $error");
     }
 
     notifyListeners(); // Immer aufrufen!

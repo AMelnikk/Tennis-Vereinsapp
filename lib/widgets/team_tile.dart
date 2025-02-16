@@ -140,14 +140,19 @@ class TeamTile extends StatelessWidget {
           // BTV-Symbol
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: IconButton(
-              icon: Image.asset(
-                'assets/images/BTV.jpg', // Dein benutzerdefiniertes Icon
-                width: 30, // Größe des Icons
-                height: 30,
-              ),
-              onPressed: () => _launchURL(context), // URL aufrufen bei Klick
-            ),
+            child:
+                teamTile.url.isNotEmpty // Überprüfe, ob die URL nicht leer ist
+                    ? IconButton(
+                        icon: Image.asset(
+                          'assets/images/BTV.jpg', // Dein benutzerdefiniertes Icon
+                          width: 30, // Größe des Icons
+                          height: 30,
+                        ),
+                        onPressed: () =>
+                            _launchURL(context), // URL aufrufen bei Klick
+                      )
+                    : const SizedBox
+                        .shrink(), // Falls die URL leer ist, nichts anzeigen
           ),
         ],
       ),

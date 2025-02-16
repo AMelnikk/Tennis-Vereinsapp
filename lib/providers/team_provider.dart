@@ -9,23 +9,23 @@ import '../models/team.dart';
 class TeamProvider with ChangeNotifier {
   TeamProvider(this._writeToken);
   final String? _writeToken;
-  List<Team> _teams = [];
-  String _saisonKey = '';
+  final List<Team> _teams = [];
 
-  Future<List<Team>> getData(
-      ScaffoldMessengerState messenger, saisonKey) async {
-    //if (_token == null || _token.isEmpty) {
-    //  throw Exception("Token fehlt");
-    //}
+  // Map to cache already loaded seasons
+  Map<String, List<Team>> teamCache = {};
 
-    if (_teams.isNotEmpty && _saisonKey == saisonKey) {
-      return _teams;
+  Future<void> loadDatatoCache(
+      ScaffoldMessengerState messenger, String saisonKey) async {
+    // Wenn die Saison bereits im Cache vorhanden ist, gib die Daten direkt aus dem Cache zurück
+    if (teamCache.containsKey(saisonKey)) {
+      //appError(
+      //    messenger, 'Team Daten aus Cache geladen für Saison: $saisonKey');
+      return; // Keine weiteren Aktionen notwendig, wenn Daten im Cache sind
     }
 
     final List<Team> loadedData = [];
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/$saisonKey.json");
-    //final url = Uri.parse("https://db-teg-default-rtdb.firebaseio.com/Mannschaften.json?auth=$_token");
 
     try {
       final response = await http.get(url);
@@ -37,16 +37,17 @@ class TeamProvider with ChangeNotifier {
 
         // Überprüfen, ob Daten existieren
         if (extractedData != null) {
-          // Daten in GameResult-Objekte umwandeln
+          // Daten in Team-Objekte umwandeln
           extractedData.forEach((resId, resData) {
             loadedData.add(Team.fromJson(resData, resId));
           });
 
-          _teams = loadedData;
-          _saisonKey = saisonKey;
-          appError(messenger, 'Team Daten geladen for Saison: $saisonKey');
+          // Cache mit den geladenen Daten aktualisieren
+          teamCache[saisonKey] = loadedData;
+
+          //appError(messenger, 'Team Daten geladen für Saison: $saisonKey');
         } else {
-          appError(messenger, 'Keine Daten vorhanden.');
+          //appError(messenger, 'Keine Daten vorhanden.');
         }
       } else {
         // Fehlerhafte Antwort behandeln
@@ -55,16 +56,42 @@ class TeamProvider with ChangeNotifier {
       }
     } catch (e) {
       // Generelle Fehlerbehandlung
-
       appError(messenger, 'Fehler beim Abrufen der Daten: $e');
-
       rethrow; // Fehler weitergeben, falls er weiter oben behandelt werden soll
     }
-
-    return loadedData; // Gibt die Liste (ggf. leer) zurück
   }
 
-  Future<int> addTeam(Team newResult) async {
+  List<Team> getFilteredMannschaften({String? saisonKey, String? mannschaft}) {
+    List<Team> filteredTeams = [];
+
+    // Überprüfen, ob die Saison im Cache existiert
+    if (teamCache.containsKey(saisonKey)) {
+      // Falls Saison im Cache vorhanden ist, Filter anwenden
+      filteredTeams = teamCache[saisonKey]!.where((team) {
+        final bool matchSaison = saisonKey == null || team.saison == saisonKey;
+        final bool matchMannschaft = mannschaft == null ||
+            mannschaft.isEmpty ||
+            team.mannschaft == mannschaft;
+        return matchSaison && matchMannschaft;
+      }).toList();
+    } else {
+      // Falls keine Saison im Cache vorhanden ist, alle Teams filtern
+      filteredTeams = _teams.where((team) {
+        final bool matchSaison = saisonKey == null || team.saison == saisonKey;
+        final bool matchMannschaft = mannschaft == null ||
+            mannschaft.isEmpty ||
+            team.mannschaft == mannschaft;
+        return matchSaison && matchMannschaft;
+      }).toList();
+    }
+
+    // Sortiere die gefilterten Teams nach Mannschaft
+    filteredTeams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
+
+    return filteredTeams;
+  }
+
+  Future<int> _addTeam(Team newResult) async {
     if (_writeToken == null || _writeToken.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400;
@@ -92,9 +119,7 @@ class TeamProvider with ChangeNotifier {
           'pdfBlob': newResult.pdfBlob != null
               ? base64Encode(newResult.pdfBlob!)
               : null,
-          'photoBlob': newResult.photoBlob != null
-              ? base64Encode(newResult.photoBlob!)
-              : null,
+          'photoBlob': newResult.photoBlob,
           'creationDate': date,
         }),
         headers: {'Content-Type': 'application/json'},
@@ -115,24 +140,6 @@ class TeamProvider with ChangeNotifier {
     }
   }
 
-  Future<List<Team>> getFilteredData(String season, String team) async {
-    List<Team> filteredResults = _teams;
-
-    // Filtere nach Saison, wenn sie angegeben ist
-    if (season.isNotEmpty) {
-      filteredResults =
-          filteredResults.where((game) => game.saison == season).toList();
-    }
-
-    // Filtere nach Mannschaft, wenn sie angegeben ist
-    if (team.isNotEmpty) {
-      filteredResults =
-          filteredResults.where((game) => game.mannschaft == team).toList();
-    }
-
-    return filteredResults;
-  }
-
   Future<void> deleteTeam(String saisonkey, String id) async {
     if (_writeToken == null || _writeToken.isEmpty) {
       throw Exception("Token fehlt");
@@ -145,7 +152,16 @@ class TeamProvider with ChangeNotifier {
       final response = await http.delete(url);
 
       if (response.statusCode == 200) {
+        // Entferne das Team aus der Liste der geladenen Teams
         _teams.removeWhere((result) => result.mannschaft == id);
+
+        // Entferne das Team auch aus dem Cache
+        if (teamCache[saisonkey] != null) {
+          teamCache[saisonkey] = teamCache[saisonkey]!
+              .where((team) =>
+                  team.mannschaft != id) // Filtere das zu löschende Team aus
+              .toList();
+        }
       } else {
         throw Exception('Failed to delete the entry.');
       }
@@ -154,32 +170,51 @@ class TeamProvider with ChangeNotifier {
     }
   }
 
+  // Method to add or update teams in the database
+// Method to add or update teams in the database
   Future<void> addOrUpdateTeams(ScaffoldMessengerState messenger,
       String saisonKey, Set<Team> newteams) async {
-    // Fetch existing teams
-    List<Team> existingteams = await getData(messenger, saisonKey);
+    // Lade die Daten in den Cache, falls noch nicht geladen
+    await loadDatatoCache(messenger, saisonKey);
 
-    // Create a map for fast look-up based on team key (mannschaft + liga + gruppe)
+    // Hole die bereits geladenen Teams aus dem Cache
+    List<Team> existingteams = teamCache[saisonKey] ?? [];
+
+    // Erstelle eine Map für eine schnelle Suche der bestehenden Teams
     Map<String, Team> teamsMap = {
-      for (var team in existingteams)
-        team.mannschaft + team.liga + team.gruppe: team
+      for (var team in existingteams) team.saison + team.mannschaft: team
     };
 
-    // Iteriere durch die neuen Teams und prüfe, ob sie existieren
+    // Wenn der Cache für diese Saison nicht existiert, initialisiere ihn
+    if (teamCache[saisonKey] == null) {
+      teamCache[saisonKey] = [];
+    }
+
+    // Iteriere über die neuen Teams und prüfe, ob sie bereits existieren
     for (var newTeam in newteams) {
-      String key = newTeam.mannschaft + newTeam.liga + newTeam.gruppe;
+      String key = newTeam.saison + newTeam.mannschaft;
 
       if (teamsMap.containsKey(key)) {
-        // Team existiert bereits, aktualisiere es
-        await updateTeam(newTeam);
+        // Team existiert, update es in der Datenbank und im Cache
+        await _updateTeam(newTeam);
+
+        // Aktualisiere das Team im Cache
+        teamCache[saisonKey] = teamCache[saisonKey]!
+            .map((team) => team.saison + team.mannschaft == key
+                ? newTeam // Ersetze das alte Team mit dem aktualisierten
+                : team)
+            .toList();
       } else {
-        // Team existiert noch nicht, füge es hinzu
-        await addTeam(newTeam);
+        // Team existiert nicht, füge es der Datenbank und dem Cache hinzu
+        await _addTeam(newTeam);
+
+        // Füge das neue Team zum Cache hinzu
+        teamCache[saisonKey]!.add(newTeam);
       }
     }
   }
 
-  Future<int> updateTeam(Team existingTeam) async {
+  Future<int> _updateTeam(Team existingTeam) async {
     if (_writeToken == null || _writeToken.isEmpty) {
       if (kDebugMode) print("Token fehlt");
       return 400; // Fehler: Kein Token vorhanden
@@ -195,10 +230,19 @@ class TeamProvider with ChangeNotifier {
       final response = await http.patch(
         url,
         body: json.encode({
-          'altersklasse': existingTeam.mannschaft,
-          'spielklasse': existingTeam.liga,
+          'url': existingTeam.url,
+          'saison': existingTeam.saison,
+          'mannschaft': existingTeam.mannschaft,
+          'liga': existingTeam.liga,
           'gruppe': existingTeam.gruppe,
-          'updateDate': date, // Datum der letzten Aktualisierung
+          'mf_name': existingTeam.mfName,
+          'mf_tel': existingTeam.mfTel,
+          'matchbilanz': existingTeam.matchbilanz,
+          'satzbilanz': existingTeam.satzbilanz,
+          'position': existingTeam.position,
+          'kommentar': existingTeam.kommentar,
+          'pdfBlob': existingTeam.pdfBlob,
+          'photoBlob': existingTeam.photoBlob[0],
         }),
         headers: {'Content-Type': 'application/json'},
       );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/season_provider.dart';
-import 'package:verein_app/providers/team_result_provider.dart';
+import '../models/season.dart';
+import '../providers/season_provider.dart';
+import '../providers/team_result_provider.dart';
 
 class FilterSection extends StatefulWidget {
   final SaisonData selectedSeason;

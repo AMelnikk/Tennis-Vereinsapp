@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../utils/app_utils.dart';
 
 Future<List<String>> pickImages(ScaffoldMessengerState messenger) async {
   final ImagePicker picker = ImagePicker();

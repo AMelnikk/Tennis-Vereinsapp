@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/popUps/show_images_dialog.dart';
-import 'package:verein_app/providers/user_provider.dart';
-import 'package:verein_app/screens/add_news_screen.dart';
-import 'package:verein_app/utils/image_helper.dart';
+import '../popUps/show_images_dialog.dart';
+import '../providers/user_provider.dart';
+import '../screens/add_news_screen.dart';
+import '../utils/image_helper.dart';
 import '../providers/news_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';

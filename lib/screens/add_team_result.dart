@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/providers/news_provider.dart';
-import 'package:verein_app/screens/add_news_screen.dart';
-import 'package:verein_app/screens/news_overview_screen.dart';
-import 'package:verein_app/utils/app_colors.dart';
-import 'package:verein_app/widgets/build_filter_season_team.dart';
+import '../models/season.dart';
+import '../providers/news_provider.dart';
+import '../screens/add_news_screen.dart';
+import '../screens/news_overview_screen.dart';
+import '../utils/app_colors.dart';
+import '../widgets/build_filter_season_team.dart';
 import '../models/tennismatch.dart';
 import '../providers/team_result_provider.dart'; // Enthält updateLigaSpiel(TennisMatch spiel)
 import '../providers/season_provider.dart'; // Lädt die Saisondaten

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:verein_app/models/season.dart';
+import '../models/season.dart';
 import '../models/calendar_event.dart';
 import '../models/tennismatch.dart';
 

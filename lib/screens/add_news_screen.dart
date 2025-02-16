@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
-import 'package:verein_app/widgets/build_photo_selector2.dart';
+import '../providers/auth_provider.dart';
+import '../utils/app_utils.dart';
+import '../widgets/build_photo_selector2.dart';
 import '../providers/news_provider.dart';
 import '../widgets/verein_appbar.dart';
 import 'package:intl/intl.dart'; // Für das Formatieren des Datums

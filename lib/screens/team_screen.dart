@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../utils/app_utils.dart';
 import '../models/season.dart';
 import '../providers/season_provider.dart';
 import '../models/team.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/team_result_provider.dart';
+import '../providers/team_result_provider.dart';
 import '../models/calendar_event.dart';
 import '../popUps/calender_show_event_details_popup.dart';
 import '../providers/termine_provider.dart';
@@ -141,13 +141,39 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
 
                           // Sortiere Events innerhalb eines Tages (ohne Uhrzeit zuerst)
                           dayEvents.sort((a, b) {
-                            if (a.date.hour == 0 && a.date.minute == 0) {
-                              return -1;
+                            DateFormat timeFormat = DateFormat("HH:mm");
+
+                            // Versuche, die Zeit zu parsen
+                            DateTime? aVon;
+                            DateTime? bVon;
+
+                            try {
+                              aVon = a.von.isNotEmpty
+                                  ? timeFormat.parse(a
+                                      .von) // Wandelt "09:00" in ein Datum mit heutigem Datum um
+                                  : null;
+                              bVon = b.von.isNotEmpty
+                                  ? timeFormat.parse(b.von)
+                                  : null;
+                            } catch (e) {
+                              print("Fehler beim Parsen der Uhrzeit: $e");
                             }
-                            if (b.date.hour == 0 && b.date.minute == 0) {
-                              return 1;
-                            }
-                            return a.date.compareTo(b.date);
+
+                            // Falls keine Uhrzeit vorhanden ist, setzen wir die Zeit auf 00:00
+                            DateTime aSortTime = DateTime(
+                                a.date.year,
+                                a.date.month,
+                                a.date.day,
+                                aVon?.hour ?? 0,
+                                aVon?.minute ?? 0);
+                            DateTime bSortTime = DateTime(
+                                b.date.year,
+                                b.date.month,
+                                b.date.day,
+                                bVon?.hour ?? 0,
+                                bVon?.minute ?? 0);
+
+                            return aSortTime.compareTo(bSortTime);
                           });
 
                           return Column(
@@ -156,8 +182,7 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
                               _buildDayHeader(
                                   dayEvents.first.date), // Tagesüberschrift
                               ...dayEvents
-                                  .map((event) => _buildDayEvents(event))
-                                  ,
+                                  .map((event) => _buildDayEvents(event)),
                             ],
                           );
                         }),
@@ -214,7 +239,7 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
 
   // Methode zur Anzeige der Event-Tage
   Widget _buildDayEvents(CalendarEvent event) {
-    String time = DateFormat('HH:mm').format(event.date);
+    String time = event.von;
 
     return InkWell(
       onTap: () => showEventDetails(context, event), // Hier Popup aufrufen

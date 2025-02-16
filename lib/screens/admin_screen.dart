@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/add_team_result.dart';
+import '../screens/add_team_result.dart';
 import '../providers/user_provider.dart';
 import './add_team_game_screen.dart';
 import './add_termine_screen.dart';

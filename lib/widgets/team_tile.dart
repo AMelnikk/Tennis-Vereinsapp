@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/screens/team_detail_screen.dart';
+import '../screens/team_detail_screen.dart';
 import '../models/team.dart';
 
 class TeamTile extends StatelessWidget {

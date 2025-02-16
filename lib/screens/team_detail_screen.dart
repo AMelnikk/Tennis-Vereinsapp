@@ -3,16 +3,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/models/news.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/models/team.dart';
-import 'package:verein_app/models/tennismatch.dart';
-import 'package:verein_app/providers/news_provider.dart';
-import 'package:verein_app/providers/season_provider.dart';
-import 'package:verein_app/providers/team_result_provider.dart';
-import 'package:verein_app/screens/news_overview_screen.dart';
-import 'package:verein_app/utils/app_utils.dart';
-import 'package:verein_app/widgets/match_row.dart';
+import '../models/news.dart';
+import '../models/season.dart';
+import '../models/team.dart';
+import '../models/tennismatch.dart';
+import '../providers/news_provider.dart';
+import '../providers/season_provider.dart';
+import '../providers/team_result_provider.dart';
+import '../screens/news_overview_screen.dart';
+import '../utils/app_utils.dart';
+import '../widgets/match_row.dart';
 
 class TeamDetailScreen extends StatefulWidget {
   static const routename = "/team-detail";

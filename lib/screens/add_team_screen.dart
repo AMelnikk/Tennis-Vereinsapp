@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:verein_app/models/season.dart';
-import 'package:verein_app/popUps/show_team_popup.dart';
-import 'package:verein_app/providers/season_provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../models/season.dart';
+import '../popUps/show_team_popup.dart';
+import '../providers/season_provider.dart';
+import '../utils/app_utils.dart';
 import '../providers/team_provider.dart';
 import '../models/team.dart';
 

@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/auth_provider.dart';
-import 'package:verein_app/utils/app_utils.dart';
+import '../providers/auth_provider.dart';
+import '../utils/app_utils.dart';
 import '../models/user.dart';
 
 class UserProvider with ChangeNotifier {

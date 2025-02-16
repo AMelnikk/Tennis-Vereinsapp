@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:verein_app/utils/app_utils.dart';
+import '../utils/app_utils.dart';
 import '../models/team.dart';
 
 class TeamProvider with ChangeNotifier {

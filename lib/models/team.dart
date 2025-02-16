@@ -14,7 +14,7 @@ class Team {
   final String position;
   final String kommentar;
   final Uint8List? pdfBlob;
-  final Uint8List? photoBlob;
+  List<String> photoBlob;
 
   Team({
     required this.url,
@@ -29,10 +29,18 @@ class Team {
     required this.position,
     required this.kommentar,
     this.pdfBlob,
-    this.photoBlob,
+    this.photoBlob = const [],
   });
 
   factory Team.fromJson(Map<String, dynamic> json, String id) {
+    List<String> photoBlob = [];
+
+    if (json['photoBlob'] is String) {
+      photoBlob = [json['photoBlob']];
+    } else if (json['photoBlob'] is List) {
+      photoBlob = List<String>.from(json['photoBlob']);
+    }
+
     return Team(
       url: json['url'],
       saison: json['saison'],
@@ -40,16 +48,15 @@ class Team {
       liga: json['liga'],
       gruppe: json['gruppe'],
       mfName: json['mf_name'] ??
-          '', // Wenn mf_name nicht vorhanden, setze einen leeren String
+          '', // Falls nicht vorhanden, setze einen leeren String
       mfTel: json['mf_tel'] ??
-          '', // Wenn mf_tel nicht vorhanden, setze einen leeren String
+          '', // Falls nicht vorhanden, setze einen leeren String
       matchbilanz: json['matchbilanz'],
       satzbilanz: json['satzbilanz'],
       position: json['position'],
       kommentar: json['kommentar'],
       pdfBlob: json['pdfBlob'] != null ? base64Decode(json['pdfBlob']) : null,
-      photoBlob:
-          json['photoBlob'] != null ? base64Decode(json['photoBlob']) : null,
+      photoBlob: photoBlob,
     );
   }
 
@@ -67,7 +74,7 @@ class Team {
       'position': position,
       'kommentar': kommentar,
       'pdfBlob': pdfBlob != null ? base64Encode(pdfBlob!) : null,
-      'photoBlob': photoBlob != null ? base64Encode(photoBlob!) : null,
+      'photoBlob': photoBlob[0],
     };
   }
 
@@ -85,7 +92,7 @@ class Team {
       position: '',
       kommentar: '',
       pdfBlob: null,
-      photoBlob: null,
+      photoBlob: [],
     );
   }
 
@@ -104,7 +111,7 @@ class Team {
       position: '',
       kommentar: '',
       pdfBlob: null,
-      photoBlob: null,
+      photoBlob: [],
     );
   }
 }

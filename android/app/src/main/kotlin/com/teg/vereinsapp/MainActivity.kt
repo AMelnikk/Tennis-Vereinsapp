@@ -1,4 +1,4 @@
-package com.example.verein_app
+package com.tennisverein.weidenbach
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -11,12 +11,14 @@ class NewsProvider with ChangeNotifier {
   bool isNewsLoading = false;
   List<News> loadedNews = [];
   final String? _token;
+  String newsId = '';
   List<String> photoBlob = [];
-  final title = TextEditingController();
+  var title = TextEditingController();
   final body = TextEditingController();
   var newsDateController = TextEditingController();
   String newsDate = '';
   final categoryController = TextEditingController();
+  String author = '';
 
   String? lastId;
   bool hasMore = true;
@@ -24,8 +26,7 @@ class NewsProvider with ChangeNotifier {
 
   final List<String> categories = [
     "Allgemein",
-    "Mannschaften Erwachsene",
-    "Mannschaften Jugend"
+    "Spielbericht",
   ];
   String selectedCategory = "Allgemein"; // Standardkategorie
 
@@ -74,46 +75,84 @@ class NewsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> postNews() async {
+  Future<String> postNews(String newsId, String author) async {
+    bool isUpdate = newsId.isNotEmpty;
+
+    // Datum parsen und formatieren
     DateTime? parsedDate =
         DateFormat("dd.MM.yyyy").parse(newsDateController.text);
-    newsDate = DateFormat("dd.MM.yyyy").format(parsedDate);
+    String formattedDate = DateFormat("yyyy-MM-dd").format(parsedDate);
 
     try {
-      // Konvertiere das Bild in Base64
-
+      // News-Objekt erstellen
       final news = News(
-        id: '', // Firebase generiert eine ID
-        date: newsDate,
+        id: newsId,
+        date: formattedDate,
         photoBlob: photoBlob,
         title: title.text,
         body: body.text,
         category: selectedCategory.isEmpty
             ? categoryController.text
             : selectedCategory,
-        author: _token.toString(),
+        author: author,
       );
 
-      final url = Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$_token");
+      final http.Response response;
+      if (isUpdate && newsId.length > 5) {
+        // Update: PUT-Anfrage
+        response = await http.put(
+          Uri.parse(
+              "https://db-teg-default-rtdb.firebaseio.com/News/$newsId.json?auth=$_token"),
+          body: json.encode(news.toJson()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      } else {
+        // Neu: POST-Anfrage
+        response = await http.post(
+          Uri.parse(
+              "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$_token"),
+          body: json.encode(news.toJson()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
 
-      final response = await http.post(
-        url,
-        body: json.encode(news.toJson()),
-        headers: {'Content-Type': 'application/json'},
-      );
-      loadedNews.add(news);
-      notifyListeners();
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = json.decode(response.body);
-        return responseData['name'] as String?; // Rückgabe der Firebase-ID
+        final String? firebaseId = responseData['name'];
+
+        if (firebaseId != null && !isUpdate) {
+          // Wenn es sich um einen neuen Beitrag handelt, die ID setzen und zur Liste hinzufügen
+          news.id = firebaseId;
+          loadedNews.add(news);
+        } else if (firebaseId != null && isUpdate) {
+          // Wenn es ein Update ist, die News im Array an der richtigen Stelle aktualisieren
+          int index = loadedNews.indexWhere((n) => n.id == news.id);
+          if (index != -1) {
+            loadedNews[index] = news;
+          }
+        }
+
+        clearNews(); // Optional: Löscht die News-Daten nach dem Absenden
+        notifyListeners(); // Informiert alle Listener über die Änderungen
+        return firebaseId ?? newsId; // Rückgabe der ID
       } else {
         throw Exception('Fehler beim Speichern: ${response.statusCode}');
       }
     } catch (error) {
       debugPrint('Fehler beim POST-Request: $error');
-      return null;
+      return ''; // Rückgabe bei Fehler
     }
+  }
+
+  void clearNews() {
+    newsId = '';
+    newsDate = DateFormat("dd.MM.yyyy").format(DateTime.now());
+    newsDateController.text = DateFormat("dd.MM.yyyy").format(DateTime.now());
+    photoBlob = [];
+    title.text = "";
+    body.text = "";
+    categoryController.text = "Allgemein";
+    author = "";
   }
 
   Future<void> deleteNews(String id) async {
@@ -129,6 +168,70 @@ class NewsProvider with ChangeNotifier {
       if (kDebugMode) print(e);
     }
     notifyListeners();
+  }
+
+  Future<void> loadNews(String id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News/$id.json'),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic>? dbData = json.decode(response.body);
+
+        if (dbData != null) {
+          newsId = id;
+          title.text = dbData["title"];
+          body.text = dbData["body"];
+          newsDate = dbData["date"];
+          author = dbData["author"];
+          categoryController.text = dbData["category"];
+          photoBlob = List<String>.from(dbData["photoBlob"] ?? []);
+          notifyListeners();
+        }
+      } else {
+        throw Exception('Fehler beim Laden der News: ${response.statusCode}');
+      }
+    } catch (error) {
+      debugPrint('Fehler beim Laden der News: $error');
+    }
+  }
+
+  Future<List<News>> loadMannschaftsNews(List<String> ids) async {
+    List<News> fetchedNews = [];
+
+    try {
+      for (String id in ids) {
+        final response = await http.get(
+          Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News/$id.json'),
+        );
+
+        if (response.statusCode == 200) {
+          Map<String, dynamic>? dbData = json.decode(response.body);
+
+          if (dbData != null) {
+            News news = News(
+              id: id,
+              title: dbData["title"] ?? '',
+              body: dbData["body"] ?? '',
+              date: dbData["date"] ?? '',
+              author: dbData["author"] ?? '',
+              category: dbData["category"] ?? '',
+              photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
+            );
+
+            fetchedNews.add(news);
+          }
+        } else {
+          throw Exception(
+              'Fehler beim Laden der News mit ID $id: ${response.statusCode}');
+        }
+      }
+    } catch (error) {
+      debugPrint('Fehler beim Laden der Mannschafts-News: $error');
+    }
+
+    return fetchedNews;
   }
 
   Future<void> getData() async {

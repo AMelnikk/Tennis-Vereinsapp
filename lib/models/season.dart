@@ -12,6 +12,15 @@ class SaisonData {
     required this.jahr2, // Hier wird 'jahr2' initialisiert
   });
 
+  factory SaisonData.empty() {
+    return SaisonData(
+      key: '',
+      saison: '',
+      jahr: -1,
+      jahr2: -1,
+    );
+  }
+
   // Factory-Methode, um ein Objekt aus JSON zu erstellen
   factory SaisonData.fromJson(Map<String, dynamic> json) {
     return SaisonData(

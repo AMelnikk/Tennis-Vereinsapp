@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/screens/add_team_result.dart';
 import '../providers/user_provider.dart';
 import './add_team_game_screen.dart';
 import './add_termine_screen.dart';
@@ -54,9 +55,16 @@ class AdminScreen extends StatelessWidget {
                         AdminFunction(
                           function: () {
                             Navigator.of(context)
+                                .pushNamed(AddTeamResultScreen.routename);
+                          },
+                          text: "Ligaspiele verwalten",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
                                 .pushNamed(AddMannschaftScreen.routename);
                           },
-                          text: "Mannschaft hinzufügen",
+                          text: "Mannschaft verwalten",
                         ),
                       ],
                     );
@@ -73,7 +81,6 @@ class AdminScreen extends StatelessWidget {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircularProgressIndicator(); // Ladeanzeige
                   }
-
                   if (snapshot.data == true) {
                     return Column(
                       children: [

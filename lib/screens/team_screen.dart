@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../models/season.dart';
 import '../providers/season_provider.dart';
 import '../models/team.dart';
@@ -18,7 +19,6 @@ class TeamScreen extends StatefulWidget {
 class _TeamScreenState extends State<TeamScreen> {
   // ignore: unused_field
   var _isLoading = true;
-  List<Team> teams = [];
   List<Team> filteredTeams = [];
   List<SaisonData> filterSeasons = [];
   SaisonData? selectedSeason;
@@ -73,13 +73,17 @@ class _TeamScreenState extends State<TeamScreen> {
       });
 
       if (selectedSeason?.key != null) {
-        teams = await Provider.of<TeamProvider>(context, listen: false).getData(
-            messenger,
-            selectedSeason!.key); // Wir holen die Teams für die gewählte Saison
-        getFilteredResults();
-        //appError(messenger, 'Teams geladen: ${teams.length} Teams');
+        // Lade die Daten aus dem Cache oder vom Server
+        await Provider.of<TeamProvider>(context, listen: false).loadDatatoCache(
+            messenger, selectedSeason!.key); // Daten ins Cache laden
+
+        // Nun die gefilterten Ergebnisse abrufen
+        filteredTeams = Provider.of<TeamProvider>(context, listen: false)
+            .getFilteredMannschaften(saisonKey: selectedSeason!.key);
+
+        // appError(messenger, 'Teams geladen: ${teams.length} Teams');
       } else {
-        teams = [];
+        filteredTeams = [];
       }
 
       setState(() {
@@ -89,12 +93,15 @@ class _TeamScreenState extends State<TeamScreen> {
       setState(() {
         _isLoading = false;
       });
+      // Fehlerbehandlung, z.B. eine Snackbar anzeigen
+      appError(messenger, 'Fehler beim Laden der Daten: ${error.toString()}');
     }
   }
 
   // Filtermethoden für Saison
   void getFilteredResults() {
-    filteredTeams = teams;
+    filteredTeams = Provider.of<TeamProvider>(context, listen: false)
+        .getFilteredMannschaften(saisonKey: selectedSeason!.key);
 
     // Filter für Saison
     if (selectedSeason != null && selectedSeason!.key.isNotEmpty) {

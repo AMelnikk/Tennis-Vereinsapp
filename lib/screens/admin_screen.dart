@@ -48,23 +48,9 @@ class AdminScreen extends StatelessWidget {
                         AdminFunction(
                           function: () {
                             Navigator.of(context)
-                                .pushNamed(AddPhotoScreen.routename);
-                          },
-                          text: "Fotos hinzufügen",
-                        ),
-                        AdminFunction(
-                          function: () {
-                            Navigator.of(context)
                                 .pushNamed(AddTeamResultScreen.routename);
                           },
                           text: "Ligaspiele verwalten",
-                        ),
-                        AdminFunction(
-                          function: () {
-                            Navigator.of(context)
-                                .pushNamed(AddMannschaftScreen.routename);
-                          },
-                          text: "Mannschaft verwalten",
                         ),
                       ],
                     );
@@ -84,6 +70,20 @@ class AdminScreen extends StatelessWidget {
                   if (snapshot.data == true) {
                     return Column(
                       children: [
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddPhotoScreen.routename);
+                          },
+                          text: "Fotos hinzufügen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddMannschaftScreen.routename);
+                          },
+                          text: "Mannschaft verwalten",
+                        ),
                         AdminFunction(
                           function: () {
                             Navigator.of(context)

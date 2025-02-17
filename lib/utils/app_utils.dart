@@ -53,9 +53,15 @@ Widget buildDropdownField({
     decoration: InputDecoration(
       labelText: label,
       labelStyle:
-          const TextStyle(fontSize: 14), // Kleinere Schrift für das Label
+          const TextStyle(fontSize: 12), // Kleinere Schrift für das Label
       contentPadding: const EdgeInsets.symmetric(
-          vertical: 0, horizontal: 0), // Weniger Padding
+        vertical: 16, // Erhöhtes vertikales Padding für mehr Höhe
+        horizontal: 16, // Horizontaler Raum bleibt gleich
+      ),
+      isDense: false, // Weniger kompaktes Layout, sodass es höher wird
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(5), // Abgerundete Ecken
+      ),
     ),
     value: value.isNotEmpty
         ? value
@@ -66,7 +72,10 @@ Widget buildDropdownField({
         child: Text(
           item,
           style: const TextStyle(
-              fontSize: 14), // Kleinere Schrift für Dropdown-Text
+            fontSize: 14, // Größere Schrift für mehr Raum
+          ),
+          overflow:
+              TextOverflow.ellipsis, // Verhindert Overflow bei langen Texten
         ),
       );
     }).toList(),
@@ -77,5 +86,7 @@ Widget buildDropdownField({
       }
       return null;
     },
+    isExpanded:
+        true, // Stellt sicher, dass das Dropdown die gesamte Breite einnimmt
   );
 }

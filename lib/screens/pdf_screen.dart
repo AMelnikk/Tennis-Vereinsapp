@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 //import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:verein_app/popUps/pdf_download_popup.dart';
@@ -92,8 +91,8 @@ class _PdfScreenState extends State<PdfScreen> {
                   child: exists
                       ? FloatingActionButton(
                           onPressed: () {
-                            OpenFilex.open(downloadPath,
-                                type: "application/pdf");
+                            //                       OpenFilex.open(downloadPath,
+                            //                          type: "application/pdf");
                           },
                           child: const Icon(Icons.open_in_new),
                         )

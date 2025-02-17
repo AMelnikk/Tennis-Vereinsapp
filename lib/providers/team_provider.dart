@@ -220,7 +220,6 @@ class TeamProvider with ChangeNotifier {
       return 400; // Fehler: Kein Token vorhanden
     }
 
-    final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
       "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${existingTeam.saison}/${existingTeam.mannschaft}.json?auth=$_writeToken",
     );

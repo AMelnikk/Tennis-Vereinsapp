@@ -54,6 +54,7 @@ void showEventDetails(BuildContext context, CalendarEvent event) {
                             text: "Beschreibung:\n",
                             style: TextStyle(fontWeight: FontWeight.bold)),
                         TextSpan(text: "${event.title}\n"),
+                        TextSpan(text: "${event.von} ${event.bis}"),
                         TextSpan(text: event.description),
                       ],
                     ),

@@ -233,67 +233,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
       },
       child: Container(
         height: 160,
-        decoration: BoxDecoration(
-          color: Colors.transparent, // Hintergrund bleibt unverändert
-          border: Border.all(
-            color: isToday && isSelected
-                ? Colors.red // Falls der aktuelle Tag heute UND ausgewählt ist
-                : isToday
-                    ? Colors.orange
-                    : isSelected
-                        ? Colors.blueAccent
-                        : Colors.transparent,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(4), // Leichte Abrundung für Optik
-        ),
         padding: const EdgeInsets.all(4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // Datum oben rechts anzeigen
-            Align(
-              alignment: Alignment.topRight,
-              child: Text(
-                '${day.day}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
+            // Hintergrund: Wird hinter allem anderen gerendert
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                Expanded(child: Container()),
+              ],
+            ),
+
+            // Zuerst die Events anzeigen (über dem Hintergrund)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.topLeft, // Links ausrichten
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                      top: 10, left: 10), // Leichter Abstand
+                  child: _buildDayCellContent(eventsForDay),
                 ),
               ),
             ),
-            // Events als kleine Punkte oder Liste anzeigen
-            Expanded(
-              child: eventsForDay.isNotEmpty
-                  ? ListView.builder(
-                      itemCount: eventsForDay.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors
-                                  .blue[100], // Hintergrundfarbe für Events
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 4),
-                            child: Text(
-                              eventsForDay[index].title,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.black,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : Container(), // Falls keine Events, bleibt die Zelle leer
-            ),
+
+            // Dann der Kreis für den selektierten oder heutigen Tag
+            if (isSelected || isToday)
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected
+                          ? Colors.blue.withOpacity(0.5) // Selektierter Tag
+                          : Colors.transparent, // Heute-Kreis
+                    ),
+                    child: const SizedBox.shrink(),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -394,20 +383,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
         color: Colors.grey[400]!, // Einheitliche Umrandung für alle Zellen
         width: 1,
       ),
-      todayDecoration: BoxDecoration(
-        border: Border.all(
-            color: Colors.orange, width: 2), // Nur Umrandung, kein Hintergrund
-        borderRadius: BorderRadius.circular(0), // Eckige Umrandung
-      ),
-      selectedDecoration: BoxDecoration(
-        color: Colors.blueAccent
-            .withOpacity(0.3), // Hintergrundfarbe für ausgewählten Tag
-        borderRadius: BorderRadius.circular(0),
-      ),
       defaultTextStyle: const TextStyle(fontSize: 10),
       weekendTextStyle: const TextStyle(fontSize: 10),
       outsideTextStyle: const TextStyle(fontSize: 10, color: Colors.grey),
       cellAlignment: Alignment.topRight,
+      todayDecoration: BoxDecoration(
+        color: Colors.transparent, // Verhindert das Verdecken durch den Kreis
+        shape: BoxShape.circle, // Kreisform
+      ),
+      selectedDecoration: BoxDecoration(
+        color: Colors.transparent, // Verhindert das Verdecken durch den Kreis
+        shape: BoxShape.circle, // Kreisform
+      ),
     );
   }
 }

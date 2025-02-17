@@ -9,12 +9,20 @@
         
         <!-- Deine MainActivity bleibt hier -->
         <activity
-           android:name=".MainApplication"
-           android:launchMode="singleTop"
-           android:theme="@style/LaunchTheme"
-           android:configChanges="orientation|screenSize|smallestScreenSize"
-           android:hardwareAccelerated="true"
-           android:windowSoftInputMode="adjustResize">
+            android:name="io.flutter.embedding.android.FlutterActivity"
+            android:exported="true">
+            android:launchMode="singleTask"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|layoutDirection|fontScale|screenDensity"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+<intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+<meta-data
+  android:name="flutterEmbedding"
+  android:value="2" />
 </activity>
 
     </application>

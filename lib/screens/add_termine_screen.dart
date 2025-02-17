@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
@@ -45,7 +44,6 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
               // Erste Zeile überspringen (Überschriften)
               if (row.length >= 5) {
                 final datumString = row[0]?.value?.toString() ?? '';
-                final dateFormat = DateFormat('HH:mm');
                 final uhrzeitVon =
                     row[1]?.value?.toString().split(':').take(2).join(':') ??
                         '';

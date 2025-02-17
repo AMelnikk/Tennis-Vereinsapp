@@ -1,10 +1,21 @@
+buildscript {
+    ext.kotlin_version = '1.9.0'  // Aktuelle Kotlin-Version
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
+        classpath 'com.google.gms:google-services:4.3.15'
+    }
+}
+
 plugins {
     id "com.android.application"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
-
-
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
@@ -32,9 +43,8 @@ if (keystorePropertiesFile.exists()) {
     throw new GradleException("key.properties file not found")
 }
 
-
 android {
-    namespace = "com.tennisverein.weidenbach"
+    namespace = "com.teg.vereinsapp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
     compileSdkVersion 34 // Oder die neueste unterstützte Version
@@ -45,22 +55,12 @@ android {
     }
 
     defaultConfig {
-	targetSdkVersion 33 // Oder die neueste unterstützte Version
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.teg.vereinsapp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
+        targetSdkVersion 33 // Oder die neueste unterstützte Version
+        applicationId = "com.teg.vereinsapp" // Hier wird die package id gesetzt
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
-    }
- 
-    buildscript {
-        ext.kotlin_version = '1.9.0'  // Aktuelle Kotlin-Version
-        dependencies {
-            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        }
     }
 
     signingConfigs {
@@ -84,11 +84,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-}
- 
 
+    dependencies {
+        implementation 'androidx.appcompat:appcompat:1.6.0'  // Hinzugefügt hier!
+    }
+}
 
 flutter {
     source = "../.."
 }
-

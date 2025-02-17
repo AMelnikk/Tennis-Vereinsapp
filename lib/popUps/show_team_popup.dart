@@ -102,42 +102,56 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text("Mannschaft bearbeiten"),
+    return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(0)), // Ecken eckig
       ),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              _buildSaisonUndMannschaft(context, widget.seasons),
-              const SizedBox(height: 5),
-              _buildLigaUndGruppe(),
-              const SizedBox(height: 5),
-              _buildMatchbilanzUndPosition(),
-              const SizedBox(height: 5),
-              _buildMannschaftsfuehrer(),
-              const SizedBox(height: 5),
-              buildTextFormField('URL', controller: _controllers['url']),
-              const SizedBox(height: 5),
-              buildTextFormField('Kommentar',
-                  controller: _controllers['kommentar']),
-              const SizedBox(height: 5),
-              PhotoSelector(
-                onImagesSelected: (List<String> photoBlob) {},
-                initialPhotoList: _photoBlob,
+      child: Container(
+        width:
+            MediaQuery.of(context).size.width * 0.9, // 90% der Bildschirmbreite
+        height:
+            MediaQuery.of(context).size.height * 0.9, // 90% der Bildschirmhöhe
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text("Mannschaft",
+                style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildSaisonUndMannschaft(context, widget.seasons),
+                      const SizedBox(height: 5),
+                      _buildLigaUndGruppe(),
+                      const SizedBox(height: 5),
+                      _buildMatchbilanzUndPosition(),
+                      const SizedBox(height: 5),
+                      _buildMannschaftsfuehrer(),
+                      const SizedBox(height: 5),
+                      buildTextFormField('URL',
+                          controller: _controllers['url']),
+                      const SizedBox(height: 5),
+                      buildTextFormField('Kommentar',
+                          controller: _controllers['kommentar']),
+                      const SizedBox(height: 5),
+                      PhotoSelector(
+                        onImagesSelected: (List<String> photoBlob) {},
+                        initialPhotoList: _photoBlob,
+                      ),
+                      const SizedBox(height: 5),
+                      _buildPdfSelector(),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 5),
-              _buildPdfSelector(),
-            ],
-          ),
+            ),
+            _buildActionButtons(),
+          ],
         ),
       ),
-      actions: [
-        _buildActionButtons(),
-      ],
     );
   }
 

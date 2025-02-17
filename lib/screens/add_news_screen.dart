@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_utils.dart';
-import '../widgets/build_photo_selector2.dart';
+import '../widgets/build_photo_selector.dart';
 import '../providers/news_provider.dart';
 import '../widgets/verein_appbar.dart';
 import 'package:intl/intl.dart'; // Für das Formatieren des Datums
@@ -46,7 +46,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
     if (pickedDate != null) {
       setState(() {
         np.newsDateController.text =
-            DateFormat("dd.MM.yyyy", "de_DE").format(pickedDate!);
+            DateFormat("dd.MM.yyyy", "de_DE").format(pickedDate);
       });
     }
   }

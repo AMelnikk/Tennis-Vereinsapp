@@ -98,6 +98,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
       appBar: VereinAppbar(),
       body: Column(
         children: [
+          const SizedBox(height: 5),
           FilterSection(
             selectedSeason: _selectedSeason,
             selectedAgeGroup: _selectedAgeGroup,

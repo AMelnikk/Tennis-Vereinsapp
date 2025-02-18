@@ -181,9 +181,10 @@ class LigaSpieleProvider with ChangeNotifier {
           int.parse(spiel.uhrzeit.split(":")[0]), // Stunde extrahieren
           int.parse(spiel.uhrzeit.split(":")[1]), // Minute extrahieren
         ),
-        von: spiel.uhrzeit,
+        von:
+            "${spiel.uhrzeit.split(":")[0].padLeft(2, '0')}:${spiel.uhrzeit.split(":")[1].padLeft(2, '0')}",
         bis:
-            "${int.parse(spiel.uhrzeit.split(":")[0]) + 5}:${int.parse(spiel.uhrzeit.split(":")[1])}", // Minute extrahieren
+            "${((int.parse(spiel.uhrzeit.split(":")[0]) + 5) % 24).toString().padLeft(2, '0')}:${spiel.uhrzeit.split(":")[1].padLeft(2, '0')}", // Minute extrahieren
         category: "Ligaspiel",
         description:
             "Gruppe: ${spiel.gruppe}\n\n${spiel.heim} vs ${spiel.gast}\n\nSpielort: ${spiel.spielort}\nUhrzeit: ${spiel.uhrzeit}",

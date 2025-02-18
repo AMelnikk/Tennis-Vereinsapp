@@ -100,6 +100,25 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
     }
   }
 
+  void _showFullScreenDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      transitionDuration: Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Scaffold(
+          appBar: AppBar(title: Text('Mannschaft')),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: MyTeamDialog(
+                seasons: widget.seasons, teamData: widget.teamData),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(

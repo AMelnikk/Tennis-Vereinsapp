@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.teg.vereinsapp">
+    package="com.tennisverein.weidenbach">
 
     <application
         android:label="TeG Altmühlgrund"

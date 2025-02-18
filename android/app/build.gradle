@@ -25,15 +25,8 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    flutterVersionCode = "1"
-}
-
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    flutterVersionName = "1.0"
-}
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode", "2")
+def flutterVersionName = localProperties.getProperty("flutter.versionName", "1.0.2")
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
@@ -56,11 +49,11 @@ android {
 
     defaultConfig {
         targetSdkVersion 33 // Oder die neueste unterstützte Version
-        applicationId = "com.teg.vereinsapp" // Hier wird die package id gesetzt
+        applicationId = "com.tennisverein.weidenbach" // Hier wird die package id gesetzt
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutterVersionCode.toInteger()
-        versionName = flutterVersionName
+        versionCode 3 // Erhöhe diesen Wert (z. B. auf 4)
+    	versionName "1.0.3"
     }
 
     signingConfigs {

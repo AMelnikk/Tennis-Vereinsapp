@@ -51,7 +51,9 @@ class NewsOverviewScreenState extends State<NewsOverviewScreen> {
         Provider.of<NewsProvider>(context, listen: false).imageCache;
 
     final String currentUser =
-        Provider.of<AuthProvider>(context, listen: false).userId.toString();
+        Provider.of<AuthorizationProvider>(context, listen: false)
+            .userId
+            .toString();
 
     return Scaffold(
       appBar: VereinAppbar(),

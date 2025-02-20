@@ -28,7 +28,8 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
 
   Future<void> _loadUserData() async {
     // AuthProvider und UserProvider abrufen
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final getraenkeProvider =
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);

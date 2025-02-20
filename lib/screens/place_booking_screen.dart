@@ -18,10 +18,10 @@ class _PlaceBookingScreenState extends State<PlaceBookingScreen> {
   @override
   didChangeDependencies() async {
     Uri placeBookingLink =
-        Provider.of<AuthProvider>(context).placeBookingLink == null
+        Provider.of<AuthorizationProvider>(context).placeBookingLink == null
             ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
-            : Uri.parse(
-                Provider.of<AuthProvider>(context).placeBookingLink as String);
+            : Uri.parse(Provider.of<AuthorizationProvider>(context)
+                .placeBookingLink as String);
     if (kDebugMode) print(placeBookingLink);
     try {
       if (placeBookingLink.isAbsolute &&

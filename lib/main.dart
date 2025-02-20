@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/screens/user_profile_screen.dart';
 import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
@@ -41,6 +44,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    print("✅ Firebase Auth erfolgreich initialisiert!");
+    print("👤 Aktueller Nutzer: ${user?.email}");
+  } catch (e) {
+    print("❌ Fehler beim Firebase-Start: $e");
+  }
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
   //    authDomain: "db-teg.firebaseapp.com",
@@ -69,39 +80,43 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => AuthProvider(),
+      create: (context) => AuthorizationProvider(),
       builder: (context, _) => MultiProvider(
         providers: [
           ChangeNotifierProvider.value(
-            value: TeamProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: TeamProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: PhotoProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: PhotoProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: NewsProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: NewsProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value:
-                TermineProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: TermineProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
             value: LigaSpieleProvider(
-                Provider.of<AuthProvider>(context).writeToken),
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value: UserProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: UserProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
-            value:
-                SaisonProvider(Provider.of<AuthProvider>(context).writeToken),
+            value: SaisonProvider(
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
           ChangeNotifierProvider.value(
             value: GetraenkeBuchenProvider(
-                Provider.of<AuthProvider>(context).writeToken),
+                Provider.of<AuthorizationProvider>(context).writeToken),
           ),
         ],
-        child: Consumer<AuthProvider>(
+        child: Consumer<AuthorizationProvider>(
           builder: (ctx, authProvider, _) => MaterialApp(
             title: "TSV Weidenbach",
             theme: ThemeData(
@@ -133,9 +148,10 @@ class MyApp extends StatelessWidget {
               NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
+              UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
               GetraenkeBuchenScreen.routename: (ctx) =>
-                  Provider.of<AuthProvider>(context).isSignedIn
+                  Provider.of<AuthorizationProvider>(context).isSignedIn
                       ? const GetraenkeBuchenScreen()
                       : const AuthScreen(pop: false),
               GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
@@ -194,32 +210,34 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     if (mounted) {
-      email =
-          await Provider.of<AuthProvider>(context).storage.read(key: "email");
-    }
-    if (mounted) {
-      password = await Provider.of<AuthProvider>(context, listen: false)
+      email = await Provider.of<AuthorizationProvider>(context)
           .storage
-          .read(key: "password");
+          .read(key: "email");
     }
     if (mounted) {
-      Provider.of<AuthProvider>(context, listen: false).credentials = {
+      password =
+          await Provider.of<AuthorizationProvider>(context, listen: false)
+              .storage
+              .read(key: "password");
+    }
+    if (mounted) {
+      Provider.of<AuthorizationProvider>(context, listen: false).credentials = {
         "email": email,
         "password": password
       };
     }
     if (mounted) {
-      if (Provider.of<AuthProvider>(context, listen: false)
+      if (Provider.of<AuthorizationProvider>(context, listen: false)
                   .credentials["email"] !=
               null &&
-          Provider.of<AuthProvider>(context, listen: false)
+          Provider.of<AuthorizationProvider>(context, listen: false)
                   .credentials["password"] !=
               null) {
-        Provider.of<AuthProvider>(context, listen: false).signIn(
+        Provider.of<AuthorizationProvider>(context, listen: false).signIn(
             context,
-            Provider.of<AuthProvider>(context, listen: false)
+            Provider.of<AuthorizationProvider>(context, listen: false)
                 .credentials["email"] as String,
-            Provider.of<AuthProvider>(context, listen: false)
+            Provider.of<AuthorizationProvider>(context, listen: false)
                 .credentials["password"] as String);
       }
     }

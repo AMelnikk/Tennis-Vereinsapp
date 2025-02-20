@@ -20,6 +20,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final TextEditingController _platzbuchungController = TextEditingController();
   final TextEditingController _nameFilter = TextEditingController();
   final TextEditingController _uid = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   String _selectedRole = "Mitglied";
   String _selectedFilterRole = "Alle";
   final bool _isLoading = false;
@@ -34,7 +35,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   void loadData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
     userProvider.setToken(authProvider.writeToken.toString());
     await userProvider.getUserData(authProvider.userId.toString());
     userProvider.getAllUsers();
@@ -44,7 +46,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
   void _saveUser() async {
     final messenger = ScaffoldMessenger.of(context); // Vorher speichern
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
 
     // Benutzerdaten setzen
     User newUser = User.empty();
@@ -187,6 +190,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
             child: TextField(
               controller: _nameFilter,
               decoration: const InputDecoration(labelText: "Filter by name"),
+              onChanged: (_) => _applyFilters(), // Aufruf bei Änderung
             ),
           ),
           const SizedBox(width: 10),
@@ -201,7 +205,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
             ]
                 .map((role) => DropdownMenuItem(value: role, child: Text(role)))
                 .toList(),
-            onChanged: (value) => setState(() => _selectedFilterRole = value!),
+            onChanged: (value) {
+              setState(() => _selectedFilterRole = value!);
+              _applyFilters(); // Aufruf nach Änderung
+            },
           ),
           const SizedBox(width: 10),
           ElevatedButton(onPressed: _applyFilters, child: const Text("Filter")),
@@ -215,36 +222,35 @@ class _AddUserScreenState extends State<AddUserScreen> {
       child: ListView.builder(
         itemCount: userProvider.filteredUsers.length,
         itemBuilder: (ctx, index) {
-          final user = userProvider.filteredUsers[index];
+          final line_user = userProvider.filteredUsers[index];
           return ListTile(
-            title: Text('${user.vorname} ${user.nachname}'),
-            subtitle: Text('Berechtigung: ${user.role}'),
+            title: Text('${line_user.vorname} ${line_user.nachname}'),
+            subtitle: Text('Berechtigung: ${line_user.role}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () {
+                  onPressed: () async {
                     setState(() {
-                      _uid.text = user.uid;
-                      _vornameController.text = user.vorname;
-                      _nachnameController.text = user.nachname;
-                      _platzbuchungController.text = user.platzbuchungLink;
+                      _uid.text = line_user.uid;
+                      _vornameController.text = line_user.vorname;
+                      _nachnameController.text = line_user.nachname;
+                      _platzbuchungController.text = line_user.platzbuchungLink;
 
                       if ([
                         "Mitglied",
                         "Admin",
                         "Abteilungsleitung",
                         "Mannschaftsführer"
-                      ].contains(user.role)) {
-                        _selectedRole = user.role;
+                      ].contains(line_user.role)) {
+                        _selectedRole = line_user.role;
                       } else {
                         _selectedRole = "Mitglied"; // Fallback-Wert
                         print(
-                            "⚠️ Unbekannte Rolle: ${user.role}, Standardwert 'Mitglied' gesetzt.");
+                            "⚠️ Unbekannte Rolle: ${line_user.role}, Standardwert 'Mitglied' gesetzt.");
                       }
                     });
-                    userProvider.user = user;
                   },
                 ),
                 IconButton(
@@ -271,7 +277,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     );
 
                     if (confirm) {
-                      await userProvider.deleteUser(ctx, user.uid);
+                      await userProvider.deleteUser(ctx, line_user.uid);
                       await userProvider.getAllUsers(); // Liste aktualisieren
                     }
                   },

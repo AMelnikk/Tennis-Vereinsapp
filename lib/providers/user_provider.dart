@@ -17,7 +17,8 @@ class UserProvider with ChangeNotifier {
   UserProvider(this._token);
 
   Future<bool> _isRole(BuildContext context, List<String> roles) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
 
     setToken(authProvider.writeToken.toString());
     await getUserData(authProvider.userId.toString());
@@ -35,6 +36,27 @@ class UserProvider with ChangeNotifier {
 
   void setToken(String wToken) {
     _token = wToken;
+  }
+
+  Future<String?> fetchOwnEmail() async {
+    final url = Uri.parse(
+        "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({"idToken": _token}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      String email = data["users"]?[0]?["email"];
+      user.email = email;
+      return email;
+    } else {
+      print("Fehler: ${response.body}");
+      return null;
+    }
   }
 
   // Methode zum Abrufen der Benutzerdaten und Privilegien

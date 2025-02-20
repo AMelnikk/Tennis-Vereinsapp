@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
 import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';
 import '../models/http_exception.dart';
@@ -44,11 +45,12 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> signIn() async {
+    final messenger = ScaffoldMessenger.of(context);
     setState(() {
       _isLoading = true;
     });
     try {
-      await Provider.of<AuthProvider>(context, listen: false)
+      await Provider.of<AuthorizationProvider>(context, listen: false)
           .signIn(context, email.text, password.text);
       Future.delayed(const Duration(milliseconds: 500));
       if (mounted && widget.pop) {
@@ -65,7 +67,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (error) {
       const errorMessage =
           "Sie können nicht authentifiziert werden. Bitte versuchen sie es später";
-      _showErrorDialog(errorMessage);
+      appError(messenger, errorMessage);
     }
     if (mounted) {
       setState(() {
@@ -80,7 +82,8 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       UserProvider uP = Provider.of<UserProvider>(context, listen: false);
-      AuthProvider aP = Provider.of<AuthProvider>(context, listen: false);
+      AuthorizationProvider aP =
+          Provider.of<AuthorizationProvider>(context, listen: false);
       User newUSer = User.empty();
       if (nachname.text.isEmpty) {
         newUSer.nachname = email.text;
@@ -97,8 +100,9 @@ class _AuthScreenState extends State<AuthScreen> {
         Navigator.of(context).pop();
       }
     } on HttpException catch (error) {
-      if(kDebugMode) print("error: ${error.toString()}");
-      var errorMessage = "Sie könnten nicht registriert werden. Bitte versuchen sie es später";
+      if (kDebugMode) print("error: ${error.toString()}");
+      var errorMessage =
+          "Sie könnten nicht registriert werden. Bitte versuchen sie es später";
       if (error.toString().contains("INVALID_EMAIL")) {
         errorMessage = "Email ist falsch";
       } else if (error.toString().contains("MISSING_PASSWORD")) {
@@ -120,6 +124,57 @@ class _AuthScreenState extends State<AuthScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showResetPasswordDialog(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context);
+    AuthorizationProvider aP =
+        Provider.of<AuthorizationProvider>(context, listen: false);
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Passwort zurücksetzen"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: "E-Mail-Adresse"),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Dialog schließen
+            },
+            child: const Text("Abbrechen"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                appError(messenger, "Bitte geben Sie eine E-Mail-Adresse ein.");
+                return;
+              }
+
+              try {
+                await aP.resetPassword(context, email);
+                Navigator.of(context).pop(); // Dialog schließen nach Erfolg
+              } catch (error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Fehler: $error')),
+                );
+              }
+            },
+            child: const Text("Zurücksetzen"),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget logInWidget() {
@@ -169,6 +224,13 @@ class _AuthScreenState extends State<AuthScreen> {
                     await signIn();
                   },
                   child: const Text("anmelden")),
+              TextButton(
+                onPressed: () => _showResetPasswordDialog(context),
+                child: const Text(
+                  "Passwort vergessen?",
+                  style: TextStyle(color: Colors.white),
+                ),
+              )
             ],
           ),
           TextButton(

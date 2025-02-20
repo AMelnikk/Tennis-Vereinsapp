@@ -1,14 +1,25 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
+import 'package:verein_app/utils/app_utils.dart';
 import '../models/http_exception.dart';
 
-class AuthProvider with ChangeNotifier {
+class AuthorizationProvider with ChangeNotifier {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  AuthorizationProvider() {
+    try {
+      print("⚡ AuthProvider wird initialisiert...");
+      print("Aktueller Nutzer: ${_auth.currentUser?.email}");
+    } catch (e) {
+      print("❌ Fehler in AuthProvider-Konstruktor: $e");
+    }
+  }
   late final Map<String, String?> credentials;
   final storage = const FlutterSecureStorage();
-
   String? _writeToken;
   DateTime? _expiryDate;
   String? _userId;
@@ -66,6 +77,21 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (error) {
       if (kDebugMode) print("Fehler beim Login: $error");
+    }
+  }
+
+  Future<void> resetPassword(BuildContext context, String email) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      appError(messenger, "⚡ Passwort-Reset wird für $email gestartet...");
+      await _auth.sendPasswordResetEmail(email: email);
+      appError(messenger, "✅ Passwort-Reset-E-Mail erfolgreich gesendet!");
+    } on FirebaseAuthException catch (e) {
+      appError(messenger, "❌ FirebaseAuthException: ${e.code} - ${e.message}");
+      throw Exception("Fehler: ${e.code} - ${e.message}");
+    } catch (e) {
+      appError(messenger, "❌ Unbekannter Fehler: $e");
+      throw Exception("Unbekannter Fehler: $e");
     }
   }
 

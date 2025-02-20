@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/screens/user_profile_screen.dart';
 import '../providers/user_provider.dart';
 import './datenschutz_screen.dart';
 import './auth_screen.dart';
@@ -34,19 +35,27 @@ class MoreScreen extends StatelessWidget {
             },
             assetImage: "assets/images/Datenschutz.png",
           ),
-          if (!Provider.of<AuthProvider>(context).isSignedIn)
+          if (!Provider.of<AuthorizationProvider>(context).isSignedIn)
             MoreTile(
               function: () {
                 Navigator.of(context).pushNamed(AuthScreen.routeName);
               },
               assetImage: "assets/images/Anmelden.png",
             ),
-          if (Provider.of<AuthProvider>(context).isSignedIn)
+          if (Provider.of<AuthorizationProvider>(context).isSignedIn) ...[
             MoreTile(
-              function: Provider.of<AuthProvider>(context).signOut,
+              function:
+                  Provider.of<AuthorizationProvider>(context, listen: false)
+                      .signOut,
               assetImage: "assets/images/Abmelden.png",
             ),
-          // FutureBuilder für Admin-Button
+            MoreTile(
+              function: () {
+                Navigator.of(context).pushNamed(UserProfileScreen.routename);
+              },
+              assetImage: "assets/images/Anmelden.png",
+            ),
+          ], // <--- Korrekte Schließung der Bedingung
           FutureBuilder<bool>(
             future: Provider.of<UserProvider>(context, listen: false)
                 .isAdminOrMannschaftsfuehrer(context),

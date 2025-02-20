@@ -73,7 +73,8 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
   @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
 
     return Scaffold(

@@ -4,12 +4,14 @@ class User {
   String vorname;
   String nachname;
   String role;
+  String email;
 
   User({
     required this.uid,
     required this.platzbuchungLink,
     required this.vorname,
     required this.nachname,
+    required this.email,
     required this.role,
   });
 
@@ -21,6 +23,7 @@ class User {
       platzbuchungLink: json['platzbuchung_link'] ?? '',
       vorname: json['vorname'] ?? '',
       nachname: json['nachname'] ?? '',
+      email: json['email'] ?? '',
       role: json['role'] ?? '',
     );
   }
@@ -31,6 +34,7 @@ class User {
       platzbuchungLink: '',
       vorname: '',
       nachname: '',
+      email: '',
       role: '',
     );
   }

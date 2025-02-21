@@ -54,7 +54,12 @@ class _AuthScreenState extends State<AuthScreen> {
           .signIn(context, email.text, password.text);
       Future.delayed(const Duration(milliseconds: 500));
       if (mounted && widget.pop) {
-        Navigator.of(context).pop();
+        if (Navigator.canPop(context)) {
+          Navigator.of(context)
+              .pop(); // Nur schließen, wenn ein Dialog/Overlay geöffnet ist
+        } else {
+          print('Kein Dialog zum Schließen.');
+        }
       }
     } on HttpException catch (error) {
       var errorMessage = "Sie können nicht authentifiziert werden";

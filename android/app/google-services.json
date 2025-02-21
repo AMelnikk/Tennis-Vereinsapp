@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "1050815457795",
+    "firebase_url": "https://db-teg-default-rtdb.firebaseio.com",
+    "project_id": "db-teg",
+    "storage_bucket": "db-teg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050815457795:android:ea64d2287d19e410e37c36",
+        "android_client_info": {
+          "package_name": "com.tennisverein.weidenbach"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAskOwP-rWTjHIl1b31_iBWQWsRWUEm2Ds"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050815457795:android:7a85c8afa0860959e37c36",
+        "android_client_info": {
+          "package_name": "com.tenniverein.weidenbach"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAskOwP-rWTjHIl1b31_iBWQWsRWUEm2Ds"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

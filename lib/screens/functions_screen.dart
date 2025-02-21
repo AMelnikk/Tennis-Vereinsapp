@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:verein_app/providers/user_provider.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/getraenkebuchen_screen.dart';
 import './place_booking_screen.dart';
@@ -14,6 +16,7 @@ class FunctionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    UserProvider userProvider = Provider.of<UserProvider>(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: CustomScrollView(
@@ -42,12 +45,18 @@ class FunctionsScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).pushNamed(CalendarScreen.routename);
                     }),
+
                 FunctionTile(
-                    image: Image.asset("assets/images/Platzbuchung.webp"),
-                    onTap: () {
+                  image: Image.asset("assets/images/Platzbuchung.webp"),
+                  onTap: () {
+                    if (userProvider.user.platzbuchungLink.isEmpty) {
+                      _showLinkNotFoundDialog(context);
+                    } else {
                       Navigator.of(context)
                           .pushNamed(PlaceBookingScreen.routename);
-                    }),
+                    }
+                  },
+                ),
                 FunctionTile(
                     image: Image.asset("assets/images/Fotogalerie.webp"),
                     onTap: () {
@@ -91,6 +100,36 @@ class FunctionsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showLinkNotFoundDialog(BuildContext context) async {
+    await Future.delayed(
+      const Duration(milliseconds: 50),
+    );
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Hinweis"),
+          content: const Text(
+            "Im Userprofil kannst du deinen persönlichen Link hinterlegen, damit du direkt Plätze buchen kannst.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Hier kannst du den gewünschten Link öffnen, wenn er vorhanden ist
+                // Beispiel-Link für Platzbuchung
+                Navigator.of(context).pop(); // Dialog schließen
+                Navigator.of(context).pushNamed(PlaceBookingScreen.routename);
+              },
+              child: const Text("Weiter als Gast"),
+            ),
+          ],
+        );
+      },
     );
   }
 }

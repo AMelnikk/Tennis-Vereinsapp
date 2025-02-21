@@ -23,7 +23,6 @@ class AuthorizationProvider with ChangeNotifier {
   String? _writeToken;
   DateTime? _expiryDate;
   String? _userId;
-  String? placeBookingLink;
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   String? get writeToken {
@@ -152,7 +151,6 @@ class AuthorizationProvider with ChangeNotifier {
     _writeToken = null;
     _expiryDate = null;
     _userId = null;
-    placeBookingLink = null;
     storage.delete(key: "email");
     storage.delete(key: "password");
     notifyListeners();

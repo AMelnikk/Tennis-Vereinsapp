@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/screens/user_profile_screen.dart';
+import 'package:verein_app/utils/push_notification_service';
 import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
@@ -41,10 +42,15 @@ import "./screens/add_team_screen.dart";
 import "./screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'firebase_options.dart'; // Firebase-Optionen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions
+        .currentPlatform, // Initialisiere mit den Optionen
+  );
+  await PushNotificationService().initialize(); // Initialisiere Push-Service
   try {
     final user = FirebaseAuth.instance.currentUser;
     print("✅ Firebase Auth erfolgreich initialisiert!");

@@ -1,0 +1,63 @@
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_database/firebase_database.dart';
+
+class PushNotificationService {
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
+
+  // Ersetze dies mit deinem Firebase Server Key
+  static const String serverKey = 'AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0';  // Dein FCM-Server-Schlüssel
+
+Future<void> initialize() async {
+  try {
+    // Setze die Berechtigungen für iOS, wenn die App auf einem iOS-Gerät läuft
+    if (!kIsWeb && io.Platform.isIOS) {
+      await _firebaseMessaging.requestPermission();
+    }
+
+    // Hole das Token für den Push-Service
+    String? token = await _firebaseMessaging.getToken();
+    print("Push Token: $token");
+
+    // Abonniere das 'notifications' Topic
+    await FirebaseMessaging.instance.subscribeToTopic('notifications');
+    print("Erfolgreich zum Topic 'notifications' abonniert.");
+
+
+
+
+      // Setze eventuell weitere Handler für Push-Nachrichten, z.B. onLaunch, onResume
+    } catch (e) {
+      print("Fehler beim Initialisieren des Push Notification Services: $e");
+    }
+
+    // Realtime Database Änderungen überwachen
+    _database.ref('News').onChildChanged.listen((event) {
+      print("Datenbankänderung erkannt: ${event.snapshot.value}");
+      _sendPushNotification('Datenbank wurde geändert');
+    });
+
+ //   _database.ref('News').onChildAdded.listen((event) {
+ //     print("Neuer Eintrag in News: ${event.snapshot.value}");
+ //     _sendPushNotification('Neuer Eintrag in News');
+ //   });
+  }
+
+  Future<void> _sendPushNotification(String message) async {
+  try {
+    // Hier sende die Nachricht an die richtigen Empfänger
+    await FirebaseMessaging.instance.subscribeToTopic('notifications');
+    print("Nachricht wurde gesendet: $message");
+  } catch (e) {
+    print("Fehler beim Senden der Push-Nachricht: $e");
+  }
+}
+
+  // Funktion zur Handhabung von Hintergrundnachrichten
+  Future<void> handleBackgroundMessages(RemoteMessage message) async {
+    print('Hintergrundnachricht erhalten: ${message.notification?.title}');
+    // Hier kannst du die Nachricht im Hintergrund verarbeiten, z.B. Benachrichtigung zeigen.
+  }
+}

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/providers/news_provider.dart';
 import 'package:verein_app/utils/image_helper.dart';
-import '../screens/news_overview_screen.dart';
+import '../screens/news_detail_screen.dart';
 
 class NewsTile extends StatelessWidget {
   const NewsTile({
@@ -31,7 +31,7 @@ class NewsTile extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.of(context).pushNamed(
-          NewsOverviewScreen.routename,
+          NewsDetailScreen.routename,
           arguments: {
             "id": id,
             "date": date,

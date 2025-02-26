@@ -12,10 +12,10 @@ class AuthorizationProvider with ChangeNotifier {
 
   AuthorizationProvider() {
     try {
-      print("⚡ AuthProvider wird initialisiert...");
-      print("Aktueller Nutzer: ${_auth.currentUser?.email}");
+      //  print("⚡ AuthProvider wird initialisiert...");
+      //  print("Aktueller Nutzer: ${_auth.currentUser?.email}");
     } catch (e) {
-      print("❌ Fehler in AuthProvider-Konstruktor: $e");
+      //  print("❌ Fehler in AuthProvider-Konstruktor: $e");
     }
   }
   late final Map<String, String?> credentials;

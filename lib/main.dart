@@ -10,6 +10,7 @@ import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
 import './screens/getraenke_summen_screen.dart';
+import './screens/news_screen.dart';
 import './providers/getraenkebuchen_provider.dart';
 import './screens/getraenkedetails_screen.dart';
 import './screens/datenschutz_screen.dart';
@@ -18,7 +19,7 @@ import './providers/user_provider.dart';
 import './providers/team_result_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
-import './screens/news_overview_screen.dart';
+import './screens/news_detail_screen.dart';
 import './providers/news_provider.dart';
 import 'screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
@@ -43,14 +44,37 @@ import "./screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart'; // Firebase-Optionen
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
 
 void main() async {
+
+
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Initialisiere mit den Optionen
-  );
-  await PushNotificationService().initialize(); // Initialisiere Push-Service
+  print("🏁 App startet...");
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("✅ Firebase erfolgreich initialisiert");
+  } catch (e) {
+    print("❌ Fehler bei Firebase-Init: $e");
+  }
+
+  try {
+    print("🚀 Initialisiere PushNotificationService...");
+    await PushNotificationService().initialize();
+    print("✅ PushNotificationService erfolgreich gestartet");
+  } catch (e, stacktrace) {
+    print("❌ Fehler bei PushNotificationService: $e");
+    print(stacktrace);
+  }
   try {
     final user = FirebaseAuth.instance.currentUser;
     print("✅ Firebase Auth erfolgreich initialisiert!");
@@ -58,6 +82,69 @@ void main() async {
   } catch (e) {
     print("❌ Fehler beim Firebase-Start: $e");
   }
+
+  // Lokale Benachrichtigungen konfigurieren
+  const AndroidInitializationSettings androidSettings =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initializationSettings =
+  InitializationSettings(android: androidSettings);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    print("📩 Nachricht empfangen: ${message.notification?.title}");
+
+    // Überprüfe, ob die 'newsId' in den Daten vorhanden ist und einen gültigen Wert hat
+    String newsId = message.data['id'] ?? '';  // Verwende einen leeren String als Fallback, wenn 'newsId' null ist
+
+    if (newsId.isNotEmpty) {
+      print("🔗 Weiterleitung zur News-ID: $newsId");
+
+      // Überprüfe, ob der Navigator und der Kontext existieren
+      if (navigatorKey.currentContext != null) {
+        // Hole den Provider und lade die News-Daten
+        NewsProvider newsProvider = Provider.of<NewsProvider>(navigatorKey.currentContext!, listen: false);
+
+        // Lade die News-Daten
+        await newsProvider.loadNews(newsId);
+
+        // Navigiere zum NewsDetailScreen, wenn die News geladen sind
+        Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          NewsDetailScreen.routename, // Nutze den Routen-Name
+        );
+      }
+    } else {
+      print("🔴 Keine gültige News-ID in den Daten gefunden");
+    }
+  });
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
+    print("📩 Nachricht empfangen: ${message.notification?.title}");
+
+    // Überprüfe, ob die 'newsId' in den Daten vorhanden ist und einen gültigen Wert hat
+    String newsId = message.data['id'] ?? '';  // Verwende einen leeren String als Fallback, wenn 'newsId' null ist
+
+    if (newsId.isNotEmpty) {
+      print("🔗 Weiterleitung zur News-ID: $newsId");
+
+      // Überprüfe, ob der Navigator und der Kontext existieren
+      if (navigatorKey.currentContext != null) {
+        // Hole den Provider und lade die News-Daten
+        NewsProvider newsProvider = Provider.of<NewsProvider>(navigatorKey.currentContext!, listen: false);
+
+        // Lade die News-Daten
+        await newsProvider.loadNews(newsId);
+
+        // Navigiere zum NewsDetailScreen, wenn die News geladen sind
+        Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          NewsDetailScreen.routename, // Nutze den Routen-Name
+        );
+      }
+    } else {
+      print("🔴 Keine gültige News-ID in den Daten gefunden");
+    }
+  });
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
   //    authDomain: "db-teg.firebaseapp.com",
@@ -136,6 +223,7 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            navigatorKey: navigatorKey, // <--- Hier den Key setzen
             supportedLocales: [
               Locale('de', 'DE'), // Deutsch
             ],
@@ -151,7 +239,7 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
+              NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               UserProfileScreen.routename: (ctx) => const UserProfileScreen(),

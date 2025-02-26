@@ -10,7 +10,7 @@ import '../models/tennismatch.dart';
 import '../providers/news_provider.dart';
 import '../providers/season_provider.dart';
 import '../providers/team_result_provider.dart';
-import '../screens/news_overview_screen.dart';
+import '../screens/news_detail_screen.dart';
 import '../utils/app_utils.dart';
 import '../widgets/match_row.dart';
 
@@ -338,7 +338,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          NewsOverviewScreen
+                          NewsDetailScreen
                               .routename, // Korrekte Nutzung des statischen Routennamens
                           arguments: {
                             // Korrekte Verwendung des routename

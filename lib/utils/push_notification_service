@@ -1,63 +1,170 @@
+import 'dart:convert';
 import 'dart:io' as io;
-import 'package:flutter/foundation.dart';
+import 'package:googleapis_auth/auth_io.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:googleapis_auth/googleapis_auth.dart'; // Stelle sicher, dass dieses Package in pubspec.yaml enthalten ist
+import 'package:flutter/services.dart' show rootBundle;
 
 class PushNotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
 
-  // Ersetze dies mit deinem Firebase Server Key
-  static const String serverKey = 'AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0';  // Dein FCM-Server-Schlüssel
-
-Future<void> initialize() async {
+  /// Lädt asynchron die Service-Account JSON-Datei
+  Future<String> getServiceAccountJson() async {
   try {
-    // Setze die Berechtigungen für iOS, wenn die App auf einem iOS-Gerät läuft
-    if (!kIsWeb && io.Platform.isIOS) {
-      await _firebaseMessaging.requestPermission();
-    }
-
-    // Hole das Token für den Push-Service
-    String? token = await _firebaseMessaging.getToken();
-    print("Push Token: $token");
-
-    // Abonniere das 'notifications' Topic
-    await FirebaseMessaging.instance.subscribeToTopic('notifications');
-    print("Erfolgreich zum Topic 'notifications' abonniert.");
-
-
-
-
-      // Setze eventuell weitere Handler für Push-Nachrichten, z.B. onLaunch, onResume
-    } catch (e) {
-      print("Fehler beim Initialisieren des Push Notification Services: $e");
-    }
-
-    // Realtime Database Änderungen überwachen
-    _database.ref('News').onChildChanged.listen((event) {
-      print("Datenbankänderung erkannt: ${event.snapshot.value}");
-      _sendPushNotification('Datenbank wurde geändert');
-    });
-
- //   _database.ref('News').onChildAdded.listen((event) {
- //     print("Neuer Eintrag in News: ${event.snapshot.value}");
- //     _sendPushNotification('Neuer Eintrag in News');
- //   });
-  }
-
-  Future<void> _sendPushNotification(String message) async {
-  try {
-    // Hier sende die Nachricht an die richtigen Empfänger
-    await FirebaseMessaging.instance.subscribeToTopic('notifications');
-    print("Nachricht wurde gesendet: $message");
+    return await rootBundle.loadString('assets/service-account.json');
   } catch (e) {
-    print("Fehler beim Senden der Push-Nachricht: $e");
+    print("❌ Fehler beim Laden des Service Accounts: $e");
+    return "";
   }
 }
 
-  // Funktion zur Handhabung von Hintergrundnachrichten
-  Future<void> handleBackgroundMessages(RemoteMessage message) async {
-    print('Hintergrundnachricht erhalten: ${message.notification?.title}');
-    // Hier kannst du die Nachricht im Hintergrund verarbeiten, z.B. Benachrichtigung zeigen.
+  /// Initialisiert den PushNotificationService
+  Future<void> initialize() async {
+    print("🔔 PushNotificationService wird gestartet...");
+
+    try {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        print("📱 Anfrage für iOS-Push-Berechtigung...");
+        await _firebaseMessaging.requestPermission();
+        print("✅ Berechtigungen erteilt");
+      }
+
+      if (kIsWeb) {
+        print("⚠️ Push-Benachrichtigungen sind auf Web nicht verfügbar.");
+        return;
+      }
+
+      print("🛠 Lade Service-Account...");
+      final String serviceAccountJson = await rootBundle.loadString('assets/service-account.json');
+      if (serviceAccountJson.isNotEmpty) {
+        print("✅ Service Account erfolgreich geladen.");
+      }
+
+      print("🛠 Hole FCM-Token...");
+      String? token = await _firebaseMessaging.getToken().timeout(
+        Duration(seconds: 5),
+        onTimeout: () {
+          print("❌ Timeout: FCM-Token konnte nicht geholt werden");
+          return null;
+        },
+      );
+      print("✅ FCM-Token: ${token ?? 'kein Token erhalten'}");
+
+      await FirebaseMessaging.instance.subscribeToTopic('notifications');
+      print("✅ Erfolgreich zum Topic 'notifications' abonniert.");
+
+      // Starte den Listener für die Firebase-Datenbank
+    startDatabaseListener();
+    } catch (e) {
+      print("❌ Fehler in PushNotificationService: $e");
+    }
   }
+
+  void startDatabaseListener() {
+    DatabaseReference ref = _database.ref("News");
+
+    void processEvent(DatabaseEvent event, String eventType) {
+      if (event.snapshot.value is Map) {
+        Map<String, dynamic> data = Map<String, dynamic>.from(event.snapshot.value as Map);
+        String title = data["title"] ?? "Keine Nachricht verfügbar";
+        String newsId = event.snapshot.key ?? "Keine ID verfügbar"; // Schlüssel (ID) des Datensatzes
+
+        // Je nach Event-Typ unterschiedliche Benachrichtigungen senden
+        if (eventType == "added") {
+          print("Neue Nachricht: $title");
+          sendPushNotification(title, "Neue Nachricht", newsId);
+        } else if (eventType == "changed") {
+          print("Nachricht geändert: $title");
+          sendPushNotification(title, "Geänderte Nachricht",newsId);
+        }
+      } else {
+        print("Unerwartetes Datenformat: ${event.snapshot.value}");
+      }
+    }
+
+    // Listener für neue Nachrichten und geänderte Nachrichten
+    ref.onChildAdded.listen((event) {
+      processEvent(event, "added"); // Event-Typ für neue Nachrichten
+    });
+    ref.onChildChanged.listen((event) {
+      processEvent(event, "changed"); // Event-Typ für geänderte Nachrichten
+    });
+
+    // Listener für gelöschte Nachrichten
+    ref.onChildRemoved.listen((event) {
+      print("Eintrag wurde gelöscht: ${event.snapshot.key}");
+    });
+  }
+
+  /// Sendet eine Push-Nachricht über die Firebase Cloud Messaging API
+  Future<void> sendPushNotification(String type, String title, String newsId) async {
+    String? newToken = await FirebaseMessaging.instance.getToken();
+
+    if (newToken==null || newToken.isEmpty || newToken.length < 20) {
+      print("⚠️ Fehler: Kein gültiger FCM-Token! Empfangener Token: $newToken");
+      return;
+    }
+
+    final String? accessToken = await getAccessToken();
+    if (accessToken == null) {
+      print("❌ Fehler: Kein Access Token erhalten!");
+      return;
+    }
+
+    final Uri url = Uri.parse("https://fcm.googleapis.com/v1/projects/db-teg/messages:send");
+
+    // Erstelle die Nachricht und den Link
+    final Map<String, dynamic> payload = {
+      "message": {
+        "token": newToken,
+        "data": {
+          "title": type, // Manuell in Flutter auswerten
+          "body": title, // Manuell in Flutter auswerten
+          "id": newsId
+        },
+        "android": {
+          "priority": "high"
+        }
+      }
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        "Authorization": "Bearer $accessToken",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      print("✅ Push-Nachricht erfolgreich gesendet!");
+    } else {
+      print("❌ Fehler beim Senden der Push-Nachricht: ${response.body}");
+    }
+  }
+
+
+  Future<String?> getAccessToken() async {
+  try {
+    final String serviceAccountJson = await rootBundle.loadString('assets/service-account.json');
+    final Map<String, dynamic> serviceAccountData = jsonDecode(serviceAccountJson);
+
+    var credentials = ServiceAccountCredentials.fromJson(serviceAccountData);
+    var client = await clientViaServiceAccount(
+      credentials,
+      ['https://www.googleapis.com/auth/firebase.messaging'],
+    );
+
+    return client.credentials.accessToken.data;
+  } catch (e) {
+    print("Fehler beim Abrufen des Access Tokens: $e");
+    return null;
+  }
+}
+
 }

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/season.dart';
 import '../providers/news_provider.dart';
 import '../screens/add_news_screen.dart';
-import '../screens/news_overview_screen.dart';
+import '../screens/news_detail_screen.dart';
 import '../utils/app_colors.dart';
 import '../widgets/build_filter_season_team.dart';
 import '../models/tennismatch.dart';
@@ -253,19 +253,8 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                               newsProvider.loadNews(spiel.spielbericht);
                               Navigator.pushNamed(
                                 context,
-                                NewsOverviewScreen
+                                NewsDetailScreen
                                     .routename, // Korrekte Nutzung des statischen Routennamens
-                                arguments: {
-                                  // Korrekte Verwendung des routename
-                                  "id": newsProvider.newsId,
-                                  "title": newsProvider.title.text,
-                                  "body": newsProvider.body.text,
-                                  "date": newsProvider.newsDate,
-                                  "author": newsProvider.author,
-                                  "category":
-                                      newsProvider.categoryController.text,
-                                  "photoBlob": newsProvider.photoBlob,
-                                },
                               );
                             }),
                       )

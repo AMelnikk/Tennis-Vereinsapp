@@ -34,6 +34,7 @@ dependencies:
     sdk: flutter
   intl: 0.19.0
   provider: ^6.0.3
+  flutter_local_notifications: ^18.0.1
   file_picker: ^8.3.5
   firebase_auth: ^5.5.0
   firebase_auth_web: ^5.14.0
@@ -43,8 +44,10 @@ dependencies:
   firebase_messaging: ^15.2.3
   firebase_database: ^11.3.3
   table_calendar: ^3.1.3
+  googleapis_auth: ^1.6.0
+  googleapis: ^13.2.0
   cupertino_icons: ^1.0.6
-  http: ^1.2.2
+  http: ^1.1.2
   url_launcher: ^6.3.1
   image_picker: ^1.1.2
   flutter_image_converter: ^0.4.1
@@ -113,6 +116,7 @@ flutter:
     - assets/images/Abmelden.png
     - assets/images/BTV.jpg
     - assets/images/Termine.webp
+    - assets/service-account.json  # Pfad zu deiner Service-Account-Datei
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

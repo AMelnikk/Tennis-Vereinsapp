@@ -7,10 +7,14 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/googleapis_auth.dart'; // Stelle sicher, dass dieses Package in pubspec.yaml enthalten ist
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/notification.dart';
+
 
 class PushNotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FirebaseDatabase _database = FirebaseDatabase.instance;
+  bool _listenersInitialized = false;
 
   /// Lädt asynchron die Service-Account JSON-Datei
   Future<String> getServiceAccountJson() async {
@@ -33,6 +37,8 @@ class PushNotificationService {
         print("✅ Berechtigungen erteilt");
       }
 
+      startDatabaseListener();
+      
       if (kIsWeb) {
         print("⚠️ Push-Benachrichtigungen sind auf Web nicht verfügbar.");
         return;
@@ -58,38 +64,63 @@ class PushNotificationService {
       print("✅ Erfolgreich zum Topic 'notifications' abonniert.");
 
       // Starte den Listener für die Firebase-Datenbank
-    startDatabaseListener();
+
     } catch (e) {
       print("❌ Fehler in PushNotificationService: $e");
     }
   }
 
-  void startDatabaseListener() {
-    DatabaseReference ref = _database.ref("News");
+  void startDatabaseListener() async {
 
-    void processEvent(DatabaseEvent event, String eventType) {
-      if (event.snapshot.value is Map) {
-        Map<String, dynamic> data = Map<String, dynamic>.from(event.snapshot.value as Map);
-        String title = data["title"] ?? "Keine Nachricht verfügbar";
-        String newsId = event.snapshot.key ?? "Keine ID verfügbar"; // Schlüssel (ID) des Datensatzes
-
-        // Je nach Event-Typ unterschiedliche Benachrichtigungen senden
-        if (eventType == "added") {
-          print("Neue Nachricht: $title");
-          sendPushNotification(title, "Neue Nachricht", newsId);
-        } else if (eventType == "changed") {
-          print("Nachricht geändert: $title");
-          sendPushNotification(title, "Geänderte Nachricht",newsId);
-        }
-      } else {
-        print("Unerwartetes Datenformat: ${event.snapshot.value}");
-      }
+  if (_listenersInitialized) {
+      print("🔄 Listener bereits aktiv. Kein erneuter Start.");
+      return;
     }
 
+    _listenersInitialized = true;
+
+    DatabaseReference ref = _database.ref("News");
+
+    
+
+    void processEvent(DatabaseEvent event, String eventType) async {
+  if (event.snapshot.value is Map) {
+    Map<String, dynamic> data = Map<String, dynamic>.from(event.snapshot.value as Map);
+    String newsId = event.snapshot.key ?? "Keine ID verfügbar"; // Schlüssel (ID) des Datensatzes
+
+    TeGNotification n = TeGNotification(
+    id: newsId,
+  type: data["type"] ?? "Unbekannter Typ",
+  title: data["title"] ?? "Keine Nachricht verfügbar",
+  body: data["body"] ?? "",
+  timestamp: (data["lastUpdate"] is int) 
+      ? data["lastUpdate"] 
+      : int.tryParse(data["lastUpdate"].toString()) ?? 0, // Sicherstellen, dass immer ein int übergeben wird
+);
+
+
+    int lastFetchTime = await getLastFetchTime();
+    
+    // Je nach Event-Typ unterschiedliche Benachrichtigungen senden
+    if (eventType == "added") {
+      if (n.timestamp > lastFetchTime) {
+        print("🆕 Neue Nachricht: ${n.title}");
+        sendPushNotification(n, newsId);
+      }
+      await saveLastFetchTime(); // Speichert den Zeitpunkt des Abrufs
+    } else if (eventType == "changed") {
+      print("Nachricht geändert: ${n.title}");
+      sendPushNotification(n, newsId);
+    }
+  } else {
+    print("Unerwartetes Datenformat: ${event.snapshot.value}");
+  }
+}
     // Listener für neue Nachrichten und geänderte Nachrichten
     ref.onChildAdded.listen((event) {
-      processEvent(event, "added"); // Event-Typ für neue Nachrichten
+        processEvent(event, "added"); // Event-Typ für geänderte Nachrichten
     });
+
     ref.onChildChanged.listen((event) {
       processEvent(event, "changed"); // Event-Typ für geänderte Nachrichten
     });
@@ -100,8 +131,20 @@ class PushNotificationService {
     });
   }
 
+
+
+Future<void> saveLastFetchTime() async {
+  final prefs = await SharedPreferences.getInstance();
+  prefs.setInt("lastFetchTime", DateTime.now().millisecondsSinceEpoch);
+}
+
+Future<int> getLastFetchTime() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getInt("lastFetchTime") ?? 0;
+}
+
   /// Sendet eine Push-Nachricht über die Firebase Cloud Messaging API
-  Future<void> sendPushNotification(String type, String title, String newsId) async {
+  Future<void> sendPushNotification(TeGNotification notifi, String newsId) async {
     String? newToken = await FirebaseMessaging.instance.getToken();
 
     if (newToken==null || newToken.isEmpty || newToken.length < 20) {
@@ -120,14 +163,21 @@ class PushNotificationService {
     // Erstelle die Nachricht und den Link
     final Map<String, dynamic> payload = {
       "message": {
-        "token": newToken,
+        "token": newToken,  // Zielgerät
         "data": {
-          "title": type, // Manuell in Flutter auswerten
-          "body": title, // Manuell in Flutter auswerten
-          "id": newsId
+          "title": notifi.title,
+          "body": notifi.body,
+          "id": newsId,
         },
         "android": {
-          "priority": "high"
+          "priority": "high",
+        },
+        "apns": {
+          "payload": {
+            "aps": {
+              "content-available": 1,
+            }
+          }
         }
       }
     };
@@ -143,10 +193,19 @@ class PushNotificationService {
 
     if (response.statusCode == 200) {
       print("✅ Push-Nachricht erfolgreich gesendet!");
+    //  await saveNotificationToDatabase(notifi);
     } else {
       print("❌ Fehler beim Senden der Push-Nachricht: ${response.body}");
     }
   }
+
+  Future<void> saveNotificationToDatabase(TeGNotification notification) async {
+  DatabaseReference dbRef = FirebaseDatabase.instance.ref("notifications");
+
+  await dbRef.push().set(notification.toMap());
+
+  print("✅ Nachricht in der Datenbank gespeichert.");
+}
 
 
   Future<String?> getAccessToken() async {

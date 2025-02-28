@@ -59,7 +59,8 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
       if (newsProvider.newsId.isNotEmpty) {
         newsProvider.loadNews(newsProvider.newsId);
       } else {
-        newsProvider.newsDate = DateFormat('dd.MM.yyyy').format(DateTime.now());
+        newsProvider.newsDateController.text =
+            DateFormat('dd.MM.yyyy').format(DateTime.now());
         newsProvider.updateCategory("Allgemein");
         newsProvider.newsId = '';
         newsProvider.newsDateController.text =
@@ -105,10 +106,8 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                   ),
 
                   // Textfeld für Body mit externer Methode
-                  buildTextFormField(
-                    "Text",
-                    controller: newsProvider.body,
-                  ),
+                  buildTextFieldScrollable("Text",
+                      controller: newsProvider.body),
 
                   // Dropdown für Kategorie mit externer Methode
                   Padding(
@@ -173,7 +172,6 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           authProvider.userId.toString(),
                         );
 
-                        newsProvider.newsId = newsId;
                         setState(() => _isLoading = false);
 
                         messenger.showSnackBar(
@@ -184,8 +182,6 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                         if (newsId.isNotEmpty) {
                           Navigator.pop(context, newsId);
                         }
-
-                        newsProvider.clearNews();
                       },
                       child: const Text("News Hochladen"),
                     ),

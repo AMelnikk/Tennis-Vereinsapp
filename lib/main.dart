@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:verein_app/screens/user_profile_screen.dart';
 import 'package:verein_app/utils/push_notification_service';
 import './providers/season_provider.dart';
+import './models/notification.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
 import './screens/getraenke_summen_screen.dart';
@@ -38,7 +39,6 @@ import './screens/functions_screen.dart';
 import './screens/team_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
-import "./screens/news_screen.dart";
 import "./screens/add_team_screen.dart";
 import "./screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
@@ -50,120 +50,173 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
-void main() async {
+void handleNotificationClick(String? payload) async {
+  print("🏷️ Benachrichtigung angeklickt, Payload: $payload");
 
+  if (payload != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Hole den aktuellen Navigator Context direkt aus der aktiven Route
+      BuildContext? context = navigatorKey.currentContext;
 
-  WidgetsFlutterBinding.ensureInitialized();
-  print("🏁 App startet...");
+      if (context != null) {
+        try {
+          Navigator.pushNamed(
+            context,
+            NewsDetailScreen.routename,
+            arguments: payload, // Hier die echte ID einsetzen
+          );
+        } catch (e) {
+          print("❌ Fehler beim Laden der News: $e");
+        }
+      } else {
+        print("❌ Kein gültiger Navigator-Kontext.");
+      }
+    });
+  } else {
+    print("❌ Ungültiges Payload.");
+  }
+}
 
+void checkForNotificationLaunch() async {
+  final details =
+      await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  if (details?.didNotificationLaunchApp ?? false) {
+    String? payload = details?.notificationResponse?.payload;
+    if (payload != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        handleNotificationClick(payload);
+      });
+    }
+  }
+}
+
+Future<void> setupPushNotifications() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("✅ Firebase erfolgreich initialisiert");
-  } catch (e) {
-    print("❌ Fehler bei Firebase-Init: $e");
-  }
-
-  try {
-    print("🚀 Initialisiere PushNotificationService...");
+    await FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await PushNotificationService().initialize();
-    print("✅ PushNotificationService erfolgreich gestartet");
-  } catch (e, stacktrace) {
-    print("❌ Fehler bei PushNotificationService: $e");
-    print(stacktrace);
-  }
-  try {
+
+    // Lokale Benachrichtigungen konfigurieren
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: androidSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        if (response.payload != null) {
+          handleNotificationClick(response.payload!);
+        }
+      },
+    );
+
     final user = FirebaseAuth.instance.currentUser;
     print("✅ Firebase Auth erfolgreich initialisiert!");
     print("👤 Aktueller Nutzer: ${user?.email}");
   } catch (e) {
     print("❌ Fehler beim Firebase-Start: $e");
   }
+}
 
-  // Lokale Benachrichtigungen konfigurieren
-  const AndroidInitializationSettings androidSettings =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initializationSettings =
-  InitializationSettings(android: androidSettings);
-
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
+Future<void> setupNotificationListeners() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-    print("📩 Nachricht empfangen: ${message.notification?.title}");
+    print("📩 Nachricht empfangen: ${message.data['title']}");
 
-    // Überprüfe, ob die 'newsId' in den Daten vorhanden ist und einen gültigen Wert hat
-    String newsId = message.data['id'] ?? '';  // Verwende einen leeren String als Fallback, wenn 'newsId' null ist
+    String newsId = message.data['id'] ?? '';
 
-    if (newsId.isNotEmpty) {
-      print("🔗 Weiterleitung zur News-ID: $newsId");
-
-      // Überprüfe, ob der Navigator und der Kontext existieren
-      if (navigatorKey.currentContext != null) {
-        // Hole den Provider und lade die News-Daten
-        NewsProvider newsProvider = Provider.of<NewsProvider>(navigatorKey.currentContext!, listen: false);
-
-        // Lade die News-Daten
-        await newsProvider.loadNews(newsId);
-
-        // Navigiere zum NewsDetailScreen, wenn die News geladen sind
-        Navigator.pushNamed(
-          navigatorKey.currentContext!,
-          NewsDetailScreen.routename, // Nutze den Routen-Name
-        );
-      }
-    } else {
-      print("🔴 Keine gültige News-ID in den Daten gefunden");
+    if (newsId.isNotEmpty && navigatorKey.currentContext != null) {
+      await Navigator.pushNamed(
+        navigatorKey.currentContext!,
+        NewsDetailScreen.routename,
+        arguments: newsId,
+      );
     }
   });
+
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print("📩 Nachricht empfangen: ${message.notification?.title}");
+    print("📩 Nachricht empfangen: ${message.data['title']}");
 
-    // Überprüfe, ob die 'newsId' in den Daten vorhanden ist und einen gültigen Wert hat
-    String newsId = message.data['id'] ?? '';  // Verwende einen leeren String als Fallback, wenn 'newsId' null ist
+    String newsId = message.data['id'] ?? '';
 
-    if (newsId.isNotEmpty) {
-      print("🔗 Weiterleitung zur News-ID: $newsId");
-
-      // Überprüfe, ob der Navigator und der Kontext existieren
-      if (navigatorKey.currentContext != null) {
-        // Hole den Provider und lade die News-Daten
-        NewsProvider newsProvider = Provider.of<NewsProvider>(navigatorKey.currentContext!, listen: false);
-
-        // Lade die News-Daten
-        await newsProvider.loadNews(newsId);
-
-        // Navigiere zum NewsDetailScreen, wenn die News geladen sind
-        Navigator.pushNamed(
-          navigatorKey.currentContext!,
-          NewsDetailScreen.routename, // Nutze den Routen-Name
-        );
-      }
-    } else {
-      print("🔴 Keine gültige News-ID in den Daten gefunden");
+    if (newsId.isNotEmpty && navigatorKey.currentContext != null) {
+      await Navigator.pushNamed(
+        navigatorKey.currentContext!,
+        NewsDetailScreen.routename,
+        arguments: newsId,
+      );
     }
   });
-  //const FirebaseOptions firebaseOptions = FirebaseOptions(
-  //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
-  //    authDomain: "db-teg.firebaseapp.com",
-  //    databaseURL: "https://db-teg-default-rtdb.firebaseio.com",
-  //    projectId: "db-teg",
-  //    storageBucket: "db-teg.firebasestorage.app",
-  //    messagingSenderId: "1050815457795",
-  //    appId: "1:1050815457795:web:2d0bc6f9b80793f6e37c36",
-  //    measurementId: "G-LNJY8VGKTG");
-  //try {
-  //  await Firebase.initializeApp();
-  //} catch (e) {
-  //  print("Firebase initialization failed: $e");
-  //}
-  await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
-    (_) {
-      runApp(const MyApp());
-    },
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  print("🏁 App startet...");
+
+  await setupPushNotifications(); // Nur Firebase-Setup, keine Listener hier
+
+  await initializeDateFormatting('de_DE', null);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  runApp(const MyApp());
+
+  await setupNotificationListeners(); // Jetzt direkt nach runApp() aufrufen
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  try {
+    print("Hintergrundnachricht empfangen: ${message.data}");
+
+    // Stelle sicher, dass die Daten vorhanden sind
+    String newsId = message.data['id'] ?? '';
+    String title = message.data['title'] ?? '';
+    String body = message.data['body'] ?? '';
+
+    if (newsId.isEmpty) {
+      print("🔴 Keine gültige News-ID oder Benachrichtigungsdetails gefunden");
+      return;
+    }
+
+    // Erstelle eine Notification-Instanz
+    TeGNotification notification = TeGNotification(
+      id: newsId,
+      type: "news", // Hier kannst du den Typ der Nachricht anpassen
+      title: title,
+      body: body,
+    );
+
+    // Zeige die Benachrichtigung an
+    await _showNotification(notification);
+  } catch (e) {
+    print("Fehler im Hintergrundnachricht-Handler: $e");
+  }
+}
+
+Future<void> _showNotification(TeGNotification notification) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'default_channel',
+    'Default',
+    channelDescription: 'Channel for notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+  );
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  // Zeige die Benachrichtigung an, indem die Notification-Daten verwendet werden
+  await flutterLocalNotificationsPlugin.show(
+    0, // Eindeutige ID verwenden
+    notification.title,
+    notification.body,
+    platformChannelSpecifics,
+    payload: notification.id.toString(),
   );
 }
 
@@ -279,6 +332,12 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _isLoading = true;
   bool _firstLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    checkForNotificationLaunch();
+  }
 
   Future<void> firstLoadNews() async {
     if (mounted) {

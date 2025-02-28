@@ -42,6 +42,24 @@ Widget buildTextFormField(
     validator: validator,
   );
 }
+Widget buildTextFieldScrollable(
+    String label, {
+      required TextEditingController? controller,
+      FormFieldValidator<String>? validator,
+    }) {
+  return TextFormField(
+    controller: controller,
+    minLines: 8, // Startet mit 8 Zeilen
+    maxLines: null, // Erlaubt Scrollen, wenn mehr Text eingegeben wird
+    keyboardType: TextInputType.multiline,
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 14),
+      border: OutlineInputBorder(),
+    ),
+    validator: validator,
+  );
+}
 
 Widget buildDropdownField({
   required String label,

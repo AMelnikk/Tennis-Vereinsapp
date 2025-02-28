@@ -422,7 +422,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                       // Setze die Werte im newsProvider
                       newsProvider.title.text =
                           "Begegnung: ${_selectedMatch.heim} vs ${_selectedMatch.gast}";
-                      newsProvider.newsDate =
+                      newsProvider.newsDateController.text =
                           DateFormat('dd.MM.yyyy').format(_selectedMatch.datum);
                       newsProvider.updateCategory("Spielbericht");
                       newsProvider.newsId = _newsIdController.text;

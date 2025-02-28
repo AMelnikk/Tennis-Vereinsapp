@@ -3,18 +3,20 @@ class News {
   String title;
   String body;
   String date;
-  List<String> photoBlob; // Liste von Bild-URLs
   String author;
   String category;
+  List<String> photoBlob;
+  int lastUpdate; // Bleibt ein int für Firebase-Kompatibilität
 
   News({
     required this.id,
-    required this.title,
-    required this.body,
-    required this.date,
-    required this.author,
-    required this.category,
-    required this.photoBlob,
+    this.title = '',
+    this.body = '',
+    this.date = '',
+    this.author = '',
+    this.category = 'Allgemein',
+    this.photoBlob = const [],
+    required this.lastUpdate,
   });
 
   factory News.fromJson(Map<String, dynamic> json, String id) {
@@ -23,21 +25,25 @@ class News {
       title: json['title'] ?? '',
       body: json['body'] ?? '',
       date: json['date'] ?? '',
-      category: json['category'] ?? '',
+      category: json['category'] ?? 'Allgemein',
       author: json['author'] ?? '',
       photoBlob: (json['photoBlob'] as List<dynamic>?)?.cast<String>() ?? [],
+      lastUpdate: json['lastUpdate'] is int
+          ? json['lastUpdate']
+          : DateTime.now()
+              .millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'title': title,
-      'body': body,
-      'date': date,
-      'photoBlob': photoBlob,
-      'category': category,
-      'author': author,
+      "title": title,
+      "body": body,
+      "date": date,
+      "author": author,
+      "category": category,
+      "photoBlob": photoBlob,
+      "lastUpdate": lastUpdate, // Wird als int gespeichert
     };
   }
 }

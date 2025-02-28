@@ -21,76 +21,94 @@ class NewsDetailScreen extends StatefulWidget {
 
 class NewsDetailScreenState extends State<NewsDetailScreen> {
   final PageController _pageController = PageController();
-  int _currentPage = 0; // Track the current page
-  List<String> photoBlob = [];
-
+  int _currentPage = 0;
+  News? detailNews;
   bool? _isAdmin;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    // Den Admin-Status einmalig beim Initialisieren laden
+    final newsID = ModalRoute.of(context)?.settings.arguments as String?;
+    if (newsID != null && newsID.isNotEmpty) {
+      print("🏷️ NewsDetail, newsID: $newsID");
+
+      Provider.of<NewsProvider>(context, listen: false)
+          .loadNews(newsID)
+          .then((news) {
+        if (mounted) {
+          setState(() {
+            detailNews = news;
+          });
+          print("✅ News geladen: ${news?.title}");
+        }
+      }).catchError((error) {
+        print("❌ Fehler beim Laden der News: $error");
+      });
+    }
+
     _loadAdminStatus();
   }
 
-  // Admin-Status einmalig laden
   Future<void> _loadAdminStatus() async {
     bool isAdmin = await Provider.of<UserProvider>(context, listen: false)
         .isAdmin(context);
-    setState(() {
-      _isAdmin = isAdmin;
-    });
+    if (mounted) {
+      setState(() {
+        _isAdmin = isAdmin;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    NewsProvider newsProvider = Provider.of<NewsProvider>(context, listen: false);
-    final imageCache =newsProvider.imageCache;
+    if (detailNews == null) {
+      return Scaffold(
+        appBar: VereinAppbar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    NewsProvider newsProvider =
+        Provider.of<NewsProvider>(context, listen: false);
+    AuthorizationProvider authProvider =
+        Provider.of<AuthorizationProvider>(context, listen: false);
+
+    final imageCache = newsProvider.imageCache;
 
     final String currentUser =
         Provider.of<AuthorizationProvider>(context, listen: false)
             .userId
             .toString();
-    newsProvider.author = currentUser;
 
     return Scaffold(
       appBar: VereinAppbar(),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10), // Seitlicher Rand
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.grey[300], // Grauer Rand
+            color: Colors.grey[300],
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
           child: Column(
             children: [
-              // Bereich für die Anzeige der Bilder
-              buildImageSection(photoBlob, imageCache),
-
-              // Bereich für den Text (nimmt den verbleibenden Platz nach dem Bild ein)
+              buildImageSection(detailNews!.photoBlob, imageCache),
               Expanded(
                 child: SingleChildScrollView(
                   child: Container(
-                    color: Colors.white, // Weißer Container für den Inhalt
+                    color: Colors.white,
                     child: Column(
                       children: [
-                        // Bereich für den Titel, Datum und Text
-                        buildTextSection(newsProvider),
-
-                        // Wenn der Admin-Status bereits geladen wurde
+                        buildTextSection(detailNews!),
                         if (_isAdmin != null) ...[
                           if (_isAdmin == true ||
-                              currentUser == newsProvider.author) ...[
-                            // Row für Edit und Delete Buttons nebeneinander
+                              (authProvider.isSignedIn &&
+                                  currentUser == detailNews!.author)) ...[
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                // Edit-Button nur für Admins oder den Autor der Nachricht
                                 IconButton(
                                   onPressed: () async {
-                                    // Navigiere zum AddNewsScreen und übergebe die News ID zur Bearbeitung
                                     final newsId = await Navigator.push<String>(
                                       context,
                                       MaterialPageRoute(
@@ -99,24 +117,20 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                                       ),
                                     );
 
-                                    // Falls eine neue News ID zurückgegeben wird, setze diese
                                     if (newsId != null && newsId.isNotEmpty) {
                                       setState(() {
-                                        // Hier kannst du den Status aktualisieren
-                                        newsProvider.newsId = newsId;
+                                        detailNews!.id = newsId;
                                       });
                                     }
-                                    newsProvider.clearNews();
                                   },
                                   icon: const Icon(Icons.edit_rounded),
                                 ),
-                                // Delete-Button nur für Admins
                                 if (_isAdmin == true)
                                   IconButton(
                                     onPressed: () {
                                       Provider.of<NewsProvider>(context,
                                               listen: false)
-                                          .deleteNews(newsProvider.newsId);
+                                          .deleteNews(detailNews!.id);
                                       Navigator.of(context).pop();
                                     },
                                     icon: const Icon(
@@ -140,16 +154,13 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
-// Methode für den Bereich der Bildanzeige
   Widget buildImageSection(
       List<String> photoBlob, Map<String, Uint8List> imageCache) {
     return photoBlob.isNotEmpty
         ? Container(
             width: double.infinity,
-            height:
-                _imageHeight(), // Dynamische Höhe basierend auf der Breite und dem Seitenverhältnis
-            color: Colors
-                .white, // Container gelb färben, um den Bereich sichtbar zu machen
+            height: _imageHeight(),
+            color: Colors.white,
             child: Stack(
               children: [
                 GestureDetector(
@@ -161,31 +172,27 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                     itemCount: photoBlob.length,
                     onPageChanged: (index) {
                       setState(() {
-                        _currentPage = index; // Update current page
+                        _currentPage = index;
                       });
                     },
                     itemBuilder: (context, index) {
                       Uint8List bytes = getImage(imageCache, photoBlob[index]);
 
                       return FittedBox(
-                        fit: BoxFit
-                            .contain, // Bild wird vollständig angezeigt ohne Zuschnitt
-                        alignment: Alignment
-                            .topCenter, // Bild oben im Container ausrichten
+                        fit: BoxFit.contain,
+                        alignment: Alignment.topCenter,
                         child: Image.memory(
                           bytes,
                           errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons
-                                  .broken_image), // Fallback für fehlerhafte Bilder
+                              const Icon(Icons.broken_image),
                         ),
                       );
                     },
                   ),
                 ),
-                // Linker Pfeil
                 Positioned(
                   left: 10,
-                  top: 50, // Positioniert den Pfeil mittig
+                  top: 50,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
@@ -199,10 +206,9 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                     },
                   ),
                 ),
-                // Rechter Pfeil
                 Positioned(
                   right: 10,
-                  top: 50, // Positioniert den Pfeil mittig
+                  top: 50,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_forward, color: Colors.white),
                     onPressed: () {
@@ -216,7 +222,6 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                     },
                   ),
                 ),
-                // Anzeige der Bildnummer in der rechten oberen Ecke
                 Positioned(
                   right: 10,
                   top: 10,
@@ -228,7 +233,7 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${_currentPage + 1} / ${photoBlob.length}', // Anzeige der aktuellen Bildnummer
+                      '${_currentPage + 1} / ${photoBlob.length}',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -236,59 +241,39 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
               ],
             ),
           )
-        : Container(); // Wenn keine Bilder vorhanden sind, ein leerer Container
+        : Container();
   }
 
-// Methode zur Berechnung der Höhe basierend auf der Bildbreite
   double _imageHeight() {
-    // Beispielhafte Berechnung der Höhe des Bildes basierend auf der Containerbreite
     double containerWidth = MediaQuery.of(context).size.width;
-    double imageWidth = containerWidth;
-
-    // Seitenverhältnis des Bildes annehmen, falls das Bild ein bestimmtes Seitenverhältnis hat
-    // Zum Beispiel für ein Seitenverhältnis von 16:9
     double imageAspectRatio = 16 / 9;
-
-    double imageHeight = imageWidth /
-        imageAspectRatio; // Höhe basierend auf dem Seitenverhältnis berechnen
-    return imageHeight;
+    return containerWidth / imageAspectRatio;
   }
 
-  // Methode für den Bereich Titel, Datum und Text
-  Widget buildTextSection(NewsProvider newsProvider) {
+  Widget buildTextSection(News news) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 5, left: 10, right: 10),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              newsProvider.newsDate,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey),
-            ),
+          child: Text(
+            news.date,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey),
           ),
         ),
         Padding(
           padding: const EdgeInsets.only(top: 5, left: 10, right: 10),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              newsProvider.title.text,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-            ),
+          child: Text(
+            news.title,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(10),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              newsProvider.body.text as String,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-            ),
+          child: Text(
+            news.body,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
           ),
         ),
       ],

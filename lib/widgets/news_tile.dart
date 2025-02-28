@@ -24,21 +24,21 @@ class NewsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    NewsProvider newsProvider =
+        Provider.of<NewsProvider>(context, listen: false);
     final double tileSize = (MediaQuery.of(context).size.width - 80) / 2;
-    final imageCache =
-        Provider.of<NewsProvider>(context, listen: false).imageCache;
+    final imageCache = newsProvider.imageCache;
 
     return InkWell(
       onTap: () {
+        newsProvider.newsId = id;
+        newsProvider.newsDateController.text = date;
+        newsProvider.title.text = title;
+        newsProvider.body.text = body;
+        newsProvider.photoBlob = photoBlob;
         Navigator.of(context).pushNamed(
           NewsDetailScreen.routename,
-          arguments: {
-            "id": id,
-            "date": date,
-            "title": title,
-            "body": body,
-            "photoBlob": photoBlob,
-          },
+          arguments: id,
         );
       },
       child: Container(

@@ -108,7 +108,7 @@ class _NewsScreenState extends State<NewsScreen> {
       );
     }
 
-    final reversedNews = newsProvider.loadedNews.reversed.toList();
+    final reversedNews = newsProvider.loadedNews;
 
     return RefreshIndicator(
       onRefresh: refreshFunction,

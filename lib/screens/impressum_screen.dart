@@ -48,27 +48,14 @@ class ImpressumScreen extends StatelessWidget {
                 "Christian Höger (Vertretungsberechtigter Vorstand)",
               ),
               const Space(),
-              Row(
-                children: [
-                  const Text(
-                    "Diese App wurde von",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      launchUrl(Uri.parse("https://www.nexgen-vision.com/"));
-                    },
-                    child: const Text(
-                      "NexGen-Vision",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  const Text(
-                    "entwickelt",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                ],
+              TextButton(
+                onPressed: () {
+                  launchUrl(Uri.parse("https://www.nexgen-vision.com/"));
+                },
+                child: const Text(
+                  "Diese App wurde von NexGen-Vision entwickelt",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
               ),
               const Space(),
               const Text(

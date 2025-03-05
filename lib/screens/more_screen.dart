@@ -53,7 +53,7 @@ class MoreScreen extends StatelessWidget {
               function: () {
                 Navigator.of(context).pushNamed(UserProfileScreen.routename);
               },
-              assetImage: "assets/images/Anmelden.png",
+              assetImage: "assets/images/Benutzerprofil.png",
             ),
           ], // <--- Korrekte Schließung der Bedingung
           FutureBuilder<bool>(

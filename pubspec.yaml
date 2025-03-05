@@ -48,7 +48,7 @@ dependencies:
   googleapis_auth: ^1.6.0
   googleapis: ^13.2.0
   cupertino_icons: ^1.0.6
-  http: ^1.1.2
+  http: ^1.2.2
   url_launcher: ^6.3.1
   image_picker: ^1.1.2
   flutter_image_converter: ^0.4.1
@@ -117,7 +117,6 @@ flutter:
     - assets/images/Abmelden.png
     - assets/images/BTV.jpg
     - assets/images/Termine.webp
-    - assets/service-account.json  # Pfad zu deiner Service-Account-Datei
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

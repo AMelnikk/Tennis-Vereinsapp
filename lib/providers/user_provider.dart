@@ -54,7 +54,6 @@ class UserProvider with ChangeNotifier {
       user.email = email;
       return email;
     } else {
-      print("Fehler: ${response.body}");
       return null;
     }
   }

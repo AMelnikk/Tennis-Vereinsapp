@@ -31,8 +31,6 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
 
     final newsID = ModalRoute.of(context)?.settings.arguments as String?;
     if (newsID != null && newsID.isNotEmpty) {
-      print("🏷️ NewsDetail, newsID: $newsID");
-
       Provider.of<NewsProvider>(context, listen: false)
           .loadNews(newsID)
           .then((news) {
@@ -40,11 +38,8 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
           setState(() {
             detailNews = news;
           });
-          print("✅ News geladen: ${news?.title}");
         }
-      }).catchError((error) {
-        print("❌ Fehler beim Laden der News: $error");
-      });
+      }).catchError((error) {});
     }
 
     _loadAdminStatus();

@@ -284,14 +284,21 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                                   if (confirmed) {
                                     await teamProvider.deleteTeam(entry.saison,
                                         entry.mannschaft); // Löschen
+
+                                    // Check if the widget is still mounted before using context or calling setState
+                                    if (!mounted) return;
+
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                          content: Text('Eintrag gelöscht.'),
-                                          backgroundColor: Colors.green),
+                                        content: Text('Eintrag gelöscht.'),
+                                        backgroundColor: Colors.green,
+                                      ),
                                     );
 
-                                    // Nur den Eintrag löschen und die Anzeige aktualisieren
-                                    setState(() {});
+                                    // Only update the UI if the widget is still mounted
+                                    if (mounted) {
+                                      setState(() {});
+                                    }
                                   }
                                 },
                               ),

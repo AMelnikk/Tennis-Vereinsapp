@@ -54,19 +54,22 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    Future.delayed(Duration.zero, () {
+      if (!mounted) {
+        return; // Verhindert Fehler, falls das Widget entfernt wurde
+      }
       final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+
       if (newsProvider.newsId.isNotEmpty) {
         newsProvider.loadNews(newsProvider.newsId);
       } else {
-        newsProvider.newsDateController.text =
-            DateFormat('dd.MM.yyyy').format(DateTime.now());
-        newsProvider.updateCategory("Allgemein");
-        newsProvider.newsId = '';
-        newsProvider.newsDateController.text =
-            DateFormat('dd.MM.yyyy').format(DateTime.now());
-        newsProvider.body.text = '';
-        newsProvider.photoBlob = [];
+        final today = DateFormat('dd.MM.yyyy').format(DateTime.now());
+        newsProvider
+          ..newsId = ''
+          ..newsDateController.text = today
+          ..updateCategory("Allgemein")
+          ..body.text = ''
+          ..photoBlob = [];
       }
     });
   }
@@ -178,6 +181,8 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                           const SnackBar(
                               content: Text("News erfolgreich hochgeladen!")),
                         );
+
+                        if (!mounted) return;
 
                         if (newsId.isNotEmpty) {
                           Navigator.pop(context, newsId);

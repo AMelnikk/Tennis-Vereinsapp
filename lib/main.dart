@@ -62,13 +62,29 @@ void handleNotificationClick(String? payload) async {
 
       if (context != null) {
         try {
-          Navigator.pushNamed(
-            context,
-            NewsDetailScreen.routename,
-            arguments: payload, // Hier die echte ID einsetzen
-          );
+          // Teile den Payload in Typ und ID auf
+          var parts = payload.split('|');
+          String type = parts[0];  // Der Typ (z. B. "News" oder "Termin")
+          String id = parts[1];    // Die ID (z. B. "123")
+
+          // Hier die Navigation entsprechend dem Typ
+          if (type == "News") {
+            Navigator.pushNamed(
+              context,
+              NewsDetailScreen.routename,
+              arguments: id,  // Die ID für die News
+            );
+          } else if (type == "Termin") {
+            // Navigator.pushNamed(
+            //   context,
+            //   TerminDetailScreen.routename,
+            //   arguments: id,  // Die ID für den Termin
+            // );
+          } else {
+            print("❌ Unbekannter Typ im Payload: $type");
+          }
         } catch (e) {
-          print("❌ Fehler beim Laden der News: $e");
+          print("❌ Fehler beim Laden der Benachrichtigung: $e");
         }
       } else {
         print("❌ Kein gültiger Navigator-Kontext.");
@@ -122,37 +138,53 @@ Future<void> setupPushNotifications() async {
     print("❌ Fehler beim Firebase-Start: $e");
   }
 }
-
-Future<void> setupNotificationListeners() async {
+Future<void> setupNewsNotificationListeners() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     print("📩 Nachricht empfangen: ${message.data['title']}");
 
-    String newsId = message.data['id'] ?? '';
+    String type = message.data['type'] ?? '';
+    String id = message.data['id'] ?? '';
 
-    if (newsId.isNotEmpty && navigatorKey.currentContext != null) {
-      await Navigator.pushNamed(
-        navigatorKey.currentContext!,
-        NewsDetailScreen.routename,
-        arguments: newsId,
-      );
+    if (id.isNotEmpty && navigatorKey.currentContext != null) {
+      if (type == "News") {
+        await Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          NewsDetailScreen.routename,
+          arguments: id,
+        );
+      } else if (type == "Termin") {
+        // await Navigator.pushNamed(
+        //   navigatorKey.currentContext!,
+        //   TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
+        //   arguments: id,
+        // );
+      }
     }
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print("📩 Nachricht empfangen: ${message.data['title']}");
+    print("📩 Nachricht empfangen onMessageOpenedApp: ${message.data['title']}");
 
-    String newsId = message.data['id'] ?? '';
+    String type = message.data['type'] ?? '';
+    String id = message.data['id'] ?? '';
 
-    if (newsId.isNotEmpty && navigatorKey.currentContext != null) {
-      await Navigator.pushNamed(
-        navigatorKey.currentContext!,
-        NewsDetailScreen.routename,
-        arguments: newsId,
-      );
+    if (id.isNotEmpty && navigatorKey.currentContext != null) {
+      if (type == "News") {
+        await Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          NewsDetailScreen.routename,
+          arguments: id,
+        );
+      } else if (type == "Termin") {
+        // await Navigator.pushNamed(
+        //   navigatorKey.currentContext!,
+        //   TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
+        //   arguments: id,
+        // );
+      }
     }
   });
 }
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   print("🏁 App startet...");
@@ -164,7 +196,7 @@ void main() async {
 
   runApp(const MyApp());
 
-  await setupNotificationListeners(); // Jetzt direkt nach runApp() aufrufen
+  await setupNewsNotificationListeners(); // Jetzt direkt nach runApp() aufrufen
 }
 
 @pragma('vm:entry-point')
@@ -173,6 +205,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print("Hintergrundnachricht empfangen: ${message.data}");
 
     // Stelle sicher, dass die Daten vorhanden sind
+    String type = message.data['type'] ?? '';
     String newsId = message.data['id'] ?? '';
     String title = message.data['title'] ?? '';
     String body = message.data['body'] ?? '';
@@ -185,7 +218,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     // Erstelle eine Notification-Instanz
     TeGNotification notification = TeGNotification(
       id: newsId,
-      type: "news", // Hier kannst du den Typ der Nachricht anpassen
+      type: type, // Hier kannst du den Typ der Nachricht anpassen
       title: title,
       body: body,
     );
@@ -210,13 +243,15 @@ Future<void> _showNotification(TeGNotification notification) async {
   const NotificationDetails platformChannelSpecifics =
       NotificationDetails(android: androidPlatformChannelSpecifics);
 
+  String payload = "${notification.type}|${notification.id.toString()}"; // Typ zuerst, dann ID
+
   // Zeige die Benachrichtigung an, indem die Notification-Daten verwendet werden
   await flutterLocalNotificationsPlugin.show(
     0, // Eindeutige ID verwenden
     notification.title,
     notification.body,
     platformChannelSpecifics,
-    payload: notification.id.toString(),
+    payload: payload,
   );
 }
 

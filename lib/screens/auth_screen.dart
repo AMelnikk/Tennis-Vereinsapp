@@ -168,11 +168,17 @@ class _AuthScreenState extends State<AuthScreen> {
 
               try {
                 await aP.resetPassword(context, email);
-                Navigator.of(context).pop(); // Dialog schließen nach Erfolg
+                if (mounted) {
+                  // Check if the widget is still mounted
+                  Navigator.of(context).pop(); // Dialog schließen nach Erfolg
+                }
               } catch (error) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Fehler: $error')),
-                );
+                if (mounted) {
+                  // Check if the widget is still mounted
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Fehler: $error')),
+                  );
+                }
               }
             },
             child: const Text("Zurücksetzen"),

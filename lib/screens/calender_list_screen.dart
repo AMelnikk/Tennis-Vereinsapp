@@ -156,7 +156,7 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
                                   ? timeFormat.parse(b.von)
                                   : null;
                             } catch (e) {
-                              print("Fehler beim Parsen der Uhrzeit: $e");
+                              //print("Fehler beim Parsen der Uhrzeit: $e");
                             }
 
                             // Falls keine Uhrzeit vorhanden ist, setzen wir die Zeit auf 00:00

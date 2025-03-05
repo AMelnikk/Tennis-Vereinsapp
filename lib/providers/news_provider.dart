@@ -103,7 +103,7 @@ class NewsProvider with ChangeNotifier {
         author: author,
         lastUpdate: DateTime.now().microsecondsSinceEpoch,
       );
-      print(json.encode(news.toJson()));
+
       final http.Response response;
       if (isUpdate && newsId.length > 5) {
         // Update: PUT-Anfrage

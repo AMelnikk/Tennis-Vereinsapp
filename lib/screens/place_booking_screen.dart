@@ -17,13 +17,12 @@ class PlaceBookingScreen extends StatefulWidget {
 class _PlaceBookingScreenState extends State<PlaceBookingScreen> {
   @override
   didChangeDependencies() async {
-    Uri placeBookingLink = Provider.of<UserProvider>(context)
-            .user
-            .platzbuchungLink
-            .isEmpty
+    final userProvider = Provider.of<UserProvider>(context);
+    final String bookingLink = userProvider.user.platzbuchungLink;
+
+    Uri placeBookingLink = bookingLink.isEmpty
         ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
-        : Uri.parse(
-            Provider.of<UserProvider>(context).user.platzbuchungLink as String);
+        : Uri.parse(bookingLink);
     if (kDebugMode) print(placeBookingLink);
     try {
       if (placeBookingLink.isAbsolute &&

@@ -17,10 +17,10 @@ class MyTeamDialog extends StatefulWidget {
   const MyTeamDialog({super.key, required this.seasons, this.teamData});
 
   @override
-  _MyTeamDialogState createState() => _MyTeamDialogState();
+  MyTeamDialogState createState() => MyTeamDialogState();
 }
 
-class _MyTeamDialogState extends State<MyTeamDialog> {
+class MyTeamDialogState extends State<MyTeamDialog> {
   final _formKey = GlobalKey<FormState>();
 
   final List<String> _mannschaften = [
@@ -60,12 +60,14 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
 
   String? _pdfPath;
   Uint8List? _pdfBlob;
-  String _editingId = '';
+  // ignore: unused_field
+  String _editID = '';
   String _selectedMannschaft = "";
   String _selectedLiga = "";
   bool _isLoading = false;
   List<String> _photoBlob = [];
   String _selectedSaisonKey = '';
+  // ignore: unused_field
   String _selectedPdfPath = '';
 
   final _controllers = <String, TextEditingController>{
@@ -83,7 +85,7 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
   void initState() {
     super.initState();
     if (widget.teamData != null) {
-      _editingId = widget.teamData!.mannschaft;
+      _editID = widget.teamData!.mannschaft;
       _selectedSaisonKey = widget.teamData!.saison;
       _selectedMannschaft = widget.teamData!.mannschaft;
       _selectedLiga = widget.teamData!.liga;
@@ -98,25 +100,6 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
       _pdfBlob = widget.teamData!.pdfBlob;
       _photoBlob = widget.teamData!.photoBlob;
     }
-  }
-
-  void _showFullScreenDialog(BuildContext context) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Scaffold(
-          appBar: AppBar(title: Text('Mannschaft')),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: MyTeamDialog(
-                seasons: widget.seasons, teamData: widget.teamData),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -175,8 +158,11 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
   }
 
   void _saveEntry() async {
-    final messenger = ScaffoldMessenger.of(context);
     if (!_formKey.currentState!.validate() || _isLoading) return;
+
+    setState(() => _isLoading = true); // Blockieren erneuter Klicks
+
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final provider = Provider.of<TeamProvider>(context, listen: false);
@@ -196,19 +182,19 @@ class _MyTeamDialogState extends State<MyTeamDialog> {
         photoBlob: _photoBlob,
       );
 
-      Set<Team> newTeamsSet = {newEntry};
-
-      await provider.addOrUpdateTeams(messenger, newEntry.saison, newTeamsSet);
+      await provider.addOrUpdateTeams(messenger, newEntry.saison, {newEntry});
       appError(messenger, "Speichern erfolgreich!");
-      // Wenn erfolgreich gespeichert, UI neu laden
-      setState(() {
-        // Hier kannst du zusätzliche logische Updates nach dem Speichern hinzufügen
-      });
-      Navigator.of(context).pop(); // Dialog nach dem Speichern schließen
+
+      if (mounted) {
+        Navigator.of(context)
+            .pop(); // Schließen nur, wenn Widget noch existiert
+      }
     } catch (error) {
       appError(messenger, "Fehler beim Speichern: ${error.toString()}");
     } finally {
-      _isLoading = false;
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

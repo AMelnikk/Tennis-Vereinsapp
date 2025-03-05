@@ -102,6 +102,7 @@ class TermineProvider with ChangeNotifier {
             'category': termin.category,
             'details': termin.description,
             'query': termin.query,
+            'lastUpdate': DateTime.now().millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -164,6 +165,7 @@ class TermineProvider with ChangeNotifier {
         'category': termin.category,
         'details': termin.description,
         'query': termin.query,
+        'lastUpdate': DateTime.now().millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
       }),
       headers: {'Content-Type': 'application/json'},
     );

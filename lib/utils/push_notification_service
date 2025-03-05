@@ -101,6 +101,7 @@ void processEvent(String eventType, String action, DatabaseEvent event) async {
       type: "News",
       title: data["title"] ?? "Keine Nachricht verfügbar",
       body: data["body"] ?? "",
+      year: "",
       timestamp: data["lastUpdate"] ?? 0,
     );
   } else if (eventType == "Termine") {
@@ -112,6 +113,7 @@ void processEvent(String eventType, String action, DatabaseEvent event) async {
       type: "Termin",
       title: data["title"] ?? "Kein Titel verfügbar",
       body: data["details"] ?? "",
+      year: event.snapshot.ref.parent?.key ?? "",
       timestamp: data["lastUpdate"] ?? 0,
     );
   }
@@ -170,7 +172,9 @@ Future<int> getLastFetchTime() async {
         "token": newToken,  // Zielgerät
         "data": {
           "title": notifi.title,
+          "type": notifi.type,
           "body": notifi.body,
+          "year": notifi.year?.toString() ?? "",
           "id": newsId,
         },
         "android": {

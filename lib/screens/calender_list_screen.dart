@@ -242,7 +242,8 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
     String time = event.von;
 
     return InkWell(
-      onTap: () => showEventDetails(context, event), // Hier Popup aufrufen
+      onTap: () =>
+          showCalendarEventDetails(context, event), // Hier Popup aufrufen
       child: Row(
         children: [
           // Uhrzeit, falls vorhanden

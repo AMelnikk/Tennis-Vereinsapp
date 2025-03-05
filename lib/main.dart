@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/models/calendar_event.dart';
+import 'package:verein_app/screens/termin_detail_screen.dart';
 import 'package:verein_app/screens/user_profile_screen.dart';
 import 'package:verein_app/utils/push_notification_service';
 import './providers/season_provider.dart';
@@ -64,22 +66,24 @@ void handleNotificationClick(String? payload) async {
         try {
           // Teile den Payload in Typ und ID auf
           var parts = payload.split('|');
-          String type = parts[0];  // Der Typ (z. B. "News" oder "Termin")
-          String id = parts[1];    // Die ID (z. B. "123")
+          String type = parts[0]; // Der Typ (z. B. "News" oder "Termin")
+          String id = parts[1]; // Die ID (z. B. "123")
+          print("❌ type $type id: $id");
 
           // Hier die Navigation entsprechend dem Typ
           if (type == "News") {
             Navigator.pushNamed(
               context,
               NewsDetailScreen.routename,
-              arguments: id,  // Die ID für die News
+              arguments: id, // Die ID für die News
             );
           } else if (type == "Termin") {
-            // Navigator.pushNamed(
-            //   context,
-            //   TerminDetailScreen.routename,
-            //   arguments: id,  // Die ID für den Termin
-            // );
+            // Hole das Event aus deiner Event-Liste oder Firebase
+            Navigator.pushNamed(
+              context,
+              TerminDetailScreen.routename,
+              arguments: id, // Die ID für die News
+            );
           } else {
             print("❌ Unbekannter Typ im Payload: $type");
           }
@@ -138,6 +142,7 @@ Future<void> setupPushNotifications() async {
     print("❌ Fehler beim Firebase-Start: $e");
   }
 }
+
 Future<void> setupNewsNotificationListeners() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     print("📩 Nachricht empfangen: ${message.data['title']}");
@@ -153,17 +158,18 @@ Future<void> setupNewsNotificationListeners() async {
           arguments: id,
         );
       } else if (type == "Termin") {
-        // await Navigator.pushNamed(
-        //   navigatorKey.currentContext!,
-        //   TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
-        //   arguments: id,
-        // );
+        await Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
+          arguments: id,
+        );
       }
     }
   });
 
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print("📩 Nachricht empfangen onMessageOpenedApp: ${message.data['title']}");
+    print(
+        "📩 Nachricht empfangen onMessageOpenedApp: ${message.data['title']}");
 
     String type = message.data['type'] ?? '';
     String id = message.data['id'] ?? '';
@@ -185,6 +191,7 @@ Future<void> setupNewsNotificationListeners() async {
     }
   });
 }
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   print("🏁 App startet...");
@@ -209,6 +216,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     String newsId = message.data['id'] ?? '';
     String title = message.data['title'] ?? '';
     String body = message.data['body'] ?? '';
+    String year = message.data['year'] ?? '';
 
     if (newsId.isEmpty) {
       print("🔴 Keine gültige News-ID oder Benachrichtigungsdetails gefunden");
@@ -221,6 +229,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       type: type, // Hier kannst du den Typ der Nachricht anpassen
       title: title,
       body: body,
+      year: year,
     );
 
     // Zeige die Benachrichtigung an
@@ -243,7 +252,10 @@ Future<void> _showNotification(TeGNotification notification) async {
   const NotificationDetails platformChannelSpecifics =
       NotificationDetails(android: androidPlatformChannelSpecifics);
 
-  String payload = "${notification.type}|${notification.id.toString()}"; // Typ zuerst, dann ID
+  String payload =
+      "${notification.type}|${notification.id.toString()}"; // Typ zuerst, dann ID
+
+  print("Payload:  $payload");
 
   // Zeige die Benachrichtigung an, indem die Notification-Daten verwendet werden
   await flutterLocalNotificationsPlugin.show(
@@ -328,6 +340,7 @@ class MyApp extends StatelessWidget {
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
               NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
+              TerminDetailScreen.routename: (ctx) => const TerminDetailScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               UserProfileScreen.routename: (ctx) => const UserProfileScreen(),

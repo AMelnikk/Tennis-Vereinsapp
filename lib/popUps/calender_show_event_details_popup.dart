@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/calendar_event.dart';
 import '../utils/ics.dart';
 
-void showEventDetails(BuildContext context, CalendarEvent event) {
+void showCalendarEventDetails(BuildContext context, CalendarEvent event) {
   showDialog(
     context: context,
     barrierDismissible: false,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:verein_app/models/termin.dart';
 import '../models/calendar_event.dart';
 
 class TermineProvider with ChangeNotifier {
@@ -45,6 +46,27 @@ class TermineProvider with ChangeNotifier {
       debugPrint("⚠️ Fehler beim Speichern der Termine: $error");
       return 400;
     }
+  }
+
+  Future<Termin?> loadTerminForYear(int jahr, String terminId) async {
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr/$terminId.json?auth=$_token");
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200 &&
+        response.body.isNotEmpty &&
+        response.body != "null") {
+      try {
+        final Map<String, dynamic> responseJson = json.decode(response.body);
+
+        return Termin.fromMap(responseJson);
+      } catch (e) {
+        print("Fehler beim Parsen des Termins: $e");
+      }
+    }
+
+    return null; // Falls kein Termin gefunden wurde oder ein Fehler aufgetreten ist
   }
 
   Future<List<Map<String, dynamic>>> loadAllTermineForYears(
@@ -102,7 +124,8 @@ class TermineProvider with ChangeNotifier {
             'category': termin.category,
             'details': termin.description,
             'query': termin.query,
-            'lastUpdate': DateTime.now().millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
+            'lastUpdate': DateTime.now()
+                .millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -165,7 +188,8 @@ class TermineProvider with ChangeNotifier {
         'category': termin.category,
         'details': termin.description,
         'query': termin.query,
-        'lastUpdate': DateTime.now().millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
+        'lastUpdate': DateTime.now()
+            .millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
       }),
       headers: {'Content-Type': 'application/json'},
     );

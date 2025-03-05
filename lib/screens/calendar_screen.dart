@@ -297,13 +297,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (eventsForDay.isNotEmpty) ...[
           // Erster Event
           _buildEventItem(eventsForDay.first, () {
-            showEventDetails(context, eventsForDay.first);
+            showCalendarEventDetails(context, eventsForDay.first);
           }),
           // Zweiter Event oder "+X mehr"
           if (eventsForDay.length > 1) ...[
             if (eventsForDay.length == 2)
               _buildEventItem(eventsForDay[1], () {
-                showEventDetails(context, eventsForDay[1]);
+                showCalendarEventDetails(context, eventsForDay[1]);
               })
             else
               Text(

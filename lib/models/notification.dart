@@ -2,6 +2,7 @@ class TeGNotification {
   String id;
   String type;
   String title;
+  String year;
   String body;
   int timestamp;
 
@@ -10,6 +11,7 @@ class TeGNotification {
     required this.type,
     required this.title,
     required this.body,
+    required this.year,
     int? timestamp,
   }) : timestamp = timestamp ??
             DateTime.now()
@@ -21,6 +23,7 @@ class TeGNotification {
       "type": type,
       "title": title,
       "body": body,
+      "year": year,
       "timestamp": timestamp,
     };
   }
@@ -31,7 +34,10 @@ class TeGNotification {
       type: map['type'] ?? "Unbekannter Typ",
       title: map['title'] ?? "Keine Nachricht verfügbar",
       body: map['body'] ?? "",
-      timestamp: map['timestamp'] is int ? map['timestamp'] : DateTime.now().millisecondsSinceEpoch,
+      year: map['year'] ?? "",
+      timestamp: map['timestamp'] is int
+          ? map['timestamp']
+          : DateTime.now().millisecondsSinceEpoch,
     );
   }
 }

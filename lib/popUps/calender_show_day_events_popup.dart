@@ -100,7 +100,7 @@ void showEventPopup(BuildContext context, List<CalendarEvent> eventsForDay,
                                         final event = eventsForDay[index];
                                         return GestureDetector(
                                           onTap: () {
-                                            showEventDetails(
+                                            showCalendarEventDetails(
                                                 dialogContext, event);
                                           },
                                           child: Container(

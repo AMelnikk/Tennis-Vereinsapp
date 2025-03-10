@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/user_profile_screen.dart';
-import 'package:verein_app/utils/push_notification_service';
+import './screens/user_profile_screen.dart';
+import './utils/push_notification_service';
 import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
@@ -20,7 +21,7 @@ import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_overview_screen.dart';
 import './providers/news_provider.dart';
-import 'screens/add_photo_screen.dart';
+import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
 import './screens/add_team_game_screen.dart';
@@ -29,7 +30,7 @@ import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
 import './screens/auth_screen.dart';
-import 'screens/photo_gallery_screen.dart';
+import './screens/photo_gallery_screen.dart';
 import './screens/trainers_screen.dart';
 import "./providers/team_provider.dart";
 import './screens/documents_screen.dart';
@@ -53,10 +54,10 @@ void main() async {
   await PushNotificationService().initialize(); // Initialisiere Push-Service
   try {
     final user = FirebaseAuth.instance.currentUser;
-    print("✅ Firebase Auth erfolgreich initialisiert!");
-    print("👤 Aktueller Nutzer: ${user?.email}");
+    if(kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
+    if(kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
   } catch (e) {
-    print("❌ Fehler beim Firebase-Start: $e");
+    if(kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
   }
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",

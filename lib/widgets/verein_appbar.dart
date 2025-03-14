@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class VereinAppbar extends AppBar {
@@ -6,8 +8,9 @@ class VereinAppbar extends AppBar {
   @override
   List<Widget>? get actions => [
         const Padding(
-          padding: EdgeInsets.only(right: 10),
-
+          padding: EdgeInsets.only(
+            right: 10,
+          ),
           child: FittedBox(
             fit: BoxFit.fitWidth,
             child: Text(
@@ -22,7 +25,9 @@ class VereinAppbar extends AppBar {
 
   @override
   Widget? get flexibleSpace => Padding(
-        padding: const EdgeInsets.only(top: 25, bottom: 5),
+        padding: Platform.isIOS
+            ? const EdgeInsets.only(top: 55, bottom: 5)
+            : const EdgeInsets.only(top: 5, bottom: 5),
         child: Image.asset(
           "assets/images/Vereinslogo.png",
           alignment: Alignment.center,

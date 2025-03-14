@@ -46,7 +46,7 @@ class AuthorizationProvider with ChangeNotifier {
   Future<void> signIn(BuildContext context, email, String password) async {
     final dbUrl = Uri.parse(
         "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-
+    dynamic responseData;
     try {
       final response = await http.post(
         dbUrl,
@@ -57,7 +57,7 @@ class AuthorizationProvider with ChangeNotifier {
         }),
       );
 
-      final responseData = json.decode(response.body);
+      responseData = json.decode(response.body);
 
       if (response.statusCode >= 400 || responseData["error"] != null) {
         throw HttpException(message: responseData["error"]["message"]);
@@ -75,7 +75,7 @@ class AuthorizationProvider with ChangeNotifier {
           key: "password", value: password); // Sicherer als SharedPreferences
       notifyListeners();
     } catch (error) {
-      if (kDebugMode) print("Fehler beim Login: $error");
+      throw HttpException(message: responseData["error"]["message"]);
     }
   }
 

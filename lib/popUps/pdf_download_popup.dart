@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 
 void showDownloadDialog(BuildContext context, String path) {
   // Guard für den BuildContext
@@ -17,7 +18,7 @@ void showDownloadDialog(BuildContext context, String path) {
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              //    OpenFilex.open(path, type: "application/pdf");
+              OpenFilex.open(path, type: "application/pdf");
             },
             child: const Text("Öffnen"),
           ),

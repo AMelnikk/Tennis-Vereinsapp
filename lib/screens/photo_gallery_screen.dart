@@ -65,7 +65,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       child: const Center(
                         child: Text(
                           "Es gibt noch nichts hier",
-                          style: TextStyle(fontSize: 20),
+                          style: TextStyle(fontSize: 20, color: Colors.white),
                         ),
                       ),
                     ),

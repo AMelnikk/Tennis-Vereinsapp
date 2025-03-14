@@ -8,6 +8,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:verein_app/popUps/pdf_download_popup.dart';
 //import 'package:share_plus/share_plus.dart';
 import '../widgets/verein_appbar.dart';
+import 'package:open_filex/open_filex.dart';
 
 class PdfScreen extends StatefulWidget {
   const PdfScreen({super.key, required this.assetPath, required this.name});
@@ -91,8 +92,8 @@ class _PdfScreenState extends State<PdfScreen> {
                   child: exists
                       ? FloatingActionButton(
                           onPressed: () {
-                            //                       OpenFilex.open(downloadPath,
-                            //                          type: "application/pdf");
+                            OpenFilex.open(downloadPath,
+                            type: "application/pdf");
                           },
                           child: const Icon(Icons.open_in_new),
                         )

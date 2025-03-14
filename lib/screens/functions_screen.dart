@@ -120,6 +120,12 @@ class FunctionsScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
+                Navigator.of(context).pop(); 
+              },
+              child: const Text("Zurück"),
+            ),
+            TextButton(
+              onPressed: () async {
                 // Hier kannst du den gewünschten Link öffnen, wenn er vorhanden ist
                 // Beispiel-Link für Platzbuchung
                 Navigator.of(context).pop(); // Dialog schließen

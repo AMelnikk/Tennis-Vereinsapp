@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:verein_app/providers/user_provider.dart';
-import '../providers/auth_provider.dart';
+//import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';
 
 class PlaceBookingScreen extends StatefulWidget {
@@ -18,13 +18,17 @@ class PlaceBookingScreen extends StatefulWidget {
 class _PlaceBookingScreenState extends State<PlaceBookingScreen> {
   @override
   didChangeDependencies() async {
-    Uri placeBookingLink = Provider.of<UserProvider>(context)
+    Uri placeBookingLink = 
+    //Provider.of<UserProvider>(context)
+    //            .user
+    //            .platzbuchungLink ==
+    //        null || 
+            Provider.of<UserProvider>(context)
                 .user
-                .platzbuchungLink ==
-            null
+                .platzbuchungLink == ""
         ? Uri.parse("https://teamup.com/ksz3fbg12qqbtpsm5o")
         : Uri.parse(
-            Provider.of<UserProvider>(context).user.platzbuchungLink as String);
+            Provider.of<UserProvider>(context).user.platzbuchungLink);
     if (kDebugMode) print(placeBookingLink);
     try {
       if (placeBookingLink.isAbsolute &&

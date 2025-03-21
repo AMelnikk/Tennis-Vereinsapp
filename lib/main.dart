@@ -1,19 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/calendar_event.dart';
-import 'package:verein_app/screens/termin_detail_screen.dart';
-import 'package:verein_app/screens/user_profile_screen.dart';
-import 'package:verein_app/utils/push_notification_service';
+import './screens/user_profile_screen.dart';
+import './utils/push_notification_service';
 import './providers/season_provider.dart';
-import './models/notification.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
 import './screens/getraenke_summen_screen.dart';
-import './screens/news_screen.dart';
 import './providers/getraenkebuchen_provider.dart';
 import './screens/getraenkedetails_screen.dart';
 import './screens/datenschutz_screen.dart';
@@ -22,9 +19,9 @@ import './providers/user_provider.dart';
 import './providers/team_result_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
-import './screens/news_detail_screen.dart';
+import './screens/news_overview_screen.dart';
 import './providers/news_provider.dart';
-import 'screens/add_photo_screen.dart';
+import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
 import './screens/add_team_game_screen.dart';
@@ -33,7 +30,7 @@ import './screens/place_booking_screen.dart';
 import './providers/auth_provider.dart';
 import './providers/photo_provider.dart';
 import './screens/auth_screen.dart';
-import 'screens/photo_gallery_screen.dart';
+import './screens/photo_gallery_screen.dart';
 import './screens/trainers_screen.dart';
 import "./providers/team_provider.dart";
 import './screens/documents_screen.dart';
@@ -41,229 +38,46 @@ import './screens/functions_screen.dart';
 import './screens/team_screen.dart';
 import './screens/more_screen.dart';
 import './widgets/verein_appbar.dart';
+import "./screens/news_screen.dart";
 import "./screens/add_team_screen.dart";
 import "./screens/team_detail_screen.dart";
 import "./screens/calendar_screen.dart";
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart'; // Firebase-Optionen
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
-
-void handleNotificationClick(String? payload) async {
-  print("🏷️ Benachrichtigung angeklickt, Payload: $payload");
-
-  if (payload != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Hole den aktuellen Navigator Context direkt aus der aktiven Route
-      BuildContext? context = navigatorKey.currentContext;
-
-      if (context != null) {
-        try {
-          // Teile den Payload in Typ und ID auf
-          var parts = payload.split('|');
-          String type = parts[0]; // Der Typ (z. B. "News" oder "Termin")
-          String id = parts[1]; // Die ID (z. B. "123")
-          print("❌ type $type id: $id");
-
-          // Hier die Navigation entsprechend dem Typ
-          if (type == "News") {
-            Navigator.pushNamed(
-              context,
-              NewsDetailScreen.routename,
-              arguments: id, // Die ID für die News
-            );
-          } else if (type == "Termin") {
-            // Hole das Event aus deiner Event-Liste oder Firebase
-            Navigator.pushNamed(
-              context,
-              TerminDetailScreen.routename,
-              arguments: id, // Die ID für die News
-            );
-          } else {
-            print("❌ Unbekannter Typ im Payload: $type");
-          }
-        } catch (e) {
-          print("❌ Fehler beim Laden der Benachrichtigung: $e");
-        }
-      } else {
-        print("❌ Kein gültiger Navigator-Kontext.");
-      }
-    });
-  } else {
-    print("❌ Ungültiges Payload.");
-  }
-}
-
-void checkForNotificationLaunch() async {
-  final details =
-      await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-  if (details?.didNotificationLaunchApp ?? false) {
-    String? payload = details?.notificationResponse?.payload;
-    if (payload != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        handleNotificationClick(payload);
-      });
-    }
-  }
-}
-
-Future<void> setupPushNotifications() async {
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await FirebaseMessaging.instance.requestPermission();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    await PushNotificationService().initialize();
-
-    // Lokale Benachrichtigungen konfigurieren
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: androidSettings);
-    await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        if (response.payload != null) {
-          handleNotificationClick(response.payload!);
-        }
-      },
-    );
-
-    final user = FirebaseAuth.instance.currentUser;
-    print("✅ Firebase Auth erfolgreich initialisiert!");
-    print("👤 Aktueller Nutzer: ${user?.email}");
-  } catch (e) {
-    print("❌ Fehler beim Firebase-Start: $e");
-  }
-}
-
-Future<void> setupNewsNotificationListeners() async {
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-    print("📩 Nachricht empfangen: ${message.data['title']}");
-
-    String type = message.data['type'] ?? '';
-    String id = message.data['id'] ?? '';
-
-    if (id.isNotEmpty && navigatorKey.currentContext != null) {
-      if (type == "News") {
-        await Navigator.pushNamed(
-          navigatorKey.currentContext!,
-          NewsDetailScreen.routename,
-          arguments: id,
-        );
-      } else if (type == "Termin") {
-        await Navigator.pushNamed(
-          navigatorKey.currentContext!,
-          TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
-          arguments: id,
-        );
-      }
-    }
-  });
-
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print(
-        "📩 Nachricht empfangen onMessageOpenedApp: ${message.data['title']}");
-
-    String type = message.data['type'] ?? '';
-    String id = message.data['id'] ?? '';
-
-    if (id.isNotEmpty && navigatorKey.currentContext != null) {
-      if (type == "News") {
-        await Navigator.pushNamed(
-          navigatorKey.currentContext!,
-          NewsDetailScreen.routename,
-          arguments: id,
-        );
-      } else if (type == "Termin") {
-        // await Navigator.pushNamed(
-        //   navigatorKey.currentContext!,
-        //   TerminDetailScreen.routename, // Beispiel: Detailseite für Termine
-        //   arguments: id,
-        // );
-      }
-    }
-  });
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print("🏁 App startet...");
-
-  await setupPushNotifications(); // Nur Firebase-Setup, keine Listener hier
-
-  await initializeDateFormatting('de_DE', null);
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  runApp(const MyApp());
-
-  await setupNewsNotificationListeners(); // Jetzt direkt nach runApp() aufrufen
-}
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  try {
-    print("Hintergrundnachricht empfangen: ${message.data}");
-
-    // Stelle sicher, dass die Daten vorhanden sind
-    String type = message.data['type'] ?? '';
-    String newsId = message.data['id'] ?? '';
-    String title = message.data['title'] ?? '';
-    String body = message.data['body'] ?? '';
-    String year = message.data['year'] ?? '';
-
-    if (newsId.isEmpty) {
-      print("🔴 Keine gültige News-ID oder Benachrichtigungsdetails gefunden");
-      return;
-    }
-
-    // Erstelle eine Notification-Instanz
-    TeGNotification notification = TeGNotification(
-      id: newsId,
-      type: type, // Hier kannst du den Typ der Nachricht anpassen
-      title: title,
-      body: body,
-      year: year,
-    );
-
-    // Zeige die Benachrichtigung an
-    await _showNotification(notification);
-  } catch (e) {
-    print("Fehler im Hintergrundnachricht-Handler: $e");
-  }
-}
-
-Future<void> _showNotification(TeGNotification notification) async {
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
-    'default_channel',
-    'Default',
-    channelDescription: 'Channel for notifications',
-    importance: Importance.max,
-    priority: Priority.high,
-    ticker: 'ticker',
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions
+        .currentPlatform, // Initialisiere mit den Optionen
   );
-  const NotificationDetails platformChannelSpecifics =
-      NotificationDetails(android: androidPlatformChannelSpecifics);
-
-  String payload =
-      "${notification.type}|${notification.id.toString()}"; // Typ zuerst, dann ID
-
-  print("Payload:  $payload");
-
-  // Zeige die Benachrichtigung an, indem die Notification-Daten verwendet werden
-  await flutterLocalNotificationsPlugin.show(
-    0, // Eindeutige ID verwenden
-    notification.title,
-    notification.body,
-    platformChannelSpecifics,
-    payload: payload,
+  await PushNotificationService().initialize(); // Initialisiere Push-Service
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if(kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
+    if(kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
+  } catch (e) {
+    if(kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
+  }
+  //const FirebaseOptions firebaseOptions = FirebaseOptions(
+  //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
+  //    authDomain: "db-teg.firebaseapp.com",
+  //    databaseURL: "https://db-teg-default-rtdb.firebaseio.com",
+  //    projectId: "db-teg",
+  //    storageBucket: "db-teg.firebasestorage.app",
+  //    messagingSenderId: "1050815457795",
+  //    appId: "1:1050815457795:web:2d0bc6f9b80793f6e37c36",
+  //    measurementId: "G-LNJY8VGKTG");
+  //try {
+  //  await Firebase.initializeApp();
+  //} catch (e) {
+  //  print("Firebase initialization failed: $e");
+  //}
+  await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
+    (_) {
+      runApp(const MyApp());
+    },
   );
 }
 
@@ -323,7 +137,6 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            navigatorKey: navigatorKey, // <--- Hier den Key setzen
             supportedLocales: [
               Locale('de', 'DE'), // Deutsch
             ],
@@ -339,8 +152,7 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
-              TerminDetailScreen.routename: (ctx) => const TerminDetailScreen(),
+              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
@@ -380,12 +192,6 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
   bool _isLoading = true;
   bool _firstLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    checkForNotificationLaunch();
-  }
 
   Future<void> firstLoadNews() async {
     if (mounted) {
@@ -470,6 +276,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //extendBodyBehindAppBar: true,
       appBar: VereinAppbar(),
       body: _isLoading
           ? const Center(

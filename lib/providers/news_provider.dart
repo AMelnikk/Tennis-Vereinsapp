@@ -101,7 +101,7 @@ class NewsProvider with ChangeNotifier {
             ? categoryController.text
             : selectedCategory,
         author: author,
-        lastUpdate: DateTime.now().microsecondsSinceEpoch,
+        lastUpdate: DateTime.now().millisecondsSinceEpoch,
       );
 
       final http.Response response;

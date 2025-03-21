@@ -121,7 +121,7 @@ void processEvent(String eventType, String action, DatabaseEvent event) async {
     if (n != null) {
       if (action == "added") {
         int lastFetchTime = await getLastFetchTime();
-        print("⚠️Timestamp Nachricht: ${n.timestamp} - LastFetchTimeStamp: $lastFetchTime");
+        print("⚠️Timestamp Nachricht id ${n.id}: ${n.timestamp} - LastFetchTimeStamp: $lastFetchTime");
         if (n.timestamp > lastFetchTime && lastFetchTime!=0) {
           print("🆕 Neue Nachricht: ${n.title}");
           await sendPushNotification(n, n.id); 

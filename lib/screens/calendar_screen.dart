@@ -276,7 +276,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isSelected
-                          ? Colors.blue.withOpacity(0.5) // Selektierter Tag
+                          ? Colors.blue
+                              .withValues(blue: 0.5) // Selektierter Tag
                           : Colors.transparent, // Heute-Kreis
                     ),
                     child: const SizedBox.shrink(),

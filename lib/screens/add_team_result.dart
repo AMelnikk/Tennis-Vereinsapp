@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/screens/news_detail_screen.dart';
 import '../models/season.dart';
 import '../providers/news_provider.dart';
 import '../screens/add_news_screen.dart';
-import '../screens/news_detail_screen.dart';
 import '../utils/app_colors.dart';
 import '../widgets/build_filter_season_team.dart';
 import '../models/tennismatch.dart';

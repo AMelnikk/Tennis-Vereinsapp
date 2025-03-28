@@ -1,4 +1,4 @@
- import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +19,7 @@ import './providers/user_provider.dart';
 import './providers/team_result_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
-import './screens/news_overview_screen.dart';
+import './screens/news_detail_screen.dart';
 import './providers/news_provider.dart';
 import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
@@ -54,10 +54,10 @@ void main() async {
   await PushNotificationService().initialize(); // Initialisiere Push-Service
   try {
     final user = FirebaseAuth.instance.currentUser;
-    if(kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
-    if(kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
+    if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
+    if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
   } catch (e) {
-    if(kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
+    if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
   }
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
@@ -152,7 +152,7 @@ class MyApp extends StatelessWidget {
               AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
               AdminScreen.routename: (ctx) => const AdminScreen(),
               AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsOverviewScreen.routename: (ctx) => const NewsOverviewScreen(),
+              NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
               ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               UserProfileScreen.routename: (ctx) => const UserProfileScreen(),

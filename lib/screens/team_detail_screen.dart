@@ -336,20 +336,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                       title: Text(news.title),
                       subtitle: Text(news.date),
                       onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          NewsDetailScreen
-                              .routename, // Korrekte Nutzung des statischen Routennamens
-                          arguments: {
-                            // Korrekte Verwendung des routename
-                            "id": news.id,
-                            "title": news.title,
-                            "body": news.body,
-                            "date": news.date,
-                            "author": news.author,
-                            "category": news.category,
-                            "photoBlob": news.photoBlob,
-                          },
+                        Navigator.of(context).pushNamed(
+                          NewsDetailScreen.routename,
+                          arguments: news.id,
                         );
                       },
                     ),

@@ -1,9 +1,7 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/termine_provider.dart';
-import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';
 import '../models/termin.dart';
 
@@ -35,7 +33,7 @@ class TerminDetailScreenState extends State<TerminDetailScreen> {
           });
         }
       }).catchError((error) {
-        print("Fehler beim Laden des Termins: $error");
+        // print("Fehler beim Laden des Termins: $error");
       });
     }
 

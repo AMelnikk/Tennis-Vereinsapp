@@ -62,7 +62,7 @@ class TermineProvider with ChangeNotifier {
 
         return Termin.fromMap(responseJson);
       } catch (e) {
-        print("Fehler beim Parsen des Termins: $e");
+        // print("Fehler beim Parsen des Termins: $e");
       }
     }
 

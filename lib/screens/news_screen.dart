@@ -19,7 +19,7 @@ class _NewsScreenState extends State<NewsScreen> {
   void initState() {
     super.initState();
     // Beim Laden der Seite Daten abrufen
-    getData();
+    //getData();
   }
 
   Future<void> refreshFunction() async {
@@ -81,13 +81,19 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
 
+    final reversedNews = newsProvider.loadedNews.reversed.toList();
+    reversedNews.sort((a, b) => b.date.compareTo(a.date));
+
+    if(kDebugMode) print("loadedNews: ${newsProvider.loadedNews}");
+    if(kDebugMode) print("reversedNews: $reversedNews");
+
     if (_isRefreshLoading || newsProvider.isNewsLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (newsProvider.loadedNews.isEmpty) {
       return RefreshIndicator(
-        onRefresh: getData,
+        onRefresh: refreshFunction,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
@@ -107,8 +113,6 @@ class _NewsScreenState extends State<NewsScreen> {
         ),
       );
     }
-
-    final reversedNews = newsProvider.loadedNews.reversed.toList();
 
     return RefreshIndicator(
       onRefresh: refreshFunction,

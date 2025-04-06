@@ -1,4 +1,4 @@
- import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -54,10 +54,10 @@ void main() async {
   await PushNotificationService().initialize(); // Initialisiere Push-Service
   try {
     final user = FirebaseAuth.instance.currentUser;
-    if(kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
-    if(kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
+    if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
+    if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
   } catch (e) {
-    if(kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
+    if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
   }
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
@@ -266,9 +266,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_firstLoading) {
       getCredentialsAndLogin();
     }
-    if (Provider.of<NewsProvider>(context).loadedNews.isEmpty && _firstLoading) {
+    /*if (Provider.of<NewsProvider>(context).loadedNews.isEmpty && _firstLoading) {
       firstLoadNews();
-    }
+    }*/
     _firstLoading = false;
     super.didChangeDependencies();
   }

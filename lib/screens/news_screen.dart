@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/news_provider.dart';
 import '../widgets/news_tile.dart';
@@ -14,13 +15,6 @@ class NewsScreen extends StatefulWidget {
 class _NewsScreenState extends State<NewsScreen> {
   bool _isLoading = false;
   bool _isRefreshLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Beim Laden der Seite Daten abrufen
-    //getData();
-  }
 
   Future<void> refreshFunction() async {
     setState(() {
@@ -78,16 +72,26 @@ class _NewsScreenState extends State<NewsScreen> {
   // }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+      getData();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final newsProvider = Provider.of<NewsProvider>(context);
 
     final reversedNews = newsProvider.loadedNews.reversed.toList();
-    reversedNews.sort((a, b) => b.date.compareTo(a.date));
+    //reversedNews.sort((a, b) => b.date.compareTo(a.date));
 
-    if(kDebugMode) print("loadedNews: ${newsProvider.loadedNews}");
-    if(kDebugMode) print("reversedNews: $reversedNews");
+    if (kDebugMode) print("screen loadedNews: ${newsProvider.loadedNews}");
+    if (kDebugMode) print("screen reversedNews: $reversedNews");
 
-    if (_isRefreshLoading || newsProvider.isNewsLoading) {
+    if (_isRefreshLoading ||
+        newsProvider.isNewsLoading ||
+        newsProvider.isFirstLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 

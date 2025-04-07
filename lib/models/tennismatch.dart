@@ -7,7 +7,7 @@ class TennisMatch {
   final String id;
   DateTime datum;
   String uhrzeit;
-  final String altersklasse;
+  String altersklasse;
   final String spielklasse;
   final String gruppe;
   final String heim;

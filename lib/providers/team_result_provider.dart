@@ -170,21 +170,39 @@ class LigaSpieleProvider with ChangeNotifier {
     }
 
     return _cachedLigaSpiele[jahr]!.map((spiel) {
-      bool istHeimspiel = spiel.heim == "TeG Altmühlgrund";
+      bool istHeimspiel = spiel.heim.startsWith("TeG Altmühlgrund");
+
+      // Extrahieren der Uhrzeit
+      List<String> uhrzeitParts = spiel.uhrzeit.split(":");
+      int stunde = int.parse(uhrzeitParts[0]);
+      int minute = int.parse(uhrzeitParts[1]);
+
+      // Berechnen der Startzeit
+      DateTime startDate = DateTime(
+        spiel.datum.year,
+        spiel.datum.month,
+        spiel.datum.day,
+        stunde,
+        minute,
+      );
+
+      // Beispiel für dynamische Endzeit (falls Spieldauer in Minuten verfügbar ist)
+      DateTime endDate = startDate.add(Duration(minutes: 90));
+
+      // Dynamisches Titel-Label je nach Heim- oder Auswärtsspiel
+      String spielTitle = istHeimspiel
+          ? "${spiel.altersklasse} - ${spiel.gast}"
+          : "${spiel.heim} - ${spiel.altersklasse}";
+
       return CalendarEvent(
         id: int.tryParse(spiel.id) ?? 0,
-        title: "${istHeimspiel ? "🏠 " : ""}${spiel.altersklasse}",
-        date: DateTime(
-          spiel.datum.year,
-          spiel.datum.month,
-          spiel.datum.day,
-          int.parse(spiel.uhrzeit.split(":")[0]), // Stunde extrahieren
-          int.parse(spiel.uhrzeit.split(":")[1]), // Minute extrahieren
-        ),
+        title: spielTitle, // Dynamisches Title mit Heim- oder Auswärtsspiel
+        ort: spiel.spielort,
+        date: startDate, // Startzeit
         von:
-            "${spiel.uhrzeit.split(":")[0].padLeft(2, '0')}:${spiel.uhrzeit.split(":")[1].padLeft(2, '0')}",
+            "${stunde.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
         bis:
-            "${((int.parse(spiel.uhrzeit.split(":")[0]) + 5) % 24).toString().padLeft(2, '0')}:${spiel.uhrzeit.split(":")[1].padLeft(2, '0')}", // Minute extrahieren
+            "${endDate.hour.toString().padLeft(2, '0')}:${endDate.minute.toString().padLeft(2, '0')}", // Endzeit formatieren
         category: "Ligaspiel",
         description:
             "Gruppe: ${spiel.gruppe}\n\n${spiel.heim} vs ${spiel.gast}\n\nSpielort: ${spiel.spielort}\nUhrzeit: ${spiel.uhrzeit}",

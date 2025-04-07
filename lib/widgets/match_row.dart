@@ -15,10 +15,12 @@ class MatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String heim =
-        spiel.heim == "TeG Altmühlgrund" ? spiel.altersklasse : spiel.heim;
-    String gast =
-        spiel.gast == "TeG Altmühlgrund" ? spiel.altersklasse : spiel.gast;
+    String heim = spiel.heim.startsWith("TeG Altmühlgrund")
+        ? spiel.altersklasse
+        : spiel.heim;
+    String gast = spiel.gast.startsWith("TeG Altmühlgrund")
+        ? spiel.altersklasse
+        : spiel.gast;
 
     Color ergebnisFarbe =
         getErgebnisCellColor(spiel.ergebnis, spiel.heim, spiel.gast);

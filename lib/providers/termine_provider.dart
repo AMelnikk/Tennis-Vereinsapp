@@ -253,6 +253,7 @@ class TermineProvider with ChangeNotifier {
           von: eventData['von'] ?? '',
           bis: eventData['bis'] ?? '',
           title: eventData['title'] ?? 'Kein Titel',
+          ort: eventData['ort'] ?? 'Kein Titel',
           description: eventData['details'] ?? '',
           category: eventData['category'] ?? '',
           query: eventData['query'] ?? '',

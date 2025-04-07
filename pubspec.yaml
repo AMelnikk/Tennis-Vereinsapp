@@ -120,6 +120,7 @@ flutter:
     - assets/images/Abmelden.png
     - assets/images/BTV.jpg
     - assets/images/Termine.webp
+    - assets/images/ornbau.png
     - assets/service-account.json
 
   # An image asset can refer to one or more resolution-specific "variants", see

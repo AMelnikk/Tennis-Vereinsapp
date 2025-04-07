@@ -91,6 +91,13 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
         }
         if (!mounted) return;
         if (spiele.isNotEmpty) {
+          // Altersklasse direkt mit Mannschaftskennung überschreiben
+          for (var spiel in spiele) {
+            String mannschaftskennung =
+                extractMannschaftskennung(spiel.heim, spiel.gast);
+            spiel.altersklasse = "${spiel.altersklasse} $mannschaftskennung";
+          }
+
           await ligaSpieleProvider.saveLigaSpiele(spiele);
 
           // Extrahiere die eindeutigen Teams
@@ -119,18 +126,39 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
     Set<Team> distinctTeams = {};
 
     for (var spiel in spiele) {
-      // Erstelle ein Team-Objekt aus den drei Feldern
+      // Erstelle ein Team-Objekt mit der modifizierten Altersklasse
       Team team = Team.newteam(
         spiel.saison,
-        spiel.altersklasse,
+        spiel
+            .altersklasse, // Hier wird die Altersklasse mit Mannschaftskennung verwendet
         spiel.spielklasse,
         spiel.gruppe,
       );
-      distinctTeams.add(
-          team); // Das Set stellt sicher, dass es nur eindeutige Teams gibt
+
+      distinctTeams.add(team);
     }
 
     return distinctTeams;
+  }
+
+// Funktion zur Extraktion der Mannschaftskennung
+  String extractMannschaftskennung(String heim, String gast) {
+    RegExp regex = RegExp(r'TeG Altmühlgrund(?: ([IVXLCDM]+))?');
+    String mannschaftskennung = "";
+
+    Match? heimMatch = regex.firstMatch(heim);
+    if (heimMatch != null && heimMatch.group(1) != null) {
+      mannschaftskennung = heimMatch.group(1)!;
+    }
+
+    Match? gastMatch = regex.firstMatch(gast);
+    if (mannschaftskennung.isEmpty &&
+        gastMatch != null &&
+        gastMatch.group(1) != null) {
+      mannschaftskennung = gastMatch.group(1)!;
+    }
+
+    return mannschaftskennung;
   }
 
   List<TennisMatch> _parseCsv(String csvString, String saisonKey) {

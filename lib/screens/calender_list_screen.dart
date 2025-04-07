@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/widgets/team_result_SpielortIcon.dart';
 import '../providers/team_result_provider.dart';
 import '../models/calendar_event.dart';
 import '../popUps/calender_show_event_details_popup.dart';
@@ -242,33 +243,41 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
     String time = event.von;
 
     return InkWell(
-      onTap: () =>
-          showCalendarEventDetails(context, event), // Hier Popup aufrufen
-      child: Row(
-        children: [
-          // Uhrzeit, falls vorhanden
-          if (time != "00:00")
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                time,
-                style: TextStyle(fontSize: 14),
+        onTap: () =>
+            showCalendarEventDetails(context, event), // Hier Popup aufrufen
+        child: Row(
+          children: [
+            // Uhrzeit, falls vorhanden
+            if (time != "00:00")
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  time,
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+
+            const SizedBox(width: 4),
+
+            // Spielort-Icon nur bei Ligaspielen
+            if (event.category == 'Ligaspiel') ...[
+              getSpielortIcon(event.ort),
+              const SizedBox(width: 4),
+            ],
+
+            // Event-Titel
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  event.title,
+                  style: TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
-          // Event-Titel
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                event.title,
-                style: TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ));
   }
 
   Widget _buildNavigationButtons(BuildContext context) {

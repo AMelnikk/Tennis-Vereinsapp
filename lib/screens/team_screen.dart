@@ -73,18 +73,19 @@ class _TeamScreenState extends State<TeamScreen> {
       });
 
       if (selectedSeason?.key != null) {
-        // Lade die Daten aus dem Cache oder vom Server
         await Provider.of<TeamProvider>(context, listen: false).loadDatatoCache(
-            messenger, selectedSeason!.key); // Daten ins Cache laden
+          messenger,
+          selectedSeason!.key,
+        );
 
-        // Nun die gefilterten Ergebnisse abrufen
         filteredTeams = Provider.of<TeamProvider>(context, listen: false)
             .getFilteredMannschaften(saisonKey: selectedSeason!.key);
-
-        // appError(messenger, 'Teams geladen: ${teams.length} Teams');
       } else {
         filteredTeams = [];
       }
+
+      // 🔧 NEU: Filter + Sortierung nach dem Laden anwenden
+      getFilteredResults();
 
       setState(() {
         _isLoading = false;
@@ -93,7 +94,6 @@ class _TeamScreenState extends State<TeamScreen> {
       setState(() {
         _isLoading = false;
       });
-      // Fehlerbehandlung, z.B. eine Snackbar anzeigen
       appError(messenger, 'Fehler beim Laden der Daten: ${error.toString()}');
     }
   }
@@ -119,6 +119,7 @@ class _TeamScreenState extends State<TeamScreen> {
               result.mannschaft.startsWith("U9") ||
               result.mannschaft.startsWith("U10") ||
               result.mannschaft.startsWith("Bambini") ||
+              result.mannschaft.startsWith("Dunlop") ||
               result.mannschaft.startsWith("Knaben") ||
               result.mannschaft.startsWith("Junioren"))
           .toList();
@@ -128,56 +129,51 @@ class _TeamScreenState extends State<TeamScreen> {
               !result.mannschaft.startsWith("U9") &&
               !result.mannschaft.startsWith("U10") &&
               !result.mannschaft.startsWith("Bambini") &&
+              !result.mannschaft.startsWith("Dunlop") &&
               !result.mannschaft.startsWith("Knaben") &&
               !result.mannschaft.startsWith("Junioren"))
           .toList();
     }
+    getSortedResults(filteredTeams);
   }
 
   // Logik für die Teamreihenfolge
   List<Team> getSortedResults(List<Team> results) {
-    // Kategorisierte Teams nach den gewünschten Gruppen
-    var ladiesTeams = results
-        .where((result) => result.mannschaft.startsWith("Damen"))
-        .toList();
-    var menTeams = results
-        .where((result) => result.mannschaft.startsWith("Herren"))
-        .toList();
-    var juniors = results
-        .where((result) => result.mannschaft.startsWith("Junioren"))
-        .toList();
-
-    // Knaben, Bambini U9 und Bambini U10 werden separat als eigene Blöcke behandelt
-    var knabenTeams = results
-        .where((result) => result.mannschaft.startsWith("Knaben"))
-        .toList();
-    var bambiniTeams = results
-        .where((result) => result.mannschaft.startsWith("Bambini"))
-        .toList();
-    var u10Teams =
-        results.where((result) => result.mannschaft.startsWith("U10")).toList();
-    var u9Teams =
-        results.where((result) => result.mannschaft.startsWith("U9")).toList();
-
-    // Alphabetische Sortierung für alle Teams (Damen, Herren, Junioren, Knaben, U9 und Bambini U10)
-    ladiesTeams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    menTeams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    juniors.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    knabenTeams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    bambiniTeams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    u10Teams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-    u9Teams.sort((a, b) => a.mannschaft.compareTo(b.mannschaft));
-
-    // Zusammenfügen der gefilterten und sortierten Listen in der richtigen Reihenfolge
-    return [
-      ...ladiesTeams,
-      ...menTeams, // Herren alphabetisch sortiert
-      ...juniors,
-      ...knabenTeams, // Knaben-Teams als eigener Block
-      ...bambiniTeams, // Bambini U9-Teams als eigener Block
-      ...u10Teams, // Bambini U10-Teams als eigener Block
-      ...u9Teams,
+    final sortOrder = [
+      "Junioren",
+      "Knaben",
+      "Bambini",
+      "U10",
+      "U9",
+      "Damen",
+      "Herren", // wichtig: vor Herren 30!
+      "Herren 30",
+      "Herren 40",
+      "Herren 50",
     ];
+
+    int getSortIndex(String mannschaftName) {
+      for (int i = 0; i < sortOrder.length; i++) {
+        if (mannschaftName.contains(sortOrder[i])) {
+          return i;
+        }
+      }
+      // Wenn nicht in der Liste: ganz unten einsortieren
+      return sortOrder.length;
+    }
+
+    results.sort((a, b) {
+      int indexA = getSortIndex(a.mannschaft);
+      int indexB = getSortIndex(b.mannschaft);
+      if (indexA != indexB) {
+        return indexA.compareTo(indexB);
+      } else {
+        return a.mannschaft
+            .compareTo(b.mannschaft); // innerhalb einer Kategorie alphabetisch
+      }
+    });
+
+    return results;
   }
 
   @override
@@ -231,6 +227,7 @@ class _TeamScreenState extends State<TeamScreen> {
                             });
                             getData(
                                 messenger); // Hole die Daten für die gewählte Saison
+                            getFilteredResults();
                           }
                         },
                       ),

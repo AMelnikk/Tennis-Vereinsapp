@@ -53,8 +53,10 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
                 final title = row[3]?.value?.toString() ?? '';
                 final category = row[4]?.value?.toString() ?? '';
                 final details = row[5]?.value?.toString() ?? '';
-                final query =
+                final ort =
                     row.length > 5 ? row[6]?.value?.toString() ?? '' : '';
+                final query =
+                    row.length > 5 ? row[7]?.value?.toString() ?? '' : '';
 
                 // Datum parsen
                 DateTime? datum = DateTime.tryParse(datumString);
@@ -67,6 +69,7 @@ class _AddTermineScreenState extends State<AddTermineScreen> {
                     von: uhrzeitVon,
                     bis: uhrzeitBis,
                     title: title,
+                    ort: ort,
                     description: details,
                     category: category,
                     query: query,

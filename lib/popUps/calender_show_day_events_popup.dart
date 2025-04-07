@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:verein_app/widgets/team_result_SpielortIcon.dart';
 import '../models/calendar_event.dart';
 import '../popUps/calender_show_event_details_popup.dart';
 import '../utils/app_colors.dart';
@@ -93,47 +94,80 @@ void showEventPopup(BuildContext context, List<CalendarEvent> eventsForDay,
                                 else
                                   SizedBox(
                                     height:
-                                        500, // Begrenzte Höhe für Scrollbarkeit
+                                        500, // Limitierte Höhe für Scrollbarkeit
                                     child: ListView.builder(
-                                      itemCount: eventsForDay.length,
+                                      itemCount: eventsForDay
+                                          .length, // Anzahl der Events in der Liste
                                       itemBuilder: (context, index) {
-                                        final event = eventsForDay[index];
+                                        // Sortiere die Events nach Uhrzeit (event.date)
+                                        eventsForDay.sort(
+                                            (a, b) => a.date.compareTo(b.date));
+
+                                        final event = eventsForDay[
+                                            index]; // Das aktuelle Event
+                                        final eventTime = DateFormat('HH:mm')
+                                            .format(event
+                                                .date); // Uhrzeit formatieren
+
                                         return GestureDetector(
                                           onTap: () {
                                             showCalendarEventDetails(
-                                                dialogContext, event);
+                                                dialogContext,
+                                                event); // Event-Details anzeigen
                                           },
                                           child: Container(
-                                            margin: const EdgeInsets.symmetric(
-                                                vertical: 8),
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: getCategoryColor(
-                                                  event.category),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(Icons.event,
-                                                    color: Colors.white),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    event.title,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8),
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: getCategoryColor(event
+                                                    .category), // Hintergrundfarbe basierend auf der Kategorie
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  // die formatierte Uhrzeit
+                                                  Text(
+                                                    eventTime, // Formatierte Uhrzeit
                                                     style: const TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize:
+                                                          14, // Kleinere Schriftgröße für die Uhrzeit
                                                     ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+
+                                                  const SizedBox(
+                                                      width:
+                                                          4), // Platz für Abstand zwischen Uhrzeit und Titel
+
+                                                  // Zuerst das Icon für den Ort des Events
+                                                  getSpielortIcon(event
+                                                      .ort), // Icon basierend auf dem Ort des Events
+                                                  const SizedBox(width: 8),
+
+                                                  const SizedBox(
+                                                      width:
+                                                          4), // Platz für Abstand zwischen Uhrzeit und Titel
+
+                                                  // Der Event-Titel
+                                                  Expanded(
+                                                    child: Text(
+                                                      event
+                                                          .title, // Titel des Events
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              )),
                                         );
                                       },
                                     ),
-                                  ),
+                                  )
                               ],
                             ),
                           ],

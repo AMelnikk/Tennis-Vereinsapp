@@ -53,7 +53,7 @@ android {
         applicationId = "com.tennisverein.weidenbach" // Hier wird die package id gesetzt
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
-        versionCode 6 // Erhöhe diesen Wert (z. B. auf 4)
+        versionCode 7 // Erhöhe diesen Wert (z. B. auf 4)
     	versionName "1.0.5"
     }
 

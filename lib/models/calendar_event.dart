@@ -1,6 +1,7 @@
 class CalendarEvent {
   final int id;
   final String title;
+  final String ort;
   final DateTime date;
   final String von;
   final String bis;
@@ -12,6 +13,7 @@ class CalendarEvent {
   CalendarEvent({
     required this.id,
     required this.title,
+    required this.ort,
     required this.date,
     required this.von,
     required this.bis,

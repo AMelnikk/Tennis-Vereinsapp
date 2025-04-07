@@ -7,23 +7,21 @@ import '../models/news.dart';
 
 class NewsProvider with ChangeNotifier {
   NewsProvider(this._token);
-  String? _token;
 
   bool isNewsLoading = false;
   List<News> loadedNews = [];
-  String? lastId;
-  bool hasMore = true;
-
-  // Aktuelle Nachricht
+  final String? _token;
   String newsId = '';
+  List<String> photoBlob = [];
   var title = TextEditingController();
   final body = TextEditingController();
-  var newsDateController =
-      TextEditingController(); // DateFormat('dd.MM.yyyy').format(DateTime.now());
+  var newsDateController = TextEditingController();
+  String newsDate = '';
   final categoryController = TextEditingController();
   String author = '';
-  List<String> photoBlob = [];
 
+  String? lastId;
+  bool hasMore = true;
   final Map<String, Uint8List> imageCache = {};
 
   final List<String> categories = [
@@ -31,10 +29,6 @@ class NewsProvider with ChangeNotifier {
     "Spielbericht",
   ];
   String selectedCategory = "Allgemein"; // Standardkategorie
-
-  void setToken(String? tok) {
-    _token = tok;
-  }
 
   // Methode zum Hochladen der Bilder als Blob in Firestore
   // Future<void> _storeImagesToFirestore(List<Uint8List> bytesList) async {
@@ -91,7 +85,7 @@ class NewsProvider with ChangeNotifier {
 
     try {
       // News-Objekt erstellen
-      News news = News(
+      final news = News(
         id: newsId,
         date: formattedDate,
         photoBlob: photoBlob,
@@ -101,7 +95,6 @@ class NewsProvider with ChangeNotifier {
             ? categoryController.text
             : selectedCategory,
         author: author,
-        lastUpdate: DateTime.now().millisecondsSinceEpoch,
       );
 
       final http.Response response;
@@ -153,6 +146,7 @@ class NewsProvider with ChangeNotifier {
 
   void clearNews() {
     newsId = '';
+    newsDate = DateFormat("dd.MM.yyyy").format(DateTime.now());
     newsDateController.text = DateFormat("dd.MM.yyyy").format(DateTime.now());
     photoBlob = [];
     title.text = "";
@@ -176,7 +170,7 @@ class NewsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<News?> loadNews(String id) async {
+  Future<void> loadNews(String id) async {
     try {
       final response = await http.get(
         Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News/$id.json'),
@@ -187,29 +181,20 @@ class NewsProvider with ChangeNotifier {
 
         if (dbData != null) {
           newsId = id;
-          title.text = dbData["title"] ?? '';
-          body.text = dbData["body"] ?? '';
-
-          DateTime? parsedDate =
-              DateFormat("yyyy-MM-dd").parse(dbData["date"] ?? '');
-          String formattedDate = DateFormat("dd.MM.yyyy").format(parsedDate);
-          newsDateController.text = formattedDate;
-
-          author = dbData["author"] ?? '';
-          categoryController.text = dbData["category"] ?? '';
+          title.text = dbData["title"];
+          body.text = dbData["body"];
+          newsDate = dbData["date"];
+          author = dbData["author"];
+          categoryController.text = dbData["category"];
           photoBlob = List<String>.from(dbData["photoBlob"] ?? []);
           notifyListeners();
-
-          return News.fromJson(dbData, id);
         }
       } else {
-        debugPrint('❌ Fehler beim Laden der News: ${response.statusCode}');
+        throw Exception('Fehler beim Laden der News: ${response.statusCode}');
       }
     } catch (error) {
-      debugPrint('❌ Fehler beim Laden der News: $error');
+      debugPrint('Fehler beim Laden der News: $error');
     }
-
-    return null; // Falls etwas schiefgeht oder dbData null ist
   }
 
   Future<List<News>> loadMannschaftsNews(List<String> ids) async {
@@ -225,15 +210,25 @@ class NewsProvider with ChangeNotifier {
           Map<String, dynamic>? dbData = json.decode(response.body);
 
           if (dbData != null) {
-            fetchedNews.add(News.fromJson(dbData, id));
+            News news = News(
+              id: id,
+              title: dbData["title"] ?? '',
+              body: dbData["body"] ?? '',
+              date: dbData["date"] ?? '',
+              author: dbData["author"] ?? '',
+              category: dbData["category"] ?? '',
+              photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
+            );
+
+            fetchedNews.add(news);
           }
         } else {
-          debugPrint(
-              '❌ Fehler beim Laden der News mit ID $id: ${response.statusCode}');
+          throw Exception(
+              'Fehler beim Laden der News mit ID $id: ${response.statusCode}');
         }
       }
     } catch (error) {
-      debugPrint('❌ Fehler beim Laden der Mannschafts-News: $error');
+      debugPrint('Fehler beim Laden der Mannschafts-News: $error');
     }
 
     return fetchedNews;
@@ -253,30 +248,29 @@ class NewsProvider with ChangeNotifier {
             'https://db-teg-default-rtdb.firebaseio.com/News.json?$queryParams'),
       );
 
+      List<String> s = <String>[];
       List<News> loadedData = [];
       Map<String, dynamic> dbData = await json.decode(response.body);
-      dbData.forEach((id, value) {
-        if (loadedNews.any((news) => news.id == id)) {
-          return; // Falls ID schon existiert, NICHT hinzufügen
-        }
-        loadedData.add(
-          News(
-            id: id,
-            title: value["title"] ?? '',
-            body: value["body"] ?? '',
-            date: value["date"] ?? '',
-            author: value["author"] ?? '',
-            category: value["category"] ?? '',
-            photoBlob:
-                value["photoBlob"] != null && value["photoBlob"] != "null"
-                    ? List<String>.from(value["photoBlob"])
-                    : [],
-            lastUpdate: value["lastUpdate"] != null
-                ? int.tryParse(value["lastUpdate"].toString()) ?? 0
-                : 0,
-          ),
-        );
-      });
+      dbData.forEach(
+        (id, value) {
+          loadedData.add(
+            News(
+              id: id,
+              title: value["title"] != null ? value["title"] as String : '',
+              body: value["body"] != null ? value["body"] as String : '',
+              date: value["date"] != null ? value["date"] as String : '',
+              author: value["author"] != null ? value["author"] as String : '',
+              category:
+                  value["category"] != null ? value["category"] as String : '',
+              photoBlob:
+                  value["photoBlob"] == null || value["photoBlob"] == "null"
+                      ? s
+                      : List<String>.from(
+                          value["photoBlob"].map((item) => item.toString())),
+            ),
+          );
+        },
+      );
       if (lastId != null) {
         loadedData.removeAt(loadedData.length - 1);
       }

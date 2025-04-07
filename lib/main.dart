@@ -265,11 +265,11 @@ class _MyHomePageState extends State<MyHomePage> {
   void didChangeDependencies() {
     if (_firstLoading) {
       getCredentialsAndLogin();
-      _firstLoading = false;
     }
-    if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+    /*if (Provider.of<NewsProvider>(context).loadedNews.isEmpty && _firstLoading) {
       firstLoadNews();
-    }
+    }*/
+    _firstLoading = false;
     super.didChangeDependencies();
   }
 

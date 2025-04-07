@@ -252,9 +252,18 @@ class LigaSpieleProvider with ChangeNotifier {
       final jahr = spiel.datum.year;
       final url = Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token");
+      // Datum und Uhrzeit in String umwandeln
+      String formattedDatum = DateFormat('dd.MM.yyyy').format(spiel.datum);
+      String formattedUhrzeit = spiel
+          .uhrzeit; // Uhrzeit als String (kann angepasst werden, falls nötig)
+
       final updateResponse = await http.patch(
         url,
-        body: json.encode({"ergebnis": spiel.ergebnis}),
+        body: json.encode({
+          "ergebnis": spiel.ergebnis,
+          "datum": formattedDatum, // Datum an Firebase übergeben
+          "uhrzeit": formattedUhrzeit, // Uhrzeit an Firebase übergeben
+        }),
         headers: {'Content-Type': 'application/json'},
       );
 

@@ -173,7 +173,7 @@ class NewsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadNews(String id) async {
+  Future<News> loadNews(String id) async {
     try {
       final response = await http.get(
         Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News/$id.json'),
@@ -191,13 +191,29 @@ class NewsProvider with ChangeNotifier {
           categoryController.text = dbData["category"];
           photoBlob = List<String>.from(dbData["photoBlob"] ?? []);
           notifyListeners();
+
+          // Create and return a News object
+          return News(
+            id: id,
+            title: dbData["title"],
+            body: dbData["body"],
+            date: dbData["date"],
+            author: dbData["author"],
+            category: dbData["category"],
+            photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
+            lastUpdate: DateTime.now().millisecondsSinceEpoch,
+          );
         }
       } else {
         throw Exception('Fehler beim Laden der News: ${response.statusCode}');
       }
     } catch (error) {
       debugPrint('Fehler beim Laden der News: $error');
+      rethrow; // Optionally rethrow the error to be handled by the caller
     }
+
+    // Return a default News object or throw an error if no data is available
+    throw Exception('No data found for News ID: $id');
   }
 
   Future<List<News>> loadMannschaftsNews(List<String> ids) async {

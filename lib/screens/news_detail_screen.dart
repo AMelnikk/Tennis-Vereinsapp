@@ -31,6 +31,7 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
 
     final newsID = ModalRoute.of(context)?.settings.arguments as String?;
     if (newsID != null && newsID.isNotEmpty) {
+      // Calling the loadNews method from NewsProvider (not from the widget itself)
       Provider.of<NewsProvider>(context, listen: false)
           .loadNews(newsID)
           .then((news) {
@@ -39,7 +40,10 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
             detailNews = news;
           });
         }
-      }).catchError((error) {});
+      }).catchError((error) {
+        // Handle error, for example by showing a snackbar or logging it
+        print('Error loading news: $error');
+      });
     }
 
     _loadAdminStatus();

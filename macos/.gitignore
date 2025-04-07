@@ -2,6 +2,8 @@
 **/Flutter/ephemeral/
 **/Pods/
 
+echo "assets/service-account.json" >> .gitignore
+
 # Xcode-related
 **/dgph
 **/xcuserdata/

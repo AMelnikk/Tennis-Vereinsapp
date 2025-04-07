@@ -9,6 +9,7 @@ class NewsProvider with ChangeNotifier {
   NewsProvider(this._token);
 
   bool isNewsLoading = false;
+  bool isFirstLoading = true;
   List<News> loadedNews = [];
   final String? _token;
   String newsId = '';
@@ -82,6 +83,7 @@ class NewsProvider with ChangeNotifier {
     DateTime? parsedDate =
         DateFormat("dd.MM.yyyy").parse(newsDateController.text);
     String formattedDate = DateFormat("yyyy-MM-dd").format(parsedDate);
+    String customId = "$formattedDate-${DateTime.now().millisecondsSinceEpoch}";
 
     try {
       // News-Objekt erstellen
@@ -95,6 +97,7 @@ class NewsProvider with ChangeNotifier {
             ? categoryController.text
             : selectedCategory,
         author: author,
+        lastUpdate: DateTime.now().millisecondsSinceEpoch,
       );
 
       final http.Response response;
@@ -108,9 +111,9 @@ class NewsProvider with ChangeNotifier {
         );
       } else {
         // Neu: POST-Anfrage
-        response = await http.post(
+        response = await http.put(
           Uri.parse(
-              "https://db-teg-default-rtdb.firebaseio.com/News.json?auth=$_token"),
+              "https://db-teg-default-rtdb.firebaseio.com/News/$customId.json?auth=$_token"),
           body: json.encode(news.toJson()),
           headers: {'Content-Type': 'application/json'},
         );
@@ -218,6 +221,7 @@ class NewsProvider with ChangeNotifier {
               author: dbData["author"] ?? '',
               category: dbData["category"] ?? '',
               photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
+              lastUpdate: DateTime.now().millisecondsSinceEpoch,
             );
 
             fetchedNews.add(news);
@@ -248,6 +252,8 @@ class NewsProvider with ChangeNotifier {
             'https://db-teg-default-rtdb.firebaseio.com/News.json?$queryParams'),
       );
 
+      if (kDebugMode) print(response.statusCode);
+
       List<String> s = <String>[];
       List<News> loadedData = [];
       Map<String, dynamic> dbData = await json.decode(response.body);
@@ -267,6 +273,9 @@ class NewsProvider with ChangeNotifier {
                       ? s
                       : List<String>.from(
                           value["photoBlob"].map((item) => item.toString())),
+              lastUpdate: value["lastUpdate"] != null
+                  ? int.tryParse(value["lastUpdate"].toString()) ?? 0
+                  : 0,
             ),
           );
         },
@@ -278,8 +287,10 @@ class NewsProvider with ChangeNotifier {
       lastId = loadedData.isNotEmpty ? loadedData.first.id : null;
       loadedNews.insertAll(0, loadedData);
       notifyListeners();
+      isFirstLoading = false;
     } catch (error) {
       loadedNews = cacheNews;
+      isFirstLoading = false;
     }
   }
 }

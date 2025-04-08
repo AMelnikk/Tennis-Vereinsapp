@@ -4,7 +4,7 @@ class VereinAppbar extends AppBar {
   VereinAppbar({super.key})
       : super(
           backgroundColor: Colors.black,
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: true,
           elevation: 0,
           title: Padding(
             padding: const EdgeInsets.only(top: 10, bottom: 5),

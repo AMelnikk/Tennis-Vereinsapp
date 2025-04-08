@@ -33,7 +33,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
+    _loadSaisons();
     // Wenn die Saison gesetzt ist, lade die Spiele
     if (_selectedSeason.key.isNotEmpty) {
       _loadSpiele();

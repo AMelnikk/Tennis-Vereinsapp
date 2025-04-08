@@ -211,6 +211,7 @@ class TeamProvider with ChangeNotifier {
         // Füge das neue Team zum Cache hinzu
         teamCache[saisonKey]!.add(newTeam);
       }
+      notifyListeners();
     }
   }
 
@@ -241,7 +242,9 @@ class TeamProvider with ChangeNotifier {
           'position': existingTeam.position,
           'kommentar': existingTeam.kommentar,
           'pdfBlob': existingTeam.pdfBlob,
-          'photoBlob': existingTeam.photoBlob[0],
+          'photoBlob': existingTeam.photoBlob.isNotEmpty
+              ? existingTeam.photoBlob[0]
+              : null, // null safety
         }),
         headers: {'Content-Type': 'application/json'},
       );

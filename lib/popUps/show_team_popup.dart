@@ -23,47 +23,10 @@ class MyTeamDialog extends StatefulWidget {
 class MyTeamDialogState extends State<MyTeamDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _mannschaften = [
-    "Herren",
-    "Herren II",
-    "Herren III",
-    "Herren 30",
-    "Herren 30 II",
-    "Herren 40",
-    "Herren 40 II",
-    "Herren 50",
-    "Damen",
-    "Junioren 18",
-    "Junioren 18 II",
-    "Knaben",
-    "Knaben II",
-    "Bambini",
-    "Bambini II",
-    "Bambini III",
-    "Bambini IV",
-    "U10",
-    "U10 II",
-    "U10 III",
-    "U10 IV",
-    "U9",
-    "U9 II"
-  ];
-
-  final List<String> _ligen = [
-    "Nordliga 4",
-    "Nordliga 3",
-    "Nordliga 2",
-    "Nordliga 1",
-    "Landesliga 2",
-    "Landesliga 1"
-  ];
-
   String? _pdfPath;
   Uint8List? _pdfBlob;
   // ignore: unused_field
   String _editID = '';
-  String _selectedMannschaft = "";
-  String _selectedLiga = "";
   bool _isLoading = false;
   List<String> _photoBlob = [];
   String _selectedSaisonKey = '';
@@ -74,6 +37,8 @@ class MyTeamDialogState extends State<MyTeamDialog> {
     'url': TextEditingController(),
     'gruppe': TextEditingController(),
     'matchbilanz': TextEditingController(),
+    'mannschaft': TextEditingController(),
+    'liga': TextEditingController(),
     'mannschaftsführerName': TextEditingController(),
     'mannschaftsführerTel': TextEditingController(),
     'satzbilanz': TextEditingController(),
@@ -87,8 +52,8 @@ class MyTeamDialogState extends State<MyTeamDialog> {
     if (widget.teamData != null) {
       _editID = widget.teamData!.mannschaft;
       _selectedSaisonKey = widget.teamData!.saison;
-      _selectedMannschaft = widget.teamData!.mannschaft;
-      _selectedLiga = widget.teamData!.liga;
+      _controllers['mannschaft']?.text = widget.teamData!.mannschaft;
+      _controllers['liga']?.text = widget.teamData!.liga;
       _controllers['url']?.text = widget.teamData!.url;
       _controllers['gruppe']?.text = widget.teamData!.gruppe;
       _controllers['matchbilanz']?.text = widget.teamData!.matchbilanz;
@@ -169,8 +134,8 @@ class MyTeamDialogState extends State<MyTeamDialog> {
       final newEntry = Team(
         url: _controllers['url']?.text ?? '',
         saison: _selectedSaisonKey,
-        mannschaft: _selectedMannschaft,
-        liga: _selectedLiga,
+        mannschaft: _controllers['mannschaft']?.text ?? '',
+        liga: _controllers['liga']?.text ?? '',
         gruppe: _controllers['gruppe']?.text ?? '',
         mfName: _controllers['mannschaftsführerName']?.text ?? '',
         mfTel: _controllers['mannschaftsführerTel']?.text ?? '',
@@ -222,13 +187,9 @@ class MyTeamDialogState extends State<MyTeamDialog> {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: buildDropdownField(
-            label: 'Mannschaft',
-            value: _selectedMannschaft,
-            items: _mannschaften,
-            onChanged: (value) {
-              setState(() => _selectedMannschaft = value ?? '');
-            },
+          child: buildTextFormField(
+            'Mannschaft',
+            controller: _controllers['mannschaft'],
           ),
         ),
       ],
@@ -239,22 +200,29 @@ class MyTeamDialogState extends State<MyTeamDialog> {
     return Row(
       children: [
         Expanded(
-          child: buildDropdownField(
-            label: 'Liga',
-            value: _selectedLiga,
-            items: _ligen,
-            onChanged: (value) => setState(() => _selectedLiga = value ?? ""),
+          child: buildTextFormField(
+            'Liga',
+            controller: _controllers['liga'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Bitte die Liga eingeben';
+              }
+              return null;
+            },
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: buildTextFormField('Gruppe',
-              controller: _controllers['gruppe'], validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Bitte die Gruppe eingeben';
-            }
-            return null;
-          }),
+          child: buildTextFormField(
+            'Gruppe',
+            controller: _controllers['gruppe'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Bitte die Gruppe eingeben';
+              }
+              return null;
+            },
+          ),
         ),
       ],
     );
@@ -357,8 +325,6 @@ class MyTeamDialogState extends State<MyTeamDialog> {
     _controllers['kommentar']?.clear();
 
     setState(() {
-      _selectedMannschaft = '';
-      _selectedLiga = '';
       _selectedSaisonKey = '';
       _photoBlob = [];
       _selectedPdfPath = '';

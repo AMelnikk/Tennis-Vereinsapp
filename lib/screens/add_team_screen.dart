@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -120,16 +119,21 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
     );
   }
 
-  void _showTeamDialog(
-      BuildContext context, List<SaisonData> seasons, Team teamData) {
-    showDialog(
+  Future<Team?> _showTeamDialog(
+      BuildContext context, List<SaisonData> seasons, Team teamData) async {
+    // Zeige den Dialog an und warte auf das Ergebnis (das bearbeitete Team)
+    final updatedTeam = await showDialog<Team>(
       context: context,
       builder: (BuildContext context) {
         return MyTeamDialog(
-            seasons: seasons,
-            teamData: teamData); // Dialog aufrufen und Daten übergeben
+          seasons: seasons,
+          teamData: teamData, // Übergebe das Team und die Saisonen
+        );
       },
     );
+
+    // Rückgabe des bearbeiteten Teams
+    return updatedTeam;
   }
 
   Widget _buildFilterRow(List<SaisonData> seasons) {
@@ -146,19 +150,6 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
             onChanged: (value) {
               setState(() {
                 _selectedSaisonFilterKey = value.toString();
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: buildDropdownField(
-            label: 'Mannschaft',
-            value: _selectedFilterMannschaft,
-            items: _filterTeams,
-            onChanged: (value) {
-              setState(() {
-                _selectedFilterMannschaft = value ?? '';
               });
             },
           ),
@@ -272,8 +263,20 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                               IconButton(
                                 icon: const Icon(Icons.edit,
                                     size: 18), // Kleinere Icons
-                                onPressed: () => _showTeamDialog(context,
-                                    filterSeasons, entry), // Bearbeiten
+                                onPressed: () async {
+                                  // Zeige den Bearbeitungsdialog an und warte auf das Ergebnis
+                                  final result = await _showTeamDialog(
+                                      context, filterSeasons, entry);
+
+                                  // Überprüfe, ob das Ergebnis (das bearbeitete Team) gültig ist
+                                  if (result != null) {
+                                    // Aktualisiere den Zustand des Widgets, damit die Seite neu aufgebaut wird
+                                    setState(() {
+                                      // Aktualisiere die `entry`-Daten mit den bearbeiteten Werten
+                                      entry = result;
+                                    });
+                                  }
+                                },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete, size: 18),

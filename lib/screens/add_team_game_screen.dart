@@ -95,7 +95,10 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
           for (var spiel in spiele) {
             String mannschaftskennung =
                 extractMannschaftskennung(spiel.heim, spiel.gast);
-            spiel.altersklasse = "${spiel.altersklasse} $mannschaftskennung";
+            if (mannschaftskennung.isNotEmpty) {
+              spiel.altersklasse =
+                  "${spiel.altersklasse.trim()} ${mannschaftskennung.trim()}";
+            }
           }
 
           await ligaSpieleProvider.saveLigaSpiele(spiele);

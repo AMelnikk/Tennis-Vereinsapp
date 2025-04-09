@@ -31,13 +31,13 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
   TennisMatch _selectedMatch = TennisMatch.empty();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadSaisons();
-    // Wenn die Saison gesetzt ist, lade die Spiele
-    if (_selectedSeason.key.isNotEmpty) {
-      _loadSpiele();
-    }
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      await _loadSaisons(); // wartet auf Saisons
+      await _loadSpiele(); // lädt Spiele danach
+      setState(() {}); // UI aktualisieren
+    });
   }
 
   Future<void> _loadSaisons() async {
@@ -45,6 +45,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
     SaisonProvider saisonP =
         Provider.of<SaisonProvider>(context, listen: false);
     await saisonP.getAllSeasons();
+    _selectedSeason = saisonP.getFirstSaison();
     _selectedAgeGroup = "Alle";
   }
 
@@ -55,7 +56,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
     await lsProvider.loadLigaSpieleForSeason(_selectedSeason);
   }
 
-  Future<void> _saveLigaSpielChanges() async {
+  Future<void> _saveErgebnis() async {
     final messenger = ScaffoldMessenger.of(context);
     final teamResultProvider =
         Provider.of<LigaSpieleProvider>(context, listen: false);
@@ -71,30 +72,16 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
 
     // Übernehme das Ergebnis in das ausgewählte Spiel
     _selectedMatch.ergebnis = _ergebnisController.text;
-    String dateString = _datumController.text;
-    DateFormat format = DateFormat("dd.MM.yyyy");
-    _selectedMatch.datum = format.parse(dateString);
-    _selectedMatch.uhrzeit = _uhrzeitController.text;
 
-    // Zeige eine Ladeanzeige
-    messenger.showSnackBar(
-        const SnackBar(content: Text("Ergebnis wird aktualisiert...")));
+    // Aktualisiere das Spiel in der Datenquelle
+    int responseCode = await teamResultProvider.updateLigaSpiel(_selectedMatch);
 
-    try {
-      // Aktualisiere das Spiel in der Datenquelle
-      int responseCode =
-          await teamResultProvider.updateLigaSpiel(_selectedMatch);
-
-      if (responseCode == 200) {
-        messenger.showSnackBar(const SnackBar(
-            content: Text("Ergebnis erfolgreich aktualisiert.")));
-      } else {
-        messenger.showSnackBar(const SnackBar(
-            content: Text("Fehler beim Aktualisieren des Ergebnisses.")));
-      }
-    } catch (e) {
+    if (responseCode == 200) {
       messenger.showSnackBar(
-          const SnackBar(content: Text("Ein Fehler ist aufgetreten.")));
+          const SnackBar(content: Text("Ergebnis erfolgreich aktualisiert.")));
+    } else {
+      messenger.showSnackBar(const SnackBar(
+          content: Text("Fehler beim Aktualisieren des Ergebnisses.")));
     }
   }
 
@@ -476,7 +463,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
             ),
             TextButton(
               onPressed: () {
-                _saveLigaSpielChanges();
+                _saveErgebnis();
                 Navigator.of(ctx).pop();
               },
               child: const Text("Speichern"),

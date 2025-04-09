@@ -14,7 +14,7 @@ import '../widgets/verein_appbar.dart';
 
 class AddTeamResultScreen extends StatefulWidget {
   const AddTeamResultScreen({super.key});
-  static const routename = "/add-spiergebnsele-screen";
+  static const routename = "/add-team-result-screen";
 
   @override
   State<AddTeamResultScreen> createState() => _AddTeamResultScreenState();
@@ -318,7 +318,20 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text("Ergebnis bearbeiten"),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Ergebnis bearbeiten'),
+              Text(
+                'ID: ${_selectedMatch.id}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,45 +426,47 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.article),
-                    onPressed: () async {
-                      final newsProvider =
-                          Provider.of<NewsProvider>(context, listen: false);
-                      final lsProvider = Provider.of<LigaSpieleProvider>(
+                      icon: const Icon(Icons.article),
+                      onPressed: () async {
+                        final newsProvider =
+                            Provider.of<NewsProvider>(context, listen: false);
+                        final lsProvider = Provider.of<LigaSpieleProvider>(
+                            context,
+                            listen: false);
+
+                        // Setze die Werte im newsProvider
+                        newsProvider.title.text =
+                            "Begegnung: ${_selectedMatch.heim} vs ${_selectedMatch.gast}";
+                        newsProvider.newsDateController.text =
+                            DateFormat('dd.MM.yyyy')
+                                .format(_selectedMatch.datum);
+                        newsProvider.updateCategory("Spielbericht");
+                        newsProvider.newsId = _newsIdController.text;
+                        newsProvider.newsDateController.text =
+                            DateFormat('dd.MM.yyyy')
+                                .format(_selectedMatch.datum);
+                        newsProvider.body.text = '';
+                        newsProvider.photoBlob = [];
+
+                        // Navigiere zum AddNewsScreen und warte auf die zurückgegebene News-ID
+                        final String? newsId = await Navigator.push<String>(
                           context,
-                          listen: false);
+                          MaterialPageRoute(
+                            builder: (context) => const AddNewsScreen(),
+                          ),
+                        );
 
-                      // Setze die Werte im newsProvider
-                      newsProvider.title.text =
-                          "Begegnung: ${_selectedMatch.heim} vs ${_selectedMatch.gast}";
-                      newsProvider.newsDateController.text =
-                          DateFormat('dd.MM.yyyy').format(_selectedMatch.datum);
-                      newsProvider.updateCategory("Spielbericht");
-                      newsProvider.newsId = _newsIdController.text;
-                      newsProvider.newsDateController.text =
-                          DateFormat('dd.MM.yyyy').format(_selectedMatch.datum);
-                      newsProvider.body.text = '';
-                      newsProvider.photoBlob = [];
+// Wenn eine gültige News-ID zurückgegeben wurde, verarbeite sie
+                        if (newsId?.isNotEmpty == true) {
+                          setState(() {
+                            _newsIdController.text = newsId!;
+                            _selectedMatch.spielbericht = newsId;
+                            lsProvider.updateLigaSpiel(_selectedMatch);
+                          });
 
-                      // Navigiere zum AddNewsScreen und warte auf die News ID
-                      final newsId = await Navigator.push<String>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AddNewsScreen(),
-                        ),
-                      );
-
-                      // Setze die News ID, wenn eine zurückgegeben wurde
-                      if (newsId != null && newsId.isNotEmpty) {
-                        setState(() {
-                          _newsIdController.text = newsId;
-                          _selectedMatch.spielbericht = newsId;
-                          lsProvider.updateLigaSpiel(_selectedMatch);
-                        });
-                        newsProvider.newsId = newsId;
-                      }
-                    },
-                  )
+                          newsProvider.newsId = newsId!;
+                        }
+                      })
                 ],
               ),
             ],

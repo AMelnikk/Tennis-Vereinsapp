@@ -137,7 +137,7 @@ class NewsProvider with ChangeNotifier {
 
         clearNews(); // Optional: Löscht die News-Daten nach dem Absenden
         notifyListeners(); // Informiert alle Listener über die Änderungen
-        return firebaseId ?? newsId; // Rückgabe der ID
+        return isUpdate ? newsId : customId;
       } else {
         throw Exception('Fehler beim Speichern: ${response.statusCode}');
       }

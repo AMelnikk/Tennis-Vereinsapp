@@ -263,6 +263,7 @@ class LigaSpieleProvider with ChangeNotifier {
           "ergebnis": spiel.ergebnis,
           "datum": formattedDatum, // Datum an Firebase übergeben
           "uhrzeit": formattedUhrzeit, // Uhrzeit an Firebase übergeben
+          "spielbericht": spiel.spielbericht,
         }),
         headers: {'Content-Type': 'application/json'},
       );

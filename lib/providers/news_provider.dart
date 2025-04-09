@@ -186,6 +186,9 @@ class NewsProvider with ChangeNotifier {
           newsId = id;
           title.text = dbData["title"];
           body.text = dbData["body"];
+          DateTime parsedDate =
+              DateTime.parse(dbData["date"]); // funktioniert mit '2025-04-12'
+          newsDateController.text = DateFormat("dd.MM.yyyy").format(parsedDate);
           newsDate = dbData["date"];
           author = dbData["author"];
           categoryController.text = dbData["category"];
@@ -193,11 +196,12 @@ class NewsProvider with ChangeNotifier {
           notifyListeners();
 
           // Create and return a News object
+
           return News(
             id: id,
             title: dbData["title"],
             body: dbData["body"],
-            date: dbData["date"],
+            date: newsDateController.text,
             author: dbData["author"],
             category: dbData["category"],
             photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
@@ -229,11 +233,13 @@ class NewsProvider with ChangeNotifier {
           Map<String, dynamic>? dbData = json.decode(response.body);
 
           if (dbData != null) {
+            DateTime parsedDate =
+                DateTime.parse(dbData["date"]); // funktioniert mit '2025-04-12'
             News news = News(
               id: id,
               title: dbData["title"] ?? '',
               body: dbData["body"] ?? '',
-              date: dbData["date"] ?? '',
+              date: DateFormat("dd.MM.yyyy").format(parsedDate),
               author: dbData["author"] ?? '',
               category: dbData["category"] ?? '',
               photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
@@ -275,12 +281,14 @@ class NewsProvider with ChangeNotifier {
       Map<String, dynamic> dbData = await json.decode(response.body);
       dbData.forEach(
         (id, value) {
+          DateTime parsedDate = DateTime.parse(value[
+              "date"]); // Accessing value["date"] instead of dbData["date"]
           loadedData.add(
             News(
               id: id,
               title: value["title"] != null ? value["title"] as String : '',
               body: value["body"] != null ? value["body"] as String : '',
-              date: value["date"] != null ? value["date"] as String : '',
+              date: DateFormat("dd.MM.yyyy").format(parsedDate),
               author: value["author"] != null ? value["author"] as String : '',
               category:
                   value["category"] != null ? value["category"] as String : '',

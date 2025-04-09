@@ -211,12 +211,15 @@ class UserProvider with ChangeNotifier {
 
   void getFilteredUsers(String role, String name) {
     filteredUsers = allUsers.where((user) {
-      return (role.isEmpty || user.role == role) &&
-              (name.isEmpty ||
-                  user.vorname.toLowerCase().contains(name.toLowerCase())) ||
-          (name.isEmpty ||
-              user.nachname.toLowerCase().contains(name.toLowerCase()));
+      final nameLower = name.toLowerCase();
+      final roleMatch = role.isEmpty || role == "Alle" || user.role == role;
+      final nameMatch = name.isEmpty ||
+          user.vorname.toLowerCase().contains(nameLower) ||
+          user.nachname.toLowerCase().contains(nameLower);
+
+      return roleMatch && nameMatch;
     }).toList();
-    notifyListeners(); // 🔥 WICHTIG
+
+    notifyListeners(); // wichtig zum UI-Update
   }
 }

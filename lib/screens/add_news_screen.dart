@@ -161,6 +161,9 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                         newsProvider.photoBlob = images;
                       });
                     },
+                    initialPhotoList: newsProvider.photoBlob.isNotEmpty
+                        ? newsProvider.photoBlob
+                        : [], // Übergabe der Liste der Bilder
                   ),
 
                   // Button zum Hochladen

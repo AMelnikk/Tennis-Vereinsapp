@@ -40,11 +40,11 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
     }
 
     // Benutzerinformationen abrufen
-    await userProvider.getUserData(uid);
+    await userProvider.getOwnUserData(uid);
 
     getraenkeProvider.username =
         "${userProvider.user.nachname} ${userProvider.user.vorname}";
-    getraenkeProvider.getAllBuchungen();
+    getraenkeProvider.uid = userProvider.user.uid;
     fetchUserBuchungen();
   }
 
@@ -194,6 +194,13 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                           itemBuilder: (context, index) {
                             final buchung = _buchungen[index];
 
+                            // Parsing der Summe als double, auch wenn sie negativ ist
+                            final summe =
+                                double.tryParse(buchung['summe'].toString()) ??
+                                    0.0;
+                            final isEinzahlung = summe < 0;
+
+                            // Formatierung des Datums
                             final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
                             final formattedDate = dateFormat.format(
                               DateTime.parse(buchung['date']),
@@ -203,60 +210,60 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
                               margin: const EdgeInsets.symmetric(vertical: 5),
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: buchung['bezahlt'] == true
-                                    ? Colors.grey[300]
-                                    : Colors.white,
+                                color: isEinzahlung
+                                    ? Colors.green[100]
+                                    : // Grün für Einzahlungen
+                                    (buchung['bezahlt'] == true
+                                        ? Colors.grey[300]
+                                        : Colors.white),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: Colors.grey,
                                 ),
                               ),
                               child: ListTile(
-                                title: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Expanded(
-                                      child: Text(
-                                        "Buchung vom",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
                                     Text(
-                                      "${buchung['summe']} €",
+                                      "${isEinzahlung ? "Einzahlung" : "Buchung"} vom $formattedDate",
                                       style: const TextStyle(
-                                        fontSize: 20,
+                                        fontSize:
+                                            20, // Etwas größerer Text für den Titel
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
+                                trailing: Text(
+                                  "${summe.toStringAsFixed(2)} €",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isEinzahlung
+                                        ? Colors.green[800]
+                                        : Colors
+                                            .red, // Grün für Einzahlungen, Rot für normale Buchungen
+                                  ),
+                                ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      formattedDate,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
+                                    if ((buchung['anzWasser'] ?? 0) > 0)
+                                      Text(
+                                        "Wasser: ${buchung['anzWasser']}",
+                                        style: const TextStyle(fontSize: 16),
                                       ),
-                                    ),
-                                    Text(
-                                      "Wasser: ${buchung['anzWasser']}",
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      "Bier: ${buchung['anzBier']}",
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      "Softgetränke: ${buchung['anzSoft']}",
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
+                                    if ((buchung['anzBier'] ?? 0) > 0)
+                                      Text(
+                                        "Bier: ${buchung['anzBier']}",
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    if ((buchung['anzSoft'] ?? 0) > 0)
+                                      Text(
+                                        "Softgetränke: ${buchung['anzSoft']}",
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
                                   ],
                                 ),
                               ),

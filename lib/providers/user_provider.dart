@@ -21,7 +21,7 @@ class UserProvider with ChangeNotifier {
         Provider.of<AuthorizationProvider>(context, listen: false);
 
     setToken(authProvider.writeToken.toString());
-    await getUserData(authProvider.userId.toString());
+    await getOwnUserData(authProvider.userId.toString());
 
     return roles.contains(user.role);
   }
@@ -59,7 +59,7 @@ class UserProvider with ChangeNotifier {
   }
 
   // Methode zum Abrufen der Benutzerdaten und Privilegien
-  Future<void> getUserData(String uid) async {
+  Future<void> getOwnUserData(String uid) async {
     if (uid.isEmpty) return; // Check if UID is empty
 
     final urlUser = Uri.parse(
@@ -84,6 +84,39 @@ class UserProvider with ChangeNotifier {
     } catch (error) {
       if (kDebugMode) print("Error: $error");
     }
+  }
+
+  // Methode zum Abrufen der Benutzerdaten und Privilegien
+  Future<User> getUserDataWithUid(String uid) async {
+    if (uid.isEmpty) return User.empty(); // Check if UID is empty
+    // Falls die Liste noch nicht geladen wurde, erst laden
+    if (allUsers.isEmpty) {
+      await getAllUsers();
+    }
+
+    final urlUser = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Users/$uid.json?auth=$_token");
+
+    User tmpUser = User.empty(); // Temporäres User-Objekt
+    try {
+      // Benutzerdaten und Berechtigungen abrufen
+      var userResponse = await http.get(urlUser);
+
+      // Initialize userData and privilegeData as Map<String, dynamic>
+      Map<String, dynamic>? userData;
+
+      if (userResponse.statusCode == 200) {
+        userData = json.decode(userResponse.body) as Map<String, dynamic>?;
+      }
+
+      if (userData != null) {
+        tmpUser = User.fromJson(userData, uid); // User erstellen
+      }
+      tmpUser.uid = uid;
+    } catch (error) {
+      if (kDebugMode) print("Error: $error");
+    }
+    return tmpUser;
   }
 
   // Methode zum Hinzufügen eines Benutzers (posten)
@@ -151,6 +184,28 @@ class UserProvider with ChangeNotifier {
       appError(messenger, "Leider Fehler beim Löschen!");
       if (kDebugMode) print("❌ Netzwerk-Fehler: $error");
     }
+  }
+
+  Future<Map<String, String>> getAllUserNames() async {
+    // Falls die Liste noch nicht geladen wurde, erst laden
+    if (allUsers.isEmpty) {
+      await getAllUsers();
+    }
+
+    // Nach Nachname, dann Vorname sortieren
+    allUsers.sort((a, b) {
+      final nameA = '${a.nachname.trim()} ${a.vorname.trim()}'.toLowerCase();
+      final nameB = '${b.nachname.trim()} ${b.vorname.trim()}'.toLowerCase();
+      return nameA.compareTo(nameB);
+    });
+
+    // Danach Map erstellen
+    Map<String, String> nameMap = {
+      for (var user in allUsers)
+        user.uid: '${user.nachname.trim()} ${user.vorname.trim()}',
+    };
+
+    return nameMap;
   }
 
   Future<void> getAllUsers() async {

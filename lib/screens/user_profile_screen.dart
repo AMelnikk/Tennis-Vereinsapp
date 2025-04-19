@@ -37,7 +37,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       // Hole Benutzerdaten und die E-Mail-Adresse
-      await userProvider.getUserData(authProvider.userId.toString());
+      await userProvider.getOwnUserData(authProvider.userId.toString());
       final email = await userProvider.fetchOwnEmail();
 
       setState(() {

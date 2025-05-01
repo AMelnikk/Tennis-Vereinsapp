@@ -178,7 +178,7 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
         final DateFormat dateFormat = DateFormat("dd.MM.yyyy");
         DateTime? datum = dateFormat.parse(datumString);
         spiele.add(TennisMatch(
-          id: fields[8],
+          id: '${saisonKey}_${fields[8]}',
           datum: datum,
           uhrzeit: fields[1],
           altersklasse: fields[2],

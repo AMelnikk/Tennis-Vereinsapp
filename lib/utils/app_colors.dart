@@ -40,8 +40,10 @@ Color getErgebnisCellColor(String ergebnisText, String heim, String gast) {
     int heimMatchpunkte = int.tryParse(ergebnisTeile[0]) ?? 0;
     int gastMatchpunkte = int.tryParse(ergebnisTeile[1]) ?? 0;
 
-    if ((heimMatchpunkte > gastMatchpunkte && heim == "TeG Altmühlgrund") ||
-        (heimMatchpunkte < gastMatchpunkte && gast == "TeG Altmühlgrund")) {
+    if ((heimMatchpunkte > gastMatchpunkte &&
+            heim.startsWith("TeG Altmühlgrund")) ||
+        (heimMatchpunkte < gastMatchpunkte &&
+            gast.startsWith("TeG Altmühlgrund"))) {
       ergebnisFarbe = AppColors.ergCellGewonnen;
     } else if (heimMatchpunkte == gastMatchpunkte) {
       ergebnisFarbe = AppColors.ergCellUnentschieden;

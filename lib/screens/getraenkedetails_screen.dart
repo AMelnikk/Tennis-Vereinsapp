@@ -24,7 +24,6 @@ class _GetraenkeBuchungenDetailsScreenState
 
   String _selectedUser = "Alle";
   String _selectedYear = "Alle";
-  bool _onlyUnpaid = false;
 
   final Map<String, String> _users = {
     'Alle': 'Alle'
@@ -122,8 +121,9 @@ class _GetraenkeBuchungenDetailsScreenState
       _filteredBuchungen = _buchungen.where((b) {
         if (_selectedUser != "Alle" && b['uid'] != _selectedUser) return false;
         if (_selectedYear != "Alle" &&
-            !_formatDate(b['date']).startsWith(_selectedYear)) return false;
-        if (_onlyUnpaid && b['bezahlt'] == true) return false;
+            !_formatDate(b['date']).startsWith(_selectedYear)) {
+          return false;
+        }
         return true;
       }).toList();
     });
@@ -407,7 +407,6 @@ class _GetraenkeBuchungenDetailsScreenState
         ],
         rows: _filteredBuchungen.map((b) {
           final id = b['id'];
-          final bezahlt = b['bezahlt'] ?? false;
           return DataRow(cells: [
             DataCell(Text(_formatDate(b['date']))),
             DataCell(Text(_formatTime(b['date']))),

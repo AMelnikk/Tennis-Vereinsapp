@@ -259,7 +259,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       _vornameController.text = user.vorname;
                       _nachnameController.text = user.nachname;
                       _platzbuchungController.text = user.platzbuchungLink;
-                      _emailController.text = user.email ?? "";
+                      _emailController.text = user.email;
                       _selectedRole = [
                         "Mitglied",
                         "Admin",

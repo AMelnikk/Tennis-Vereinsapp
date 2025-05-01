@@ -159,10 +159,11 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
             final dateFormatted = DateFormat('dd.MM.yyyy').format(spiel.datum);
             final ergebnisAnzeige = spiel.ergebnis;
 
-            String heimAnzeige = spiel.heim == "TeG Altmühlgrund"
+            String heimAnzeige = spiel.heim.startsWith("TeG Altmühlgrund")
                 ? spiel.altersklasse
                 : spiel.heim;
-            String gastAnzeige = spiel.gast == "TeG Altmühlgrund"
+
+            String gastAnzeige = spiel.gast.startsWith("TeG Altmühlgrund")
                 ? spiel.altersklasse
                 : spiel.gast;
 

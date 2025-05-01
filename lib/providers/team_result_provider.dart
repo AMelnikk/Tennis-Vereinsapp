@@ -281,4 +281,29 @@ class LigaSpieleProvider with ChangeNotifier {
       return 400;
     }
   }
+
+  Future<int> deleteLigaSpiel(TennisMatch spiel) async {
+    if (_token == null || _token.isEmpty) return 400;
+
+    try {
+      final jahr = spiel.datum.year;
+      final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token",
+      );
+
+      final deleteResponse = await http.delete(url);
+
+      if (deleteResponse.statusCode == 200) {
+        _cachedLigaSpiele.remove(jahr); // Cache für das Jahr invalidieren
+        await loadLigaSpieleForYear(jahr);
+        notifyListeners();
+        return 200;
+      } else {
+        return deleteResponse.statusCode;
+      }
+    } catch (error) {
+      debugPrint("Fehler beim Löschen des Spiels: $error");
+      return 400;
+    }
+  }
 }

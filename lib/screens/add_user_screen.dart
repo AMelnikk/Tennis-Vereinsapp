@@ -70,7 +70,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
         newUser.uid = rData["localId"];
         _emailController.text =
             "${newUser.nachname}_${newUser.vorname}@example.com";
-        await userProvider.postUser(context, newUser, rData["idToken"]);
+        if (mounted)
+          await userProvider.postUser(context, newUser, rData["idToken"]);
       } else {
         await userProvider.postUser(
             context, newUser, authProvider.writeToken.toString());
@@ -218,10 +219,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
       child: ListView.builder(
         itemCount: userProvider.filteredUsers.length,
         itemBuilder: (ctx, index) {
-          final line_user = userProvider.filteredUsers[index];
+          final lineUser = userProvider.filteredUsers[index];
           return ListTile(
-            title: Text('${line_user.vorname} ${line_user.nachname}'),
-            subtitle: Text('Berechtigung: ${line_user.role}'),
+            title: Text('${lineUser.vorname} ${lineUser.nachname}'),
+            subtitle: Text('Berechtigung: ${lineUser.role}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -229,18 +230,18 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   icon: const Icon(Icons.edit),
                   onPressed: () {
                     setState(() {
-                      _uid.text = line_user.uid;
-                      _vornameController.text = line_user.vorname;
-                      _nachnameController.text = line_user.nachname;
-                      _platzbuchungController.text = line_user.platzbuchungLink;
-                      _emailController.text = line_user.email ?? "";
+                      _uid.text = lineUser.uid;
+                      _vornameController.text = lineUser.vorname;
+                      _nachnameController.text = lineUser.nachname;
+                      _platzbuchungController.text = lineUser.platzbuchungLink;
+                      _emailController.text = lineUser.email;
                       _selectedRole = [
                         "Mitglied",
                         "Admin",
                         "Abteilungsleitung",
                         "Mannschaftsführer"
-                      ].contains(line_user.role)
-                          ? line_user.role
+                      ].contains(lineUser.role)
+                          ? lineUser.role
                           : "Mitglied";
                     });
                   },
@@ -269,7 +270,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     );
 
                     if (confirm) {
-                      await userProvider.deleteUser(ctx, line_user.uid);
+                      await userProvider.deleteUser(ctx, lineUser.uid);
                       await userProvider.getAllUsers();
                     }
                   },

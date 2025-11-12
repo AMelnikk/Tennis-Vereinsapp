@@ -221,12 +221,14 @@ class _MyHomePageState extends State<MyHomePage> {
           .storage
           .read(key: "email");
     }
+    if (kDebugMode) print("User Email: $email");
     if (mounted) {
       password =
           await Provider.of<AuthorizationProvider>(context, listen: false)
               .storage
               .read(key: "password");
     }
+    if (kDebugMode) print("User Password: $password");
     if (mounted) {
       Provider.of<AuthorizationProvider>(context, listen: false).credentials = {
         "email": email,
@@ -266,9 +268,6 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_firstLoading) {
       getCredentialsAndLogin();
     }
-    /*if (Provider.of<NewsProvider>(context).loadedNews.isEmpty && _firstLoading) {
-      firstLoadNews();
-    }*/
     _firstLoading = false;
     super.didChangeDependencies();
   }
@@ -276,7 +275,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //extendBodyBehindAppBar: true,
       appBar: VereinAppbar(),
       body: _isLoading
           ? const Center(

@@ -274,7 +274,7 @@ class NewsProvider with ChangeNotifier {
             'https://db-teg-default-rtdb.firebaseio.com/News.json?$queryParams'),
       );
 
-      if (kDebugMode) print(response.statusCode);
+      // if (kDebugMode) print(response.statusCode);
 
       List<String> s = <String>[];
       List<News> loadedData = [];

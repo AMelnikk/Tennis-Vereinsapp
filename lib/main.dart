@@ -1,4 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -52,13 +53,14 @@ void main() async {
         .currentPlatform, // Initialisiere mit den Optionen
   );
   await PushNotificationService().initialize(); // Initialisiere Push-Service
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
-    if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
-  } catch (e) {
-    if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
-  }
+  // try {
+  //   // final user = FirebaseAuth.instance.currentUser;
+  //   // if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
+  //   // if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
+  // } catch (e) {
+  //   if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
+  // }
+
   //const FirebaseOptions firebaseOptions = FirebaseOptions(
   //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
   //    authDomain: "db-teg.firebaseapp.com",
@@ -221,14 +223,12 @@ class _MyHomePageState extends State<MyHomePage> {
           .storage
           .read(key: "email");
     }
-    if (kDebugMode) print("User Email: $email");
     if (mounted) {
       password =
           await Provider.of<AuthorizationProvider>(context, listen: false)
               .storage
               .read(key: "password");
     }
-    if (kDebugMode) print("User Password: $password");
     if (mounted) {
       Provider.of<AuthorizationProvider>(context, listen: false).credentials = {
         "email": email,
@@ -269,6 +269,13 @@ class _MyHomePageState extends State<MyHomePage> {
       getCredentialsAndLogin();
     }
     _firstLoading = false;
+    if (kDebugMode) {
+      print(
+          """Vorname: ${Provider.of<UserProvider>(context, listen: false).user.vorname},
+          Email: ${Provider.of<UserProvider>(context, listen: false).user.email},
+          Uid: ${Provider.of<UserProvider>(context, listen: false).user.email},
+          PlatzbuchungLink: ${Provider.of<UserProvider>(context, listen: false).user.email}""");
+    }
     super.didChangeDependencies();
   }
 

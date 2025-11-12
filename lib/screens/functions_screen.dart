@@ -107,7 +107,6 @@ class FunctionsScreen extends StatelessWidget {
     await Future.delayed(
       const Duration(milliseconds: 50),
     );
-
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -120,7 +119,7 @@ class FunctionsScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               },
               child: const Text("Zurück"),
             ),

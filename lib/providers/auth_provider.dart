@@ -1,21 +1,24 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
-import 'package:verein_app/utils/app_utils.dart';
+import 'package:provider/provider.dart';
+import '../utils/app_utils.dart';
 import '../models/http_exception.dart';
+import './user_provider.dart';
 
 class AuthorizationProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   AuthorizationProvider() {
-    try {
-      //  print("⚡ AuthProvider wird initialisiert...");
-      //  print("Aktueller Nutzer: ${_auth.currentUser?.email}");
-    } catch (e) {
-      //  print("❌ Fehler in AuthProvider-Konstruktor: $e");
-    }
+    // try {
+    //   //  print("⚡ AuthProvider wird initialisiert...");
+    //   //  print("Aktueller Nutzer: ${_auth.currentUser?.email}");
+    // } catch (e) {
+    //   //  print("❌ Fehler in AuthProvider-Konstruktor: $e");
+    // }
   }
   late final Map<String, String?> credentials;
   final storage = const FlutterSecureStorage();
@@ -57,6 +60,8 @@ class AuthorizationProvider with ChangeNotifier {
       );
 
       responseData = json.decode(response.body);
+      Provider.of<UserProvider>(context, listen: false)
+          .getUserData(responseData["localId"]);
 
       if (response.statusCode >= 400 || responseData["error"] != null) {
         throw HttpException(message: responseData["error"]["message"]);
@@ -74,7 +79,8 @@ class AuthorizationProvider with ChangeNotifier {
           key: "password", value: password); // Sicherer als SharedPreferences
       notifyListeners();
     } catch (error) {
-      throw HttpException(message: responseData["error"]["message"]);
+      if (kDebugMode) print("Error: $error");
+      // throw HttpException(message: responseData["error"]["message"]);
     }
   }
 

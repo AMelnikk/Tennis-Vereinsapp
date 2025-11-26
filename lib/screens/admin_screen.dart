@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import '../screens/add_team_result.dart';
 import '../providers/user_provider.dart';
 import './add_team_game_screen.dart';
+import './news_admin_screen.dart';
 import './add_termine_screen.dart';
 import './getraenke_summen_screen.dart';
 import './getraenkedetails_screen.dart';
 import './add_team_screen.dart';
 import '../screens/add_user_screen.dart';
 import './add_news_screen.dart';
-import './add_photo_screen.dart';
 import '../widgets/admin_function.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -70,12 +70,19 @@ class AdminScreen extends StatelessWidget {
                   if (snapshot.data == true) {
                     return Column(
                       children: [
+//                        AdminFunction(
+//                          function: () {
+//                            Navigator.of(context)
+//                                .pushNamed(AddPhotoScreen.routename);
+//                          },
+//                          text: "Fotos hinzufügen",
+//                        ),
                         AdminFunction(
                           function: () {
                             Navigator.of(context)
-                                .pushNamed(AddPhotoScreen.routename);
+                                .pushNamed(NewsAdminScreen.routename);
                           },
-                          text: "Fotos hinzufügen",
+                          text: "News verwalten",
                         ),
                         AdminFunction(
                           function: () {
@@ -84,13 +91,7 @@ class AdminScreen extends StatelessWidget {
                           },
                           text: "Mannschaft verwalten",
                         ),
-                        AdminFunction(
-                          function: () {
-                            Navigator.of(context)
-                                .pushNamed(AddTermineScreen.routename);
-                          },
-                          text: "Termine hochladen",
-                        ),
+
                         AdminFunction(
                           function: () {
                             Navigator.of(context)
@@ -98,13 +99,7 @@ class AdminScreen extends StatelessWidget {
                           },
                           text: "Ligaspiele hochladen",
                         ),
-                        AdminFunction(
-                          function: () {
-                            Navigator.of(context)
-                                .pushNamed(AddUserScreen.routename);
-                          },
-                          text: "Nutzer hinzufügen",
-                        ),
+
                         AdminFunction(
                           function: () {
                             Navigator.of(context).pushNamed(
@@ -118,6 +113,20 @@ class AdminScreen extends StatelessWidget {
                                 .pushNamed(GetraenkeSummenScreen.routename);
                           },
                           text: "Getränke Summen",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddUserScreen.routename);
+                          },
+                          text: "Benutzer verwalten",
+                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddTermineScreen.routename);
+                          },
+                          text: "Termine hochladen",
                         ),
                       ],
                     );

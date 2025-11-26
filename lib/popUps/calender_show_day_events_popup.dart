@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:verein_app/widgets/team_result_SpielortIcon.dart';
+import 'package:verein_app/widgets/team_result_spielort_icon.dart';
 import '../models/calendar_event.dart';
 import '../popUps/calender_show_event_details_popup.dart';
 import '../utils/app_colors.dart';

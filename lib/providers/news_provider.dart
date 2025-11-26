@@ -160,17 +160,27 @@ class NewsProvider with ChangeNotifier {
 
   Future<void> deleteNews(String id) async {
     try {
-      if (kDebugMode) print(id);
+      debugPrint('Lösche News mit ID: $id');
+
       final url = Uri.parse(
-          "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$_token");
-      final responce = await http.delete(url);
-      loadedNews.removeWhere((item) => item.id == id);
-      if (kDebugMode) print(responce.statusCode);
-      notifyListeners();
-    } catch (e) {
-      if (kDebugMode) print(e);
+        "https://db-teg-default-rtdb.firebaseio.com/News/$id.json?auth=$_token",
+      );
+
+      final response = await http.delete(url);
+      debugPrint('HTTP DELETE ${url.toString()} => ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        loadedNews.removeWhere((item) => item.id == id);
+        debugPrint(
+            'News erfolgreich aus loadedNews entfernt. Neue Länge: ${loadedNews.length}');
+        notifyListeners();
+      } else {
+        debugPrint('Fehler beim Löschen der News: ${response.statusCode}');
+      }
+    } catch (e, stack) {
+      debugPrint('Exception beim Löschen der News: $e');
+      debugPrintStack(stackTrace: stack);
     }
-    notifyListeners();
   }
 
   Future<News> loadNews(String id) async {
@@ -186,16 +196,29 @@ class NewsProvider with ChangeNotifier {
           newsId = id;
           title.text = dbData["title"];
           body.text = dbData["body"];
-          DateTime parsedDate =
-              DateTime.parse(dbData["date"]); // funktioniert mit '2025-04-12'
+          DateTime parsedDate = DateTime.parse(dbData["date"]);
           newsDateController.text = DateFormat("dd.MM.yyyy").format(parsedDate);
           newsDate = dbData["date"];
           author = dbData["author"];
           categoryController.text = dbData["category"];
           photoBlob = List<String>.from(dbData["photoBlob"] ?? []);
-          notifyListeners();
 
-          // Create and return a News object
+          if (kDebugMode) {
+            double totalKb = 0;
+
+            // Logging pro Bild
+            for (int i = 0; i < photoBlob.length; i++) {
+              final bytes = base64Decode(photoBlob[i]);
+              final kb = bytes.length / 1024;
+              totalKb += kb;
+              debugPrint('News $id: Bild $i = ${kb.toStringAsFixed(2)} KB');
+            }
+
+            // Logging Gesamtgröße aller Bilder in dieser News
+            debugPrint(
+                'News $id: Gesamtgröße aller Bilder = ${totalKb.toStringAsFixed(2)} KB');
+          }
+          notifyListeners();
 
           return News(
             id: id,
@@ -213,10 +236,9 @@ class NewsProvider with ChangeNotifier {
       }
     } catch (error) {
       debugPrint('Fehler beim Laden der News: $error');
-      rethrow; // Optionally rethrow the error to be handled by the caller
+      rethrow;
     }
 
-    // Return a default News object or throw an error if no data is available
     throw Exception('No data found for News ID: $id');
   }
 
@@ -246,6 +268,20 @@ class NewsProvider with ChangeNotifier {
               lastUpdate: DateTime.now().millisecondsSinceEpoch,
             );
 
+            if (kDebugMode) {
+              double totalKb = 0;
+
+              for (int i = 0; i < news.photoBlob.length; i++) {
+                final bytes = base64Decode(news.photoBlob[i]);
+                final kb = bytes.length / 1024;
+                totalKb += kb;
+                debugPrint(
+                    'Mannschafts-News $id: Bild $i = ${kb.toStringAsFixed(2)} KB');
+              }
+
+              debugPrint(
+                  'Mannschafts-News $id: Gesamtgröße aller Bilder = ${totalKb.toStringAsFixed(2)} KB');
+            }
             fetchedNews.add(news);
           }
         } else {
@@ -276,13 +312,29 @@ class NewsProvider with ChangeNotifier {
 
       if (kDebugMode) print(response.statusCode);
 
-      List<String> s = <String>[];
       List<News> loadedData = [];
       Map<String, dynamic> dbData = await json.decode(response.body);
       dbData.forEach(
         (id, value) {
           DateTime parsedDate = DateTime.parse(value[
               "date"]); // Accessing value["date"] instead of dbData["date"]
+          List<String> blobs =
+              value["photoBlob"] == null || value["photoBlob"] == "null"
+                  ? <String>[]
+                  : List<String>.from(
+                      value["photoBlob"].map((item) => item.toString()));
+          // Debug: Größe der Bilder in KB berechnen
+          if (kDebugMode) {
+            double totalKb = 0;
+            for (int i = 0; i < blobs.length; i++) {
+              final bytes = base64Decode(blobs[i]);
+              totalKb += bytes.length / 1024;
+              debugPrint(
+                  'News $id: Bild $i = ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+            }
+            debugPrint(
+                'News $id: Gesamtgröße aller Bilder = ${totalKb.toStringAsFixed(2)} KB');
+          }
           loadedData.add(
             News(
               id: id,
@@ -292,11 +344,7 @@ class NewsProvider with ChangeNotifier {
               author: value["author"] != null ? value["author"] as String : '',
               category:
                   value["category"] != null ? value["category"] as String : '',
-              photoBlob:
-                  value["photoBlob"] == null || value["photoBlob"] == "null"
-                      ? s
-                      : List<String>.from(
-                          value["photoBlob"].map((item) => item.toString())),
+              photoBlob: blobs,
               lastUpdate: value["lastUpdate"] != null
                   ? int.tryParse(value["lastUpdate"].toString()) ?? 0
                   : 0,
@@ -315,6 +363,63 @@ class NewsProvider with ChangeNotifier {
     } catch (error) {
       loadedNews = cacheNews;
       isFirstLoading = false;
+    }
+  }
+
+  Future<List<News>> loadAllNewsForAdmin() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News.json'),
+      );
+
+      if (response.statusCode != 200) return [];
+
+      Map<String, dynamic>? dbData = json.decode(response.body);
+      if (dbData == null) return [];
+
+      List<News> all = [];
+
+      dbData.forEach((id, value) {
+        DateTime parsedDate = DateTime.parse(value["date"]);
+        List<String> blobs =
+            value["photoBlob"] == null || value["photoBlob"] == "null"
+                ? <String>[]
+                : List<String>.from(
+                    value["photoBlob"].map((item) => item.toString()));
+        // Debug: Größe der Bilder in KB berechnen
+        if (kDebugMode) {
+          double totalKb = 0;
+          for (int i = 0; i < blobs.length; i++) {
+            final bytes = base64Decode(blobs[i]);
+            totalKb += bytes.length / 1024;
+            debugPrint(
+                'News $id: Bild $i = ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+          }
+          debugPrint(
+              'News $id: Gesamtgröße aller Bilder = ${totalKb.toStringAsFixed(2)} KB');
+        }
+        all.add(
+          News(
+            id: id,
+            title: value["title"] ?? '',
+            body: value["body"] ?? '',
+            date: DateFormat("dd.MM.yyyy").format(parsedDate),
+            author: value["author"] ?? '',
+            category: value["category"] ?? '',
+            photoBlob: blobs,
+            lastUpdate:
+                int.tryParse(value["lastUpdate"]?.toString() ?? '0') ?? 0,
+          ),
+        );
+      });
+
+      // nach Datum absteigend sortieren
+      all.sort((a, b) => b.date.compareTo(a.date));
+
+      return all;
+    } catch (e) {
+      debugPrint("ERROR loadAllNewsForAdmin(): $e");
+      return [];
     }
   }
 }

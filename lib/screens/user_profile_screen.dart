@@ -4,6 +4,8 @@ import 'package:verein_app/providers/auth_provider.dart';
 import 'package:verein_app/utils/app_utils.dart';
 import '../providers/user_provider.dart';
 import '../widgets/verein_appbar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -82,9 +84,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final authProvider =
         Provider.of<AuthorizationProvider>(context, listen: false);
+
+    // 1. Asynchrone Operation, die einen await erfordert:
+    // Hier könnte der Kontext ungültig werden.
     await authProvider.resetPassword(context, userProvider.user.email);
+
+    // 2. WICHTIGE KORREKTUR: mounted Check
+    // Prüfen Sie, ob das Widget noch aktiv ist, bevor Sie den Kontext verwenden.
+    // Dies setzt voraus, dass sich diese Methode in einem State-Objekt befindet.
+    if (!context.mounted) return;
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Passwort-Reset-E-Mail gesendet.")),
+      const SnackBar(content: Text("Passwort-Reset-E-Mail gesendet.")),
     );
   }
 
@@ -131,19 +142,63 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: const Text("Speichern"),
                       ),
                       const SizedBox(width: 10),
-                      userProvider.user.email.isNotEmpty
-                          ? ElevatedButton(
-                              onPressed: _resetPassword,
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red),
-                              child: const Text("Passwort zurücksetzen"),
-                            )
-                          : SizedBox(), // Falls die Bedingung nicht erfüllt ist, nichts anzeigen
+                      if (userProvider.user.email.isNotEmpty) ...[
+                        ElevatedButton(
+                          onPressed: _resetPassword,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red),
+                          child: const Text("Passwort zurücksetzen"),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            try {
+                              //                             final result = await sendMail(
+                              //                                 to: "fefef",
+                              //                                 subject: "efefeff",
+                              //                                 text: "3434");
+                            } catch (e) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text("Unbekannter Fehler: $e"),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text("Getränkebuchung per Mail senden"),
+                        ),
+                      ],
                     ],
                   ),
                 ],
               ),
             ),
     );
+  }
+
+  Future<void> sendMail({
+    required String to,
+    required String subject,
+    required String text,
+  }) async {
+    final url = Uri.parse(
+        'https://us-central1-tennis-vereinsapp.cloudfunctions.net/sendMail');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'to': to,
+        'subject': subject,
+        'text': text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      debugPrint('Mail erfolgreich gesendet!');
+    } else {
+      debugPrint('Fehler beim Senden der Mail: ${response.body}');
+    }
   }
 }

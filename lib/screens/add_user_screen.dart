@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
@@ -70,6 +72,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         newUser.uid = rData["localId"];
         _emailController.text =
             "${newUser.nachname}_${newUser.vorname}@example.com";
+        if (!context.mounted) return;
         await userProvider.postUser(context, newUser, rData["idToken"]);
       } else {
         await userProvider.postUser(

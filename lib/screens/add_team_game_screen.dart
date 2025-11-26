@@ -239,8 +239,35 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
                     Row(
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            showAddSeasonPopup(context);
+                          onPressed: () async {
+                            // Popup öffnen
+
+                            final newSeason = await showAddSeasonPopup(context);
+
+                            if (newSeason != null && mounted) {
+                              setState(() {
+                                seasons.add(newSeason);
+                                selectedSeason = newSeason.key;
+                              });
+                            }
+
+                            // Nach dem Schließen die Seasons neu laden
+                            if (!context.mounted) return;
+                            final saisonProvider = Provider.of<SaisonProvider>(
+                                context,
+                                listen: false);
+                            final updatedSeasons =
+                                await saisonProvider.getAllSeasons();
+
+                            if (!mounted) return;
+
+                            setState(() {
+                              seasons = updatedSeasons;
+                              if (updatedSeasons.isNotEmpty) {
+                                // Neue Saison automatisch auswählen → letzte in der Liste
+                                selectedSeason = updatedSeasons.last.key;
+                              }
+                            });
                           },
                           child: const Text('Neue Saison hinzufügen'),
                         ),

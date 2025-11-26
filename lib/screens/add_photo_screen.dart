@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -62,18 +64,19 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   Future<void> postImage() async {
     try {
-    setState(() {
-      _isLoading = true;
-    });
-    var responseStatusCode =
-        await Provider.of<PhotoProvider>(context, listen: false).postImage();
-    resetProvider(context);
-    Provider.of<PhotoProvider>(context, listen: false).image = null;
-    setState(() {
-      _isLoading = false;
-    });
-    if(kDebugMode) print(responseStatusCode);
-    showSnackBar(responseStatusCode);
+      setState(() {
+        _isLoading = true;
+      });
+      var responseStatusCode =
+          await Provider.of<PhotoProvider>(context, listen: false).postImage();
+      if (!context.mounted) return;
+      resetProvider(context);
+      Provider.of<PhotoProvider>(context, listen: false).image = null;
+      setState(() {
+        _isLoading = false;
+      });
+      if (kDebugMode) print(responseStatusCode);
+      showSnackBar(responseStatusCode);
     } on HttpException catch (error) {
       showFehler(error);
     } catch (error) {
@@ -90,7 +93,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
-            child: Padding(
+              child: Padding(
                 padding: const EdgeInsets.all(30),
                 child: Column(
                   children: [
@@ -99,7 +102,6 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 20),
                     ),
-                    
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Row(
@@ -120,7 +122,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: TextButton.icon(
                               onPressed: () {
-                                Provider.of<PhotoProvider>(context, listen: false)
+                                Provider.of<PhotoProvider>(context,
+                                        listen: false)
                                     .pickImage();
                               },
                               icon: const Icon(Icons.photo),
@@ -154,7 +157,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                   ],
                 ),
               ),
-          ),
+            ),
     );
   }
 }

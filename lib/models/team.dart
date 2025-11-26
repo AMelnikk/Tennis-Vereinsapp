@@ -1,5 +1,7 @@
-import 'dart:convert';
 import 'dart:typed_data';
+import 'package:verein_app/utils/app_utils.dart';
+// Importieren Sie 'decodePdfBlobs' und 'encodePdfBlobs' aus app_utils.dart
+// oder definieren Sie sie in dieser Datei.
 
 class Team {
   final String url;
@@ -9,11 +11,12 @@ class Team {
   final String gruppe;
   final String mfName;
   final String mfTel;
+  final String mfUID;
   final String matchbilanz;
   final String satzbilanz;
   final String position;
   final String kommentar;
-  final Uint8List? pdfBlob;
+  final List<Uint8List>? pdfBlob;
   List<String> photoBlob;
 
   Team({
@@ -24,6 +27,7 @@ class Team {
     required this.gruppe,
     required this.mfName,
     required this.mfTel,
+    required this.mfUID,
     required this.matchbilanz,
     required this.satzbilanz,
     required this.position,
@@ -33,48 +37,47 @@ class Team {
   });
 
   factory Team.fromJson(Map<String, dynamic> json, String id) {
-    List<String> photoBlob = [];
-
-    if (json['photoBlob'] is String) {
-      photoBlob = [json['photoBlob']];
-    } else if (json['photoBlob'] is List) {
-      photoBlob = List<String>.from(json['photoBlob']);
-    }
-
+    // Robustes Parsen für photoBlob
+    final List<Uint8List> decodedBlobs = decodePdfBlobs(json['pdfBlobs']);
     return Team(
-      url: json['url'],
-      saison: json['saison'],
-      mannschaft: json['mannschaft'],
-      liga: json['liga'],
-      gruppe: json['gruppe'],
-      mfName: json['mf_name'] ??
-          '', // Falls nicht vorhanden, setze einen leeren String
-      mfTel: json['mf_tel'] ??
-          '', // Falls nicht vorhanden, setze einen leeren String
-      matchbilanz: json['matchbilanz'],
-      satzbilanz: json['satzbilanz'],
-      position: json['position'],
-      kommentar: json['kommentar'],
-      pdfBlob: json['pdfBlob'] != null ? base64Decode(json['pdfBlob']) : null,
-      photoBlob: photoBlob,
-    );
+        url: json['url'],
+        saison: json['saison'],
+        mannschaft: json['mannschaft'],
+        liga: json['liga'],
+        gruppe: json['gruppe'],
+        mfName: json['mf_name'] ??
+            '', // Falls nicht vorhanden, setze einen leeren String
+        mfTel: json['mf_tel'] ??
+            '', // Falls nicht vorhanden, setze einen leeren String
+        mfUID: json['mf_uid'] ?? '',
+        matchbilanz: json['matchbilanz'],
+        satzbilanz: json['satzbilanz'],
+        position: json['position'],
+        kommentar: json['kommentar'],
+        pdfBlob: decodedBlobs,
+        photoBlob: parsePhotoBlob(json['photoBlob']));
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'url': url,
       'saison': saison,
       'mannschaft': mannschaft,
       'liga': liga,
       'gruppe': gruppe,
       'mf_name': mfName,
       'mf_tel': mfTel,
+      'mf_uid': mfUID,
       'matchbilanz': matchbilanz,
       'satzbilanz': satzbilanz,
       'position': position,
+      'url': url,
       'kommentar': kommentar,
-      'pdfBlob': pdfBlob != null ? base64Encode(pdfBlob!) : null,
-      'photoBlob': photoBlob[0],
+
+      // ✅ KORREKTUR: Null-Prüfung hinzufügen (pdfBlob ?? [])
+      // Wenn pdfBlob null ist, wird eine leere Liste übergeben und kodiert.
+      'pdfBlobs': encodePdfBlobs(pdfBlob ?? []),
+
+      "photoBlob": photoBlob,
     };
   }
 
@@ -87,11 +90,12 @@ class Team {
       gruppe: '',
       mfName: '',
       mfTel: '',
+      mfUID: '',
       matchbilanz: '',
       satzbilanz: '',
       position: '',
       kommentar: '',
-      pdfBlob: null,
+      pdfBlob: [],
       photoBlob: [],
     );
   }
@@ -106,11 +110,12 @@ class Team {
       gruppe: gruppe,
       mfName: '',
       mfTel: '',
+      mfUID: '',
       matchbilanz: '',
       satzbilanz: '',
       position: '',
       kommentar: '',
-      pdfBlob: null,
+      pdfBlob: [],
       photoBlob: [],
     );
   }

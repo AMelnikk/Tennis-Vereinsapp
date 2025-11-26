@@ -65,6 +65,38 @@ class TennisMatch {
     return jsonMap;
   }
 
+  // copyWith hinzufügen
+  TennisMatch copyWith(
+      {String? id,
+      DateTime? datum,
+      String? uhrzeit,
+      String? heim,
+      String? gast,
+      String? spielort,
+      String? saison,
+      String? altersklasse,
+      String? spielklasse,
+      String? gruppe,
+      String? ergebnis,
+      String? spielbericht,
+      Uint8List? photoBlobSB}) {
+    return TennisMatch(
+      id: id ?? this.id,
+      datum: datum ?? this.datum,
+      uhrzeit: uhrzeit ?? this.uhrzeit,
+      heim: heim ?? this.heim,
+      gast: gast ?? this.gast,
+      spielort: spielort ?? this.spielort,
+      saison: saison ?? this.saison,
+      altersklasse: altersklasse ?? this.altersklasse,
+      spielklasse: spielklasse ?? this.spielklasse,
+      gruppe: gruppe ?? this.gruppe,
+      ergebnis: ergebnis ?? this.ergebnis,
+      spielbericht: spielbericht ?? this.spielbericht,
+      photoBlobSB: photoBlobSB ?? this.photoBlobSB,
+    );
+  }
+
   factory TennisMatch.empty() {
     return TennisMatch(
       id: '',

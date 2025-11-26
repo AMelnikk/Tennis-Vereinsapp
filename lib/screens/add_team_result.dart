@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/screens/news_detail_screen.dart';
+import 'package:verein_app/popUps/edit_team_result_dialog.dart';
 import '../models/season.dart';
 import '../providers/news_provider.dart';
 import '../screens/add_news_screen.dart';
@@ -56,34 +56,34 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
     await lsProvider.loadLigaSpieleForSeason(_selectedSeason);
   }
 
-  Future<void> _saveErgebnis() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final teamResultProvider =
-        Provider.of<LigaSpieleProvider>(context, listen: false);
+  //Future<void> _saveErgebnis() async {
+  //   final messenger = ScaffoldMessenger.of(context);
+  //   final teamResultProvider =
+  //       Provider.of<LigaSpieleProvider>(context, listen: false);
 
-    // Überprüfe, ob das Ergebnis im richtigen Format ist (z.B. "1:1")
-    final resultPattern = RegExp(r'^[0-9]:[0-9]$');
-    if (_ergebnisController.text.isNotEmpty &&
-        !resultPattern.hasMatch(_ergebnisController.text)) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text("Ergebnis muss im Format Zahl:Zahl sein (1-9).")));
-      return;
-    }
+  // Überprüfe, ob das Ergebnis im richtigen Format ist (z.B. "1:1")
+  //   final resultPattern = RegExp(r'^[0-9]:[0-9]$');
+  //   if (_ergebnisController.text.isNotEmpty &&
+  //       !resultPattern.hasMatch(_ergebnisController.text)) {
+  //    messenger.showSnackBar(const SnackBar(
+  //         content: Text("Ergebnis muss im Format Zahl:Zahl sein (1-9).")));
+  //     return;
+  //  }
 
-    // Übernehme das Ergebnis in das ausgewählte Spiel
-    _selectedMatch.ergebnis = _ergebnisController.text;
+  // Übernehme das Ergebnis in das ausgewählte Spiel
+  //   _selectedMatch.ergebnis = _ergebnisController.text;
 
-    // Aktualisiere das Spiel in der Datenquelle
-    int responseCode = await teamResultProvider.updateLigaSpiel(_selectedMatch);
+  // Aktualisiere das Spiel in der Datenquelle
+  //   int responseCode = await teamResultProvider.updateLigaSpiel(_selectedMatch);
 
-    if (responseCode == 200) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text("Ergebnis erfolgreich aktualisiert.")));
-    } else {
-      messenger.showSnackBar(const SnackBar(
-          content: Text("Fehler beim Aktualisieren des Ergebnisses.")));
-    }
-  }
+  //   if (responseCode == 200) {
+  //     messenger.showSnackBar(
+  //         const SnackBar(content: Text("Ergebnis erfolgreich aktualisiert.")));
+  //   } else {
+  //    messenger.showSnackBar(const SnackBar(
+  //         content: Text("Fehler beim Aktualisieren des Ergebnisses.")));
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -248,18 +248,35 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                     ? Tooltip(
                         message: "Spielbericht ansehen",
                         child: IconButton(
-                            icon: Icon(Icons.article, color: Colors.orange),
-                            onPressed: () {
-                              final newsProvider = Provider.of<NewsProvider>(
-                                  context,
-                                  listen: false);
-                              newsProvider.loadNews(spiel.spielbericht);
-                              Navigator.pushNamed(
+                          icon: const Icon(Icons.article),
+                          tooltip: "Spielbericht bearbeiten / erstellen",
+                          onPressed: () async {
+                            final newsProvider = Provider.of<NewsProvider>(
                                 context,
-                                NewsDetailScreen
-                                    .routename, // Korrekte Nutzung des statischen Routennamens
-                              );
-                            }),
+                                listen: false);
+                            final lsProvider = Provider.of<LigaSpieleProvider>(
+                                context,
+                                listen: false);
+
+                            // Setze die Werte im newsProvider
+                            newsProvider.newsId = spiel.spielbericht;
+                            final String? newsId = await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AddNewsScreen(),
+                              ),
+                            );
+
+                            // Wenn eine gültige News-ID zurückgegeben wurde, verarbeite sie
+                            if (newsId?.isNotEmpty == true) {
+                              setState(() {
+                                spiel.spielbericht = newsId.toString();
+                                lsProvider.updateLigaSpiel(spiel);
+                              });
+                              newsProvider.newsId = newsId!;
+                            }
+                          },
+                        ),
                       )
                     : Container(), // Kein Icon, falls kein Bericht existiert
               ),
@@ -270,23 +287,22 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                   children: [
                     // 🖊 Bearbeiten (öffnet Dialog)
                     Tooltip(
-                      message: "Ergebnis bearbeiten",
-                      child: IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          setState(() {
-                            _selectedMatch = spiel;
-                          });
-
-                          _datumController.text = dateFormatted;
-                          _uhrzeitController.text = spiel.uhrzeit;
-                          _ergebnisController.text = spiel.ergebnis;
-                          _newsIdController.text = spiel.spielbericht;
-
-                          _showEditErgebnisDialog();
-                        },
-                      ),
-                    ),
+                        message: "Ergebnis bearbeiten",
+                        child: IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            showEditTeamResultDialog(
+                              context,
+                              spiel,
+                              (updatedMatch) async {
+                                await Provider.of<LigaSpieleProvider>(context,
+                                        listen: false)
+                                    .updateLigaSpiel(updatedMatch);
+                                setState(() {}); // Liste aktualisieren
+                              },
+                            );
+                          },
+                        )),
                     // 🗑 Löschen (setzt Ergebnis zurück)
                     Tooltip(
                       message: "Ergebnis löschen",
@@ -308,183 +324,6 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
               ),
             ]);
           }).toList(),
-        ),
-      ),
-    );
-  }
-
-  /// Zeigt einen Dialog, in dem das Ergebnis bearbeitet werden kann.
-  void _showEditErgebnisDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Ergebnis bearbeiten'),
-              Text(
-                'ID: ${_selectedMatch.id}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Datumsauswahl
-              Row(
-                children: [
-                  Text(
-                    'Datum: ${_datumController.text}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      final DateTime? newDate = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedMatch.datum,
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime(2100),
-                      );
-                      if (newDate != null) {
-                        setState(() {
-                          _selectedMatch.datum = newDate;
-                          _datumController.text =
-                              DateFormat('dd.MM.yyyy').format(newDate);
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Uhrzeit-Auswahl
-              Row(
-                children: [
-                  Text(
-                    'Uhrzeit: ${_uhrzeitController.text}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.access_time),
-                    onPressed: () async {
-                      final TimeOfDay? newTime = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(
-                          DateFormat('HH:mm').parse(_selectedMatch.uhrzeit),
-                        ),
-                      );
-                      if (newTime != null) {
-                        final formattedTime =
-                            "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}";
-                        setState(() {
-                          _selectedMatch.uhrzeit = formattedTime;
-                          _uhrzeitController.text = formattedTime;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Begegnung
-              Row(
-                children: [
-                  Text(
-                    'Begegnung: ${_selectedMatch.heim} vs ${_selectedMatch.gast}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Ergebnis
-              TextField(
-                controller: _ergebnisController,
-                decoration: const InputDecoration(
-                    labelText: "Ergebnis im Format (1-9:1-9)"),
-                keyboardType: TextInputType.text,
-              ),
-              const SizedBox(height: 8),
-
-              // News ID + Button
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _newsIdController,
-                      decoration: const InputDecoration(labelText: "News ID"),
-                      keyboardType: TextInputType.text,
-                    ),
-                  ),
-                  IconButton(
-                      icon: const Icon(Icons.article),
-                      onPressed: () async {
-                        final newsProvider =
-                            Provider.of<NewsProvider>(context, listen: false);
-                        final lsProvider = Provider.of<LigaSpieleProvider>(
-                            context,
-                            listen: false);
-
-                        // Setze die Werte im newsProvider
-                        newsProvider.title.text =
-                            "Begegnung: ${_selectedMatch.heim} vs ${_selectedMatch.gast}";
-                        newsProvider.newsDateController.text =
-                            DateFormat('dd.MM.yyyy')
-                                .format(_selectedMatch.datum);
-                        newsProvider.updateCategory("Spielbericht");
-                        newsProvider.newsId = _newsIdController.text;
-                        newsProvider.newsDateController.text =
-                            DateFormat('dd.MM.yyyy')
-                                .format(_selectedMatch.datum);
-                        newsProvider.body.text = '';
-                        newsProvider.photoBlob = [];
-
-                        // Navigiere zum AddNewsScreen und warte auf die zurückgegebene News-ID
-                        final String? newsId = await Navigator.push<String>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddNewsScreen(),
-                          ),
-                        );
-
-// Wenn eine gültige News-ID zurückgegeben wurde, verarbeite sie
-                        if (newsId?.isNotEmpty == true) {
-                          setState(() {
-                            _newsIdController.text = newsId!;
-                            _selectedMatch.spielbericht = newsId;
-                            lsProvider.updateLigaSpiel(_selectedMatch);
-                          });
-
-                          newsProvider.newsId = newsId!;
-                        }
-                      })
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text("Abbrechen"),
-            ),
-            TextButton(
-              onPressed: () {
-                _saveErgebnis();
-                Navigator.of(ctx).pop();
-              },
-              child: const Text("Speichern"),
-            ),
-          ],
         ),
       ),
     );

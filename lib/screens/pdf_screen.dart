@@ -93,7 +93,7 @@ class _PdfScreenState extends State<PdfScreen> {
                       ? FloatingActionButton(
                           onPressed: () {
                             OpenFilex.open(downloadPath,
-                            type: "application/pdf");
+                                type: "application/pdf");
                           },
                           child: const Icon(Icons.open_in_new),
                         )
@@ -106,6 +106,7 @@ class _PdfScreenState extends State<PdfScreen> {
 
                             // Nun sicherstellen, dass der BuildContext noch verfügbar ist, bevor er verwendet wird
                             if (mounted) {
+                              if (!context.mounted) return;
                               // Hier prüfen wir explizit, ob der Navigator noch verwendet werden kann
                               if (!Navigator.canPop(context)) return;
 

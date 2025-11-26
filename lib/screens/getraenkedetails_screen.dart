@@ -236,6 +236,7 @@ class _GetraenkeBuchungenDetailsScreenState
                     uid,
                     userProvider.user.uid,
                     betrag);
+                if (!context.mounted) return;
                 Navigator.pop(ctx);
                 _loadBuchungen();
               } else {

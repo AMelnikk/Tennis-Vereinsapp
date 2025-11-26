@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_fields
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -205,41 +207,41 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
                       15, // Reduzierte Spaltenabstände für kompaktere Darstellung
                   columns: const [
                     DataColumn(
-                        label: Text('Saison', style: TextStyle(fontSize: 16))),
+                        label: Text('Saison', style: TextStyle(fontSize: 14))),
                     DataColumn(
                         label:
-                            Text('Mannschaft', style: TextStyle(fontSize: 16))),
+                            Text('Mannschaft', style: TextStyle(fontSize: 14))),
                     DataColumn(
-                        label: Text('Liga', style: TextStyle(fontSize: 16))),
+                        label: Text('Liga', style: TextStyle(fontSize: 14))),
                     DataColumn(
-                        label: Text('Gruppe', style: TextStyle(fontSize: 16))),
+                        label: Text('Gruppe', style: TextStyle(fontSize: 14))),
                     DataColumn(
                         label: Text('Matchbilanz',
                             style: TextStyle(fontSize: 16))),
                     DataColumn(
                         label:
-                            Text('Satzbilanz', style: TextStyle(fontSize: 16))),
+                            Text('Satzbilanz', style: TextStyle(fontSize: 14))),
                     DataColumn(
-                        label: Text('Link', style: TextStyle(fontSize: 16))),
+                        label: Text('Link', style: TextStyle(fontSize: 14))),
                     DataColumn(
                         label:
-                            Text('Aktionen', style: TextStyle(fontSize: 16))),
+                            Text('Aktionen', style: TextStyle(fontSize: 14))),
                   ],
                   rows: teams.map((entry) {
                     return DataRow(
                       cells: [
                         DataCell(Text(entry.saison,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(Text(entry.mannschaft,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(Text(entry.liga,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(Text(entry.gruppe,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(Text(entry.matchbilanz,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(Text(entry.satzbilanz,
-                            style: const TextStyle(fontSize: 14))),
+                            style: const TextStyle(fontSize: 12))),
                         DataCell(
                           entry.url.isNotEmpty && entry.url.startsWith('http')
                               ? GestureDetector(

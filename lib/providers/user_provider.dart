@@ -186,6 +186,37 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, String>> getAllMFandAdminUserNames() async {
+    // 1. Laden ALLER (erlaubten) Benutzer aus der Realtime DB über getAllUsers
+    // (allUsers enthält nun entweder alle Benutzer (als Admin) oder nur den eigenen (als Nicht-Admin)).
+    if (allUsers.isEmpty) {
+      await getAllUsers();
+    }
+
+    // Wir arbeiten mit der gefilterten Liste, um nur MFs und Admins zu berücksichtigen.
+    final List<User> usersToSelect = allUsers.where((user) {
+      final role = user.role.toLowerCase();
+      // ✅ NEU: Filtern der lokal geladenen Liste
+      return role == 'admin' || role == 'mannschaftsführer';
+    }).toList();
+
+    // 2. Sortieren nach Vorname, dann Nachname
+    usersToSelect.sort((a, b) {
+      // Sortieren nach Vorname
+      final nameA = '${a.vorname.trim()} ${a.vorname.trim()}'.toLowerCase();
+      final nameB = '${b.nachname.trim()} ${b.vorname.trim()}'.toLowerCase();
+      return nameA.compareTo(nameB);
+    });
+
+    // 3. Map erstellen (Format: Vorname Nachname)
+    Map<String, String> nameMap = {
+      for (var user in usersToSelect)
+        user.uid: '${user.vorname.trim()} ${user.nachname.trim()}',
+    };
+
+    return nameMap;
+  }
+
   Future<Map<String, String>> getAllUserNames() async {
     // Falls die Liste noch nicht geladen wurde, erst laden
     if (allUsers.isEmpty) {

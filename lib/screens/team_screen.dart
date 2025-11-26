@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/app_utils.dart';
@@ -19,6 +21,7 @@ class TeamScreen extends StatefulWidget {
 class _TeamScreenState extends State<TeamScreen> {
   // ignore: unused_field
   var _isLoading = true;
+  bool _isInitialized = false;
   List<Team> filteredTeams = [];
   List<SaisonData> filterSeasons = [];
   SaisonData? selectedSeason;
@@ -27,59 +30,106 @@ class _TeamScreenState extends State<TeamScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Die gesamte einmalige Ladelogik wird hier gestartet
+    if (!_isInitialized) {
+      _isInitialized = true; // Flag sofort setzen
+
+      // WidgetsBinding.instance.addPostFrameCallback
+      // wartet, bis der Widget-Baum aufgebaut ist und context verfügbar ist.
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Sicherstellen, dass das Widget noch existiert, bevor context verwendet wird
+        if (!mounted) return;
+
+        // Da wir uns jetzt in initState befinden, müssen wir den Ladezustand
+        // sofort setzen, bevor die asynchrone Arbeit beginnt.
+        if (mounted) {
+          setState(() {
+            _isLoading = true;
+          });
+        }
+
+        final messenger = ScaffoldMessenger.of(context);
+
+        // 1. Alle Daten laden und State setzen
+        await loadSeasonData(messenger);
+
+        // 2. Teams laden, nachdem selectedSeason gesetzt wurde (in loadSeasonData)
+        if (selectedSeason != null && mounted) {
+          await getData(messenger);
+        }
+
+        // 3. Ladezustand beenden
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // This is where you should safely access providers or inherited widgets
-    //saisonProvider = Provider.of<SaisonProvider>(context, listen: false);
-    // Now you can safely call methods or load data that depend on context
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final messenger = ScaffoldMessenger.of(context); // Vorher speichern
-      loadSeasonData(messenger);
-    });
+    // DIESER BLOCK BLEIBT NUN LEER
+    // Er wird nur verwendet, wenn sich Provider-Abhängigkeiten ändern,
+    // was hier nicht für die Erstinitialisierung notwendig ist.
   }
+
+  // ... (loadSeasonData, getData und build bleiben wie in der letzten Korrektur)
 
   // Methode zum Abrufen der Saisondaten
   Future<void> loadSeasonData(ScaffoldMessengerState messenger) async {
     try {
       final saisonProvider =
           Provider.of<SaisonProvider>(context, listen: false);
+
+      // WICHTIG: Prüfen Sie, ob diese Methode (getAllSeasons) EINE leere Liste ODER einen Fehler liefert.
       List<SaisonData> loadedSeasons = await saisonProvider.getAllSeasons();
 
       if (loadedSeasons.isNotEmpty) {
-        setState(() {
-          filterSeasons = loadedSeasons;
-          selectedSeason = filterSeasons.first;
-        });
-        // Jetzt auch die Teams für die gewählte Saison laden
-        getData(messenger);
+        // NUR SETSTATE AUFRUFEN, WENN WIR AUF DEM WIDGET MOUNTED SIND
+        if (mounted) {
+          setState(() {
+            filterSeasons = loadedSeasons;
+            // KRITISCH: selectedSeason MUSS hier gesetzt werden!
+            selectedSeason = filterSeasons.first;
+          });
+        }
       } else {
-        setState(() {
-          filterSeasons = [];
-        });
+        // Wenn keine Daten geladen wurden, setState aufrufen, um filterSeasons leer zu setzen
+        if (mounted) {
+          setState(() {
+            filterSeasons = [];
+            selectedSeason = null; // Zur Sicherheit
+          });
+        }
       }
     } catch (error) {
-      //appError(messenger, "Fehler beim Laden der Saisons: $error");
+      // Wenn ein Fehler auftritt, MUSS der State trotzdem aktualisiert werden,
+      // damit _isLoading = false gesetzt werden kann, und die "Keine Saisons verfügbar" Meldung erscheint.
+      if (mounted) {
+        setState(() {
+          filterSeasons = [];
+          selectedSeason = null;
+        });
+      }
+      // appError(messenger, "Fehler beim Laden der Saisons: $error");
     }
   }
 
   // Abruf der Teams
   Future<void> getData(ScaffoldMessengerState messenger) async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
       if (selectedSeason?.key != null) {
         await Provider.of<TeamProvider>(context, listen: false).loadDatatoCache(
           messenger,
           selectedSeason!.key,
         );
-
-        filteredTeams = Provider.of<TeamProvider>(context, listen: false)
-            .getFilteredMannschaften(saisonKey: selectedSeason!.key);
+        if (!context.mounted) return;
+        // filteredTeams = Provider.of<TeamProvider>(context, listen: false)
+        //     .getFilteredMannschaften(saisonKey: selectedSeason!.key);
       } else {
         filteredTeams = [];
       }
@@ -100,17 +150,22 @@ class _TeamScreenState extends State<TeamScreen> {
 
   // Filtermethoden für Saison
   void getFilteredResults() {
+    if (selectedSeason == null) {
+      filteredTeams = [];
+      // Keine Sortierung, einfach leere Liste
+      return;
+    }
     filteredTeams = Provider.of<TeamProvider>(context, listen: false)
         .getFilteredMannschaften(saisonKey: selectedSeason!.key);
 
     // Filter für Saison
-    if (selectedSeason != null && selectedSeason!.key.isNotEmpty) {
-      filteredTeams = filteredTeams
-          .where((result) =>
-              result.saison ==
-              selectedSeason!.key) // Vergleiche den Saison-Namen
-          .toList();
-    }
+    //   if (selectedSeason != null && selectedSeason!.key.isNotEmpty) {
+    //     filteredTeams = filteredTeams
+    //         .where((result) =>
+    //             result.saison ==
+    //             selectedSeason!.key) // Vergleiche den Saison-Namen
+    //         .toList();
+    //   }
 
     // Filter für Jugend und Erwachsene
     if (selectedAgeGroup == 'Jugend') {
@@ -178,81 +233,78 @@ class _TeamScreenState extends State<TeamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messenger = ScaffoldMessenger.of(context); // Vorher speichern
+    // Wichtig: context.read<T>() ist moderner als Provider.of(context, listen: false)
+    final messenger = ScaffoldMessenger.of(context);
+
+    // --- 1. ZENTRALE LADESTEUERUNG (Ersetzt den FutureBuilder) ---
+    if (_isLoading) {
+      // Zeigt den Ladeindikator an, solange initState läuft
+      return Scaffold(
+        appBar: VereinAppbar(),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // --- 2. KEINE DATEN VORHANDEN ---
+    if (filterSeasons.isEmpty) {
+      // Zeigt die Fehlermeldung, wenn loadSeasonData() eine leere Liste zurückgibt
+      return Scaffold(
+        appBar: VereinAppbar(),
+        body: Center(child: Text('Keine Saisons verfügbar')),
+      );
+    }
+
+    // --- 3. DATEN VORHANDEN – Rendern der Dropdowns ---
     return Scaffold(
       appBar: VereinAppbar(),
       body: Column(
         children: [
-          // Saison Dropdown mit FutureBuilder für Saisondaten
-          FutureBuilder<List<SaisonData>>(
-            future: Provider.of<SaisonProvider>(context, listen: false)
-                .getAllSeasons(), // Diese Methode gibt ein Future zurück
-            builder: (context, snapshot) {
-              // Ladezustand
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              // Fehlerbehandlung
-              if (snapshot.hasError) {
-                return Center(child: Text('Fehler: ${snapshot.error}'));
-              }
-
-              // Wenn keine Daten vorhanden sind
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Keine Saisons verfügbar'));
-              }
-
-              // Wenn Daten vorhanden sind, speichern wir sie
-              filterSeasons = snapshot.data!;
-
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButton<SaisonData>(
-                        value: selectedSeason,
-                        hint: const Text('Select season'),
-                        items: filterSeasons.map((SaisonData saison) {
-                          return DropdownMenuItem<SaisonData>(
-                            value: saison,
-                            child: Text(saison.saison),
-                          );
-                        }).toList(),
-                        onChanged: (SaisonData? value) {
-                          if (value != null) {
-                            setState(() {
-                              selectedSeason = value;
-                            });
-                            getData(
-                                messenger); // Hole die Daten für die gewählte Saison
-                            getFilteredResults();
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: DropdownButton<String>(
-                        value: selectedAgeGroup,
-                        items: ['All', 'Jugend', 'Erwachsene']
-                            .map((group) => DropdownMenuItem<String>(
-                                value: group, child: Text(group)))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedAgeGroup = value!;
-                            getFilteredResults();
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+          Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<SaisonData>(
+                    // Nutzt die im State gesetzte Variable selectedSeason
+                    value: selectedSeason,
+                    hint: const Text('Select season'),
+                    items: filterSeasons.map((SaisonData saison) {
+                      return DropdownMenuItem<SaisonData>(
+                        value: saison,
+                        child: Text(saison.saison),
+                      );
+                    }).toList(),
+                    onChanged: (SaisonData? value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedSeason = value;
+                        });
+                        // Hole die Daten für die gewählte Saison
+                        getData(messenger);
+                      }
+                    },
+                  ),
                 ),
-              );
-            },
+                const SizedBox(width: 20),
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: selectedAgeGroup,
+                    items: ['All', 'Jugend', 'Erwachsene']
+                        .map((group) => DropdownMenuItem<String>(
+                            value: group, child: Text(group)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedAgeGroup = value!;
+                        getFilteredResults();
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
+
           // Anzeige der Teams
           if (filteredTeams.isNotEmpty)
             Expanded(

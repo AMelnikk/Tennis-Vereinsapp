@@ -11,6 +11,8 @@ class TeamProvider with ChangeNotifier {
   final String? _writeToken;
   final List<Team> _teams = [];
 
+  final Map<String, Uint8List> imageCache = {};
+
   // Map to cache already loaded seasons
   Map<String, List<Team>> teamCache = {};
 
@@ -30,6 +32,13 @@ class TeamProvider with ChangeNotifier {
     try {
       final response = await http.get(url);
 
+      if (kDebugMode) {
+        final bytes = utf8.encode(response.body).length; // Größe in Bytes
+        final kilobytes = (bytes / 1024)
+            .toStringAsFixed(2); // Umrechnung in KB mit 2 Nachkommastellen
+        // Ausgabe der Datenmenge im Debug-Log
+        debugPrint('➡️ Teamdaten geladen für $saisonKey: $kilobytes KB');
+      }
       // Prüfe den HTTP-Statuscode
       if (response.statusCode == 200) {
         final extractedData =
@@ -96,32 +105,13 @@ class TeamProvider with ChangeNotifier {
       if (kDebugMode) print("Token fehlt");
       return 400;
     }
-    // final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final date = DateTime.now().toIso8601String();
     final url = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/Mannschaften/${newResult.saison}/${newResult.mannschaft}.json?auth=$_writeToken");
 
     try {
       final response = await http.put(
         url,
-        body: json.encode({
-          'url': newResult.url,
-          'saison': newResult.saison,
-          'mannschaft': newResult.mannschaft,
-          'liga': newResult.liga,
-          'gruppe': newResult.gruppe, // Standardwert setzen
-          'mf_name': newResult.mfName, // Standardwert setzen
-          'mf_tel': newResult.mfTel, // Standardwert setzen
-          'matchbilanz': newResult.matchbilanz, // Standardwert setzen
-          'satzbilanz': newResult.satzbilanz, // Standardwert setzen
-          'position': newResult.position, // Standardwert setzen
-          'kommentar': newResult.kommentar, // Standardwert setzen
-          'pdfBlob': newResult.pdfBlob != null
-              ? base64Encode(newResult.pdfBlob!)
-              : null,
-          'photoBlob': newResult.photoBlob,
-          'creationDate': date,
-        }),
+        body: newResult.toJson(),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -211,7 +201,6 @@ class TeamProvider with ChangeNotifier {
         // Füge das neue Team zum Cache hinzu
         teamCache[saisonKey]!.add(newTeam);
       }
-      notifyListeners();
     }
   }
 
@@ -229,29 +218,13 @@ class TeamProvider with ChangeNotifier {
       // Aktualisiere das Team, indem du die Werte aus existingTeam verwendest
       final response = await http.patch(
         url,
-        body: json.encode({
-          'url': existingTeam.url,
-          'saison': existingTeam.saison,
-          'mannschaft': existingTeam.mannschaft,
-          'liga': existingTeam.liga,
-          'gruppe': existingTeam.gruppe,
-          'mf_name': existingTeam.mfName,
-          'mf_tel': existingTeam.mfTel,
-          'matchbilanz': existingTeam.matchbilanz,
-          'satzbilanz': existingTeam.satzbilanz,
-          'position': existingTeam.position,
-          'kommentar': existingTeam.kommentar,
-          'pdfBlob': existingTeam.pdfBlob,
-          'photoBlob': existingTeam.photoBlob.isNotEmpty
-              ? existingTeam.photoBlob[0]
-              : null, // null safety
-        }),
+        body: json.encode(existingTeam.toJson()),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         if (kDebugMode) {
-          print("Team erfolgreich aktualisiert: ${response.body}");
+          debugPrint("Team erfolgreich aktualisiert: ${response.body}");
         }
         return response.statusCode;
       } else {

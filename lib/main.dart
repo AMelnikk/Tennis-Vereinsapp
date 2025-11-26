@@ -1,12 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import './screens/user_profile_screen.dart';
-import './utils/push_notification_service';
+import './utils/push_notification_service.dart';
 import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
@@ -37,6 +36,7 @@ import './screens/documents_screen.dart';
 import './screens/functions_screen.dart';
 import './screens/team_screen.dart';
 import './screens/more_screen.dart';
+import './screens/news_admin_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 import "./screens/add_team_screen.dart";
@@ -47,38 +47,40 @@ import 'firebase_options.dart'; // Firebase-Optionen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase initialisieren
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Initialisiere mit den Optionen
+    options: DefaultFirebaseOptions.currentPlatform,
   );
-  await PushNotificationService().initialize(); // Initialisiere Push-Service
+
+  // Background Handler registrieren (muss top-level sein)
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Locale vorbereiten
+  await initializeDateFormatting('de_DE', null);
+
+  // Portrait erzwingen
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // App starten
+  runApp(const MyApp());
+
+  // Push-Service nach App-Start initialisieren (nicht blockierend)
   try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
-    if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
-  } catch (e) {
-    if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
+    await PushNotificationService().initialize();
+  } catch (e, stack) {
+    debugPrint("❌ Fehler in PushNotificationService: $e");
+    debugPrint(stack.toString());
   }
-  //const FirebaseOptions firebaseOptions = FirebaseOptions(
-  //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
-  //    authDomain: "db-teg.firebaseapp.com",
-  //    databaseURL: "https://db-teg-default-rtdb.firebaseio.com",
-  //    projectId: "db-teg",
-  //    storageBucket: "db-teg.firebasestorage.app",
-  //    messagingSenderId: "1050815457795",
-  //    appId: "1:1050815457795:web:2d0bc6f9b80793f6e37c36",
-  //    measurementId: "G-LNJY8VGKTG");
-  //try {
-  //  await Firebase.initializeApp();
-  //} catch (e) {
-  //  print("Firebase initialization failed: $e");
-  //}
-  await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
-    (_) {
-      runApp(const MyApp());
-    },
-  );
+}
+
+// Top-level Background-Handler
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase muss hier initialisiert werden
+  await Firebase.initializeApp();
+  debugPrint("📩 Hintergrund-Nachricht empfangen: ${message.messageId}");
+  debugPrint("Daten: ${message.data}");
 }
 
 class MyApp extends StatelessWidget {
@@ -90,41 +92,58 @@ class MyApp extends StatelessWidget {
       create: (context) => AuthorizationProvider(),
       builder: (context, _) => MultiProvider(
         providers: [
-          ChangeNotifierProvider.value(
-            value: TeamProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+          // Auth Provider als Basis
+          ChangeNotifierProvider(
+            create: (_) => AuthorizationProvider(),
           ),
-          ChangeNotifierProvider.value(
-            value: PhotoProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          // Ab hier alle Provider, die das Token benötigen → ProxyProvider
+          ChangeNotifierProxyProvider<AuthorizationProvider, TeamProvider>(
+            create: (_) => TeamProvider(null),
+            update: (_, auth, prev) => TeamProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: NewsProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider, PhotoProvider>(
+            create: (_) => PhotoProvider(null),
+            update: (_, auth, prev) => PhotoProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: TermineProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
+            create: (_) => NewsProvider(null),
+            update: (_, auth, prev) => NewsProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: LigaSpieleProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
+            create: (_) => TermineProvider(null),
+            update: (_, auth, prev) => TermineProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: UserProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider,
+              LigaSpieleProvider>(
+            create: (_) => LigaSpieleProvider(null),
+            update: (_, auth, prev) => LigaSpieleProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: SaisonProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider, UserProvider>(
+            create: (_) => UserProvider(null),
+            update: (_, auth, prev) => UserProvider(auth.writeToken),
           ),
-          ChangeNotifierProvider.value(
-            value: GetraenkeBuchenProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider, SaisonProvider>(
+            create: (_) => SaisonProvider(null),
+            update: (_, auth, prev) => SaisonProvider(auth.writeToken),
+          ),
+
+          ChangeNotifierProxyProvider<AuthorizationProvider,
+              GetraenkeBuchenProvider>(
+            create: (_) => GetraenkeBuchenProvider(null),
+            update: (_, auth, prev) => GetraenkeBuchenProvider(auth.writeToken),
           ),
         ],
         child: Consumer<AuthorizationProvider>(
           builder: (ctx, authProvider, _) => MaterialApp(
+            navigatorKey: PushNotificationService
+                .navigatorKey, // <--- über Klasse, nicht Instanz
             title: "TSV Weidenbach",
             theme: ThemeData(
               scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
@@ -157,6 +176,7 @@ class MyApp extends StatelessWidget {
               AddUserScreen.routename: (ctx) => const AddUserScreen(),
               UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
               DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
+              NewsAdminScreen.routename: (ctx) => const NewsAdminScreen(),
               GetraenkeBuchenScreen.routename: (ctx) =>
                   Provider.of<AuthorizationProvider>(context).isSignedIn
                       ? const GetraenkeBuchenScreen()

@@ -42,7 +42,7 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
         }
       }).catchError((error) {
         // Handle error, for example by showing a snackbar or logging it
-        print('Error loading news: $error');
+        debugPrint('Error loading news: $error');
       });
     }
 
@@ -153,6 +153,12 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
     );
   }
 
+  double _imageHeight() {
+    double containerWidth = MediaQuery.of(context).size.width;
+    double imageAspectRatio = 16 / 9;
+    return containerWidth / imageAspectRatio;
+  }
+
   Widget buildImageSection(
       List<String> photoBlob, Map<String, Uint8List> imageCache) {
     return photoBlob.isNotEmpty
@@ -241,12 +247,6 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
             ),
           )
         : Container();
-  }
-
-  double _imageHeight() {
-    double containerWidth = MediaQuery.of(context).size.width;
-    double imageAspectRatio = 16 / 9;
-    return containerWidth / imageAspectRatio;
   }
 
   Widget buildTextSection(News news) {

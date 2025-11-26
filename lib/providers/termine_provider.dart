@@ -57,6 +57,8 @@ class TermineProvider with ChangeNotifier {
     if (response.statusCode == 200 &&
         response.body.isNotEmpty &&
         response.body != "null") {
+      debugPrint(
+          "loadAllTermineForYears: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
       try {
         final Map<String, dynamic> responseJson = json.decode(response.body);
 
@@ -80,6 +82,8 @@ class TermineProvider with ChangeNotifier {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        debugPrint(
+            "loadAllTermineForYears: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
         dynamic responseJson =
             (response.body.isNotEmpty && response.body != "null")
                 ? json.decode(response.body)
@@ -221,6 +225,8 @@ class TermineProvider with ChangeNotifier {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         // Prüfen, ob die Antwort nicht leer oder "null" ist
+        debugPrint(
+            "loadEvents: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
         dynamic responseJson =
             (response.body.isNotEmpty && response.body != "null")
                 ? json.decode(response.body)

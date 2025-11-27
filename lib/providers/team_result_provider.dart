@@ -14,6 +14,7 @@ class LigaSpieleProvider with ChangeNotifier {
   final Map<int, Future<void>> _loadingFutures =
       {}; // Läuft bereits eine Anfrage?
 
+  bool isDebug = false;
   bool isLoading = false;
 
   List<TennisMatch> getLigaSpiele(int jahr) {
@@ -50,7 +51,7 @@ class LigaSpieleProvider with ChangeNotifier {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        if (kDebugMode) {
+        if (isDebug) {
           // Größe der geladenen Daten in KB
           final kb = response.bodyBytes.lengthInBytes / 1024;
           debugPrint(

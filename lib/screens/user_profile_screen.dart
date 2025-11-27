@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+// Eigene Imports
 import 'package:verein_app/providers/auth_provider.dart';
+import 'package:verein_app/providers/getraenkebuchen_provider.dart';
 import 'package:verein_app/utils/app_utils.dart';
 import '../providers/user_provider.dart';
 import '../widgets/verein_appbar.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -16,168 +19,192 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+  // -------------------------
+  // 1. Controller & State Variablen
+  // -------------------------
   final TextEditingController _vornameController = TextEditingController();
   final TextEditingController _nachnameController = TextEditingController();
   final TextEditingController _platzbuchungController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   String _selectedRole = "Mitglied";
   String _uid = "";
-  bool _isLoading = false;
+
+  // Allgemeiner Ladezustand für die gesamte Seite
+  bool _isLoading = true;
+  // Separater Ladezustand für Aktionen (Speichern, Senden, Reset)
+  bool _isActionLoading = false;
+
+  double _getraenkeSaldo = 0.0; // Anzeige des aktuellen Saldos
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => loadData());
+    Future.microtask(() => _loadData());
   }
 
-  void loadData() async {
+  @override
+  void dispose() {
+    _vornameController.dispose();
+    _nachnameController.dispose();
+    _platzbuchungController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  // -------------------------
+  // 2. Daten laden (_loadData)
+  // -------------------------
+  void _loadData() async {
+    if (!mounted) return;
+
     final messenger = ScaffoldMessenger.of(context);
-    setState(() => _isLoading = true);
-    final authProvider =
-        Provider.of<AuthorizationProvider>(context, listen: false);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    setState(() {
+      _isLoading = true;
+      _isActionLoading = false;
+    });
+
+    final authProvider = context.read<AuthorizationProvider>();
+    final userProvider = context.read<UserProvider>();
+    final getraenkeProvider = context.read<GetraenkeBuchenProvider>(); // Neu
 
     try {
-      // Hole Benutzerdaten und die E-Mail-Adresse
+      // 1. Benutzerdaten holen
       await userProvider.getOwnUserData(authProvider.userId.toString());
-      final email = await userProvider.fetchOwnEmail();
+      final String? email = await userProvider.fetchOwnEmail();
 
+      // 2. Getränke-Saldo holen
+      // Setze die UID im Getränke-Provider, da dieser sie für die Filterung braucht
+      getraenkeProvider.uid = userProvider.user.uid;
+      getraenkeProvider.username =
+          "${userProvider.user.vorname} ${userProvider.user.nachname}";
+      final saldo = await getraenkeProvider.calculateUserSaldo();
+
+      if (!mounted) return;
+      // UI-Update
       setState(() {
         _uid = userProvider.user.uid;
         _vornameController.text = userProvider.user.vorname;
         _nachnameController.text = userProvider.user.nachname;
         _platzbuchungController.text = userProvider.user.platzbuchungLink;
-        _emailController.text = email.toString(); // Setze die E-Mail korrekt
+        _emailController.text = email ?? '';
         _selectedRole = userProvider.user.role;
+        _getraenkeSaldo = saldo; // Saldo zuweisen
       });
     } catch (error) {
-      // Fehlerbehandlung, z.B. anzeigen einer Fehlermeldung
+      if (!mounted) return;
       appError(messenger, 'Fehler beim Laden der Daten: $error');
     }
 
     setState(() => _isLoading = false);
   }
 
+  // -------------------------
+  // 3. Benutzerdaten speichern (_saveUser)
+  // -------------------------
   void _saveUser() async {
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final authProvider =
-        Provider.of<AuthorizationProvider>(context, listen: false);
+    final userProvider = context.read<UserProvider>();
+    final authProvider = context.read<AuthorizationProvider>();
 
-    userProvider.user.uid = _uid.toString();
-    userProvider.user.vorname = _vornameController.text.toString();
-    userProvider.user.nachname = _nachnameController.text.toString();
-    userProvider.user.platzbuchungLink =
-        _platzbuchungController.text.toString();
-    userProvider.user.role = _selectedRole.toString();
+    setState(() => _isActionLoading = true);
+
+    // Update der Daten im UserProvider-Objekt
+    userProvider.user.uid = _uid;
+    userProvider.user.vorname = _vornameController.text;
+    userProvider.user.nachname = _nachnameController.text;
+    userProvider.user.platzbuchungLink = _platzbuchungController.text;
+    userProvider.user.role = _selectedRole;
 
     try {
-      userProvider.postUser(
+      await userProvider.postUser(
           context, userProvider.user, authProvider.writeToken.toString());
+
+      if (!mounted) return;
       appError(messenger, "Daten erfolgreich gespeichert.");
     } catch (error) {
+      if (!mounted) return;
       appError(messenger, "Fehler beim Speichern: $error");
     }
+
+    setState(() => _isActionLoading = false);
   }
 
+  // -------------------------
+  // 4. Passwort zurücksetzen (_resetPassword)
+  // -------------------------
   void _resetPassword() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final authProvider =
-        Provider.of<AuthorizationProvider>(context, listen: false);
+    if (!mounted) return;
+    final authProvider = context.read<AuthorizationProvider>();
+    final userProvider = context.read<UserProvider>();
 
-    // 1. Asynchrone Operation, die einen await erfordert:
-    // Hier könnte der Kontext ungültig werden.
+    setState(() => _isActionLoading = true);
+
+    // Prüfen, ob die E-Mail verfügbar ist
+    if (userProvider.user.email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("E-Mail-Adresse fehlt.")),
+      );
+      setState(() => _isActionLoading = false);
+      return;
+    }
+
     await authProvider.resetPassword(context, userProvider.user.email);
 
-    // 2. WICHTIGE KORREKTUR: mounted Check
-    // Prüfen Sie, ob das Widget noch aktiv ist, bevor Sie den Kontext verwenden.
-    // Dies setzt voraus, dass sich diese Methode in einem State-Objekt befindet.
-    if (!context.mounted) return;
-    // ignore: use_build_context_synchronously
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Passwort-Reset-E-Mail gesendet.")),
     );
+
+    setState(() => _isActionLoading = false);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    return Scaffold(
-      appBar: VereinAppbar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(labelText: "UID"),
-                    controller: TextEditingController(text: _uid),
-                    enabled: false,
-                  ),
-                  TextField(
-                    decoration: const InputDecoration(labelText: "E-Mail"),
-                    controller: _emailController,
-                    enabled: false,
-                  ),
-                  TextField(
-                    controller: _vornameController,
-                    decoration: const InputDecoration(labelText: "Vorname"),
-                  ),
-                  TextField(
-                    controller: _nachnameController,
-                    decoration: const InputDecoration(labelText: "Nachname"),
-                  ),
-                  TextField(
-                    controller: _platzbuchungController,
-                    decoration:
-                        const InputDecoration(labelText: "Platzbuchungslink"),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: _saveUser,
-                        child: const Text("Speichern"),
-                      ),
-                      const SizedBox(width: 10),
-                      if (userProvider.user.email.isNotEmpty) ...[
-                        ElevatedButton(
-                          onPressed: _resetPassword,
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
-                          child: const Text("Passwort zurücksetzen"),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            try {
-                              //                             final result = await sendMail(
-                              //                                 to: "fefef",
-                              //                                 subject: "efefeff",
-                              //                                 text: "3434");
-                            } catch (e) {
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text("Unbekannter Fehler: $e"),
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text("Getränkebuchung per Mail senden"),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-    );
+  // -------------------------
+  // 5. Getränkebuchung per Mail senden (_sendGetraenkeMail)
+  // -------------------------
+  void _sendGetraenkeMail() async {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final userProvider = context.read<UserProvider>();
+
+    setState(() => _isActionLoading = true);
+
+    // Vorbereitung der Daten
+    final recipient = _emailController.text;
+    final name = "${userProvider.user.vorname} ${userProvider.user.nachname}";
+    final saldoText = '${_getraenkeSaldo.toStringAsFixed(2)} €';
+
+    final subject = "Abrechnungsanfrage Getränkesaldo für $name";
+    final textBody =
+        "Hallo,\n\nhiermit bitte ich um die Abrechnung des aktuellen Getränkesaldos von $saldoText für $name.\n\nViele Grüße,\n${userProvider.user.vorname}";
+
+    if (recipient.isEmpty) {
+      if (!mounted) return;
+      appError(messenger, "E-Mail-Adresse fehlt für den Versand.");
+      setState(() => _isActionLoading = false);
+      return;
+    }
+
+    try {
+      await _sendMail(
+        to: recipient,
+        subject: subject,
+        text: textBody,
+      );
+      if (!mounted) return;
+      appError(messenger, "Abrechnungs-E-Mail erfolgreich gesendet.");
+    } catch (e) {
+      if (!mounted) return;
+      appError(messenger, "Fehler beim Senden der E-Mail: $e");
+    }
+
+    setState(() => _isActionLoading = false);
   }
 
-  Future<void> sendMail({
+  // -------------------------
+  // 6. API-Aufruf (_sendMail) - bleibt unverändert
+  // -------------------------
+  Future<void> _sendMail({
     required String to,
     required String subject,
     required String text,
@@ -195,10 +222,219 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      debugPrint('Mail erfolgreich gesendet!');
-    } else {
-      debugPrint('Fehler beim Senden der Mail: ${response.body}');
+    if (response.statusCode != 200) {
+      throw Exception(
+          'Serverfehler (${response.statusCode}): ${response.body}');
     }
+  }
+
+  // -------------------------
+  // 7. BUILD METHODE (UI)
+  // -------------------------
+  @override
+  Widget build(BuildContext context) {
+    // Lesen des Providers hier nur für die Bedingung in der UI (z.B. user.email.isNotEmpty)
+    // Es ist besser, wenn wir die State-Variablen _emailController.text verwenden.
+
+    return Scaffold(
+      appBar: VereinAppbar(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              // ✅ Äußere Stack hat die Größe des gesamten Bildschirms
+              children: [
+                // 1. Der gesamte scrollbare Inhalt (fängt den Platz)
+                Positioned.fill(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // --- Basisdaten ---
+                        _buildHeader("Basisinformationen 👤"),
+                        buildTextFormField(
+                          "UID",
+                          controller: TextEditingController(text: _uid),
+                          readOnly: true,
+                        ),
+                        buildTextFormField(
+                          "E-Mail",
+                          controller: _emailController,
+                          readOnly: true,
+                        ),
+
+                        // --- Bearbeitbare Felder ---
+                        buildTextFormField(
+                          "Vorname",
+                          controller: _vornameController,
+                          readOnly: false,
+                        ),
+                        buildTextFormField(
+                          "Nachname",
+                          controller: _nachnameController,
+                          readOnly: false,
+                        ),
+                        buildTextFormField(
+                          "Platzbuchungslink",
+                          controller: _platzbuchungController,
+                          readOnly: false,
+                        ),
+
+                        // --- Rollen-Anzeige ---
+                        buildTextFormField(
+                          "Rolle",
+                          controller:
+                              TextEditingController(text: _selectedRole),
+                          readOnly: true,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _isActionLoading ? null : _saveUser,
+                                icon: const Icon(Icons.save),
+                                label: const Text("Speichern"),
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                  backgroundColor:
+                                      Theme.of(context).primaryColor,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // --- Getränkesumme Sektion ---
+                        _buildHeader("Getränke-Saldo 🍺"),
+                        _buildSaldoCard(context),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    _isActionLoading || _getraenkeSaldo > 0
+                                        ? null
+                                        : _sendGetraenkeMail,
+                                icon: const Icon(Icons.email),
+                                label: const Text("Abrechnung senden"),
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // Passwort-Reset-Button (nur anzeigen, wenn eine E-Mail verfügbar ist)
+                        if (_emailController.text.isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: _isActionLoading ? null : _resetPassword,
+                            icon: const Icon(Icons.lock_reset),
+                            label: const Text("Passwort zurücksetzen"),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 2. Lade-Overlay über die gesamte UI (muss außerhalb der Column sein)
+                if (_isActionLoading)
+                  Positioned.fill(
+                    // ✅ Positioned.fill füllt den gesamten Stack
+                    child: Opacity(
+                      opacity: 0.8,
+                      child: ModalBarrier(
+                          dismissible: false, color: Colors.black12),
+                    ),
+                  ),
+                if (_isActionLoading)
+                  const Center(child: CircularProgressIndicator()),
+              ],
+            ),
+    );
+  }
+
+  // -------------------------
+  // 8. Hilfswidgets für die UI
+  // -------------------------
+
+  Widget _buildHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.blueGrey,
+        ),
+      ),
+    );
+  }
+
+  // Widget für die Saldo-Anzeige
+  Widget _buildSaldoCard(BuildContext context) {
+    // Farbe basierend auf dem Saldo
+    Color saldoColor = _getraenkeSaldo < 0
+        ? Colors.red.shade700
+        : (_getraenkeSaldo > 0 ? Colors.green.shade700 : Colors.black87);
+    String saldoLabel = _getraenkeSaldo < 0 ? "Schulden:" : "Guthaben:";
+
+    // Saldo in positive Zahl umwandeln, wenn es Schulden sind
+    double displaySaldo = _getraenkeSaldo.abs();
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(saldoLabel,
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+            const SizedBox(height: 5),
+            Text(
+              '${displaySaldo.toStringAsFixed(2)} €',
+              style: TextStyle(
+                  fontSize: 28, fontWeight: FontWeight.bold, color: saldoColor),
+            ),
+            const Divider(height: 20),
+            Text(
+              _getraenkeSaldo < 0
+                  ? 'Bitte begleichen Sie Ihren negativen Saldo.'
+                  : (_getraenkeSaldo > 0
+                      ? 'Sie haben ein Guthaben auf Ihrem Getränkekonto.'
+                      : 'Ihr Saldo ist ausgeglichen.'),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey.shade600),
+            )
+          ],
+        ),
+      ),
+    );
   }
 }

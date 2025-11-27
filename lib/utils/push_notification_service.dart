@@ -301,13 +301,37 @@ class PushNotificationService {
 
   /// Sendet Push an Topic 'notifications'
   Future sendPushNotification(TeGNotification notifi) async {
-// FCM Token abrufen (optional, für einzelne Devices)
-    final token = await _firebaseMessaging.getToken();
-    if (token == null || token.isEmpty) return;
+    String? token;
+
+    // 1. Token-Abruf in einem try-catch-Block absichern.
+    // Dies fängt den "permission-blocked"-Fehler ab, der auf dem Web
+    // beim Versuch, das Token abzurufen, auftritt.
+    try {
+      token = await _firebaseMessaging.getToken();
+    } on FirebaseException catch (e) {
+      // <-- Jetzt funktioniert es mit dem Import
+      if (kIsWeb && e.code == 'permission-blocked') {
+        // Erwarteter Fehler, wenn Berechtigung im Browser blockiert ist.
+        if (kDebugMode) {
+          debugPrint(
+              "⚠️ Token-Abruf blockiert (Web). Senden abgebrochen. (Fehler: ${e.code})");
+        }
+        return; // Senden abbrechen
+      }
+// Andere Firebase-Fehler
+      if (kDebugMode) print('Fehler beim Abrufen des Tokens: ${e.code}');
+      return;
+    } catch (e) {
+// Unbekannte Fehler abfangen
+      if (kDebugMode) print('Unbekannter Fehler beim Abrufen des Tokens: $e');
+      return;
+    }
+
+    if (token == null || token.isEmpty)
+      return; // Weiter nur, wenn Token vorhanden
 
     // Access Token für FCM HTTP v1 holen
     final accessToken = await _getAccessToken();
-    if (accessToken == null) return;
 // FCM Endpoint
     final url = Uri.parse(
         "https://fcm.googleapis.com/v1/projects/db-teg/messages:send");

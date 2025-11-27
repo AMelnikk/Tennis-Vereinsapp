@@ -120,8 +120,8 @@ class TeamProvider with ChangeNotifier {
 
       //resetData();
 
-      if (isDebug) print("Response status: ${response.statusCode}");
-      if (isDebug) print("Response body: ${response.body}");
+      if (isDebug) debugPrint("Response status: ${response.statusCode}");
+      if (isDebug) debugPrint("Response body: ${response.body}");
 
       return response.statusCode;
     } on SocketException {

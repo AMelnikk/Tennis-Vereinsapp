@@ -13,6 +13,7 @@ class UserProvider with ChangeNotifier {
 
   List<User> allUsers = []; // Liste aller Benutzer
   List<User> filteredUsers = []; // Gefilterte Liste von Benutzern
+  bool isDebug = false;
 
   UserProvider(this._token);
 

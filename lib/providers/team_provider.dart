@@ -120,8 +120,8 @@ class TeamProvider with ChangeNotifier {
 
       //resetData();
 
-      if (kDebugMode) print("Response status: ${response.statusCode}");
-      if (kDebugMode) print("Response body: ${response.body}");
+      if (isDebug) print("Response status: ${response.statusCode}");
+      if (isDebug) print("Response body: ${response.body}");
 
       return response.statusCode;
     } on SocketException {
@@ -226,7 +226,7 @@ class TeamProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        if (kDebugMode) {
+        if (isDebug) {
           debugPrint("Team erfolgreich aktualisiert: ${response.body}");
         }
         return response.statusCode;

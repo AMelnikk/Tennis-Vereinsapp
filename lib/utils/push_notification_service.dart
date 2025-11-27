@@ -27,12 +27,9 @@ class PushNotificationService {
 
   Future initialize() async {
     // ---------------------------
-    // 1. NUR auf iOS–NATIVE
-    //    (niemals Web!)
+    // 1. Berechtigungen anfordern
     // ---------------------------
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      await _firebaseMessaging.requestPermission();
-    }
+    await _requestPermissions();
 
     // ---------------------------
     // 2. Lokale Notifications initialisieren
@@ -65,6 +62,36 @@ class PushNotificationService {
     // 7. Falls eine Pending Notification existiert
     // ---------------------------
     processPendingMessage();
+  }
+
+  Future<void> _requestPermissions() async {
+    if (kIsWeb) {
+      // Web: Berechtigung anfordern. Kann fehlschlagen, wenn dauerhaft blockiert.
+      try {
+        await _firebaseMessaging.requestPermission();
+      } on FirebaseException catch (e) {
+        if (e.code == 'permission-blocked') {
+          // Logik zur Benutzerführung auf der Webplattform
+          if (kDebugMode) {
+            print(
+                '⚠️ Web Notification Permission BLOCKED. User must enable manually.');
+          }
+          // Zeige einen Dialog/Snackbar, um den Benutzer über die manuelle Freigabe zu informieren.
+        } else {
+          if (kDebugMode) {
+            print('Fehler bei FCM Permission Request: ${e.code}');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) print('Unbekannter Fehler bei _requestPermissions: $e');
+      }
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS/macOS: Standardanfrage
+      await _firebaseMessaging.requestPermission();
+    } else {
+      // Android/Desktop: Keine explizite Anfrage nötig, aber zur Sicherheit aufrufen
+      await _firebaseMessaging.requestPermission();
+    }
   }
 
 // Navigation aus Message, sicher über navigatorKey

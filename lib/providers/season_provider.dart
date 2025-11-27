@@ -40,10 +40,10 @@ class SaisonProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
 
-        if (isDebug) {  
-        debugPrint(
-            "SaisonProvider Data Received: $data"); // Fügen Sie dies HINZU
-}
+        if (isDebug) {
+          debugPrint(
+              "SaisonProvider Data Received: $data"); // Fügen Sie dies HINZU
+        }
         if (data == null || data is! Map<String, dynamic>) {
           // <--- WICHTIGE PRÜFUNG auf NULL
           saisons = [];
@@ -55,6 +55,7 @@ class SaisonProvider with ChangeNotifier {
           if (isDebug) {
             // NEU: Debuggen, um zu sehen, wie viele Saisons geladen wurden
             debugPrint("SaisonProvider Saisons Loaded: ${saisons.length}");
+          }
         }
       }
     } catch (error) {

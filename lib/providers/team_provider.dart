@@ -37,9 +37,10 @@ class TeamProvider with ChangeNotifier {
         final bytes = utf8.encode(response.body).length; // Größe in Bytes
         final kilobytes = (bytes / 1024)
             .toStringAsFixed(2); // Umrechnung in KB mit 2 Nachkommastellen
-            if(isDebug){  
-        // Ausgabe der Datenmenge im Debug-Log
-        debugPrint('➡️ Teamdaten geladen für $saisonKey: $kilobytes KB');
+        if (isDebug) {
+          // Ausgabe der Datenmenge im Debug-Log
+          debugPrint('➡️ Teamdaten geladen für $saisonKey: $kilobytes KB');
+        }
       }
       // Prüfe den HTTP-Statuscode
       if (response.statusCode == 200) {

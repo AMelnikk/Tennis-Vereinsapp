@@ -253,4 +253,20 @@ class GetraenkeBuchenProvider with ChangeNotifier {
       return 400;
     }
   }
+
+  /// Berechnet den aktuellen Saldo (Summe der Einzahlungen - Summe der Ausgaben)
+  Future<double> calculateUserSaldo() async {
+    final userBuchungen = await fetchUserBuchungen();
+
+    // Die Summe der Buchungen (Ausgaben sind negativ, Einzahlungen sind positiv)
+    double saldo = 0.0;
+
+    for (var buchung in userBuchungen) {
+      // Wir gehen davon aus, dass 'summe' im Provider bereits als double konvertiert wird
+      final summe = buchung['summe'] as double? ?? 0.0;
+      saldo += summe;
+    }
+
+    return -saldo;
+  }
 }

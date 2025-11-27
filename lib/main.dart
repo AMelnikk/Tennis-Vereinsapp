@@ -90,113 +90,121 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => AuthorizationProvider(),
-      builder: (context, _) => MultiProvider(
-        providers: [
-          // Auth Provider als Basis
-          ChangeNotifierProvider(
-            create: (_) => AuthorizationProvider(),
-          ),
+      builder: (context, child) {
+        // Holen Sie sich die Instanz A, die soeben erstellt wurde.
+        final authProviderInstanceA = context.read<AuthorizationProvider>();
 
-          // Ab hier alle Provider, die das Token benötigen → ProxyProvider
-          ChangeNotifierProxyProvider<AuthorizationProvider, TeamProvider>(
-            create: (_) => TeamProvider(null),
-            update: (_, auth, prev) => TeamProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider, PhotoProvider>(
-            create: (_) => PhotoProvider(null),
-            update: (_, auth, prev) => PhotoProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
-            create: (_) => NewsProvider(null),
-            update: (_, auth, prev) => NewsProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
-            create: (_) => TermineProvider(null),
-            update: (_, auth, prev) => TermineProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider,
-              LigaSpieleProvider>(
-            create: (_) => LigaSpieleProvider(null),
-            update: (_, auth, prev) => LigaSpieleProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider, UserProvider>(
-            create: (_) => UserProvider(null),
-            update: (_, auth, prev) => UserProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider, SaisonProvider>(
-            create: (_) => SaisonProvider(null),
-            update: (_, auth, prev) => SaisonProvider(auth.writeToken),
-          ),
-
-          ChangeNotifierProxyProvider<AuthorizationProvider,
-              GetraenkeBuchenProvider>(
-            create: (_) => GetraenkeBuchenProvider(null),
-            update: (_, auth, prev) => GetraenkeBuchenProvider(auth.writeToken),
-          ),
-        ],
-        child: Consumer<AuthorizationProvider>(
-          builder: (ctx, authProvider, _) => MaterialApp(
-            navigatorKey: PushNotificationService
-                .navigatorKey, // <--- über Klasse, nicht Instanz
-            title: "TSV Weidenbach",
-            theme: ThemeData(
-              scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-              appBarTheme: const AppBarTheme(
-                  backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-                  foregroundColor: Colors.white),
+        return MultiProvider(
+          providers: [
+            // Auth Provider als Basis
+            ChangeNotifierProvider.value(
+              value: authProviderInstanceA, // <--- Nur DIESE Instanz verwenden
             ),
-            localizationsDelegates: [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: [
-              Locale('de', 'DE'), // Deutsch
-            ],
-            home: const MyHomePage(),
-            routes: {
-              TeamScreen.routename: (ctx) => const TeamScreen(),
-              TeamDetailScreen.routename: (ctx) => const TeamDetailScreen(),
-              DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
-              TrainersScreen.routename: (ctx) => const TrainersScreen(),
-              AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
-              PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
-              PlaceBookingScreen.routename: (ctx) => const PlaceBookingScreen(),
-              AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
-              AdminScreen.routename: (ctx) => const AdminScreen(),
-              AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
-              ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
-              AddUserScreen.routename: (ctx) => const AddUserScreen(),
-              UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
-              DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
-              NewsAdminScreen.routename: (ctx) => const NewsAdminScreen(),
-              GetraenkeBuchenScreen.routename: (ctx) =>
-                  Provider.of<AuthorizationProvider>(context).isSignedIn
-                      ? const GetraenkeBuchenScreen()
-                      : const AuthScreen(pop: false),
-              GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
-                  const GetraenkeBuchungenDetailsScreen(),
-              GetraenkeSummenScreen.routename: (ctx) =>
-                  const GetraenkeSummenScreen(),
-              AddMannschaftScreen.routename: (ctx) =>
-                  const AddMannschaftScreen(),
-              CalendarScreen.routename: (ctx) => const CalendarScreen(),
-              AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
-              AddLigaSpieleScreen.routename: (ctx) =>
-                  const AddLigaSpieleScreen(),
-              AddTeamResultScreen.routename: (ctx) =>
-                  const AddTeamResultScreen(),
-            },
+
+            // Ab hier alle Provider, die das Token benötigen → ProxyProvider
+            ChangeNotifierProxyProvider<AuthorizationProvider, TeamProvider>(
+              create: (_) => TeamProvider(null),
+              update: (_, auth, prev) => TeamProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, PhotoProvider>(
+              create: (_) => PhotoProvider(null),
+              update: (_, auth, prev) => PhotoProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
+              create: (_) => NewsProvider(null),
+              update: (_, auth, prev) => NewsProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
+              create: (_) => TermineProvider(null),
+              update: (_, auth, prev) => TermineProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider,
+                LigaSpieleProvider>(
+              create: (_) => LigaSpieleProvider(null),
+              update: (_, auth, prev) => LigaSpieleProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, UserProvider>(
+              create: (_) => UserProvider(null),
+              update: (_, auth, prev) => UserProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, SaisonProvider>(
+              create: (_) => SaisonProvider(null),
+              update: (_, auth, prev) => SaisonProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider,
+                GetraenkeBuchenProvider>(
+              create: (_) => GetraenkeBuchenProvider(null),
+              update: (_, auth, prev) =>
+                  GetraenkeBuchenProvider(auth.writeToken),
+            ),
+          ],
+          child: Consumer<AuthorizationProvider>(
+            builder: (ctx, authProvider, _) => MaterialApp(
+              navigatorKey: PushNotificationService
+                  .navigatorKey, // <--- über Klasse, nicht Instanz
+              title: "TSV Weidenbach",
+              theme: ThemeData(
+                scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+                appBarTheme: const AppBarTheme(
+                    backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+                    foregroundColor: Colors.white),
+              ),
+              localizationsDelegates: [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: [
+                Locale('de', 'DE'), // Deutsch
+              ],
+              home: const MyHomePage(),
+              routes: {
+                TeamScreen.routename: (ctx) => const TeamScreen(),
+                TeamDetailScreen.routename: (ctx) => const TeamDetailScreen(),
+                DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+                TrainersScreen.routename: (ctx) => const TrainersScreen(),
+                AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
+                PhotoGalleryScreen.routename: (ctx) =>
+                    const PhotoGalleryScreen(),
+                PlaceBookingScreen.routename: (ctx) =>
+                    const PlaceBookingScreen(),
+                AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
+                AdminScreen.routename: (ctx) => const AdminScreen(),
+                AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
+                NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
+                ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
+                AddUserScreen.routename: (ctx) => const AddUserScreen(),
+                UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
+                DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
+                NewsAdminScreen.routename: (ctx) => const NewsAdminScreen(),
+                GetraenkeBuchenScreen.routename: (ctx) =>
+                    Provider.of<AuthorizationProvider>(context).isSignedIn
+                        ? const GetraenkeBuchenScreen()
+                        : const AuthScreen(pop: false),
+                GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
+                    const GetraenkeBuchungenDetailsScreen(),
+                GetraenkeSummenScreen.routename: (ctx) =>
+                    const GetraenkeSummenScreen(),
+                AddMannschaftScreen.routename: (ctx) =>
+                    const AddMannschaftScreen(),
+                CalendarScreen.routename: (ctx) => const CalendarScreen(),
+                AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
+                AddLigaSpieleScreen.routename: (ctx) =>
+                    const AddLigaSpieleScreen(),
+                AddTeamResultScreen.routename: (ctx) =>
+                    const AddTeamResultScreen(),
+              },
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

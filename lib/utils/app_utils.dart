@@ -45,26 +45,42 @@ Widget buildTextFormField(
   String label, {
   required TextEditingController? controller,
   FormFieldValidator<String>? validator,
-  // ✅ 1. NEU: Parameter readOnly hinzufügen (mit Standardwert false)
+  // Parameter readOnly ist bereits vorhanden
   bool readOnly = false,
-  // ✅ 2. NEU: Parameter decoration hinzufügen, um die grüne Hinterlegung zu ermöglichen
+  // Parameter decoration ist bereits vorhanden
   InputDecoration? decoration,
 }) {
-  // Das Standard-Decoration-Objekt erstellen, falls keines übergeben wurde
+  // ✅ NEU: Farbe basierend auf dem readOnly-Status bestimmen
+  // Grau (Standard) für nicht-editierbar (readOnly: true)
+  // Transparent/Weiß (Standard in Flutter) für editierbar (readOnly: false)
+  final Color baseFillColor = readOnly
+      ? Colors.grey.shade400 // Leichtes Grau für readOnly Felder
+      : Colors
+          .white; // Oder einfach Colors.transparent, falls der Scaffold-Hintergrund nicht weiß ist
+
+  // 1. Das Standard-Decoration-Objekt erstellen, das die Basis-Füllfarbe nutzt
   final defaultDecoration = InputDecoration(
     labelText: label,
     labelStyle: const TextStyle(fontSize: 10), // Kleinere Schrift für das Label
+
+    // ✅ Füllung und Farbe für den Standardfall (readOnly) festlegen
+    filled: true,
+    fillColor: baseFillColor,
   );
 
   return TextFormField(
     controller: controller,
-    // ✅ 3. readOnly an das TextFormField-Widget übergeben
+    // readOnly an das TextFormField-Widget übergeben
     readOnly: readOnly,
-    // ✅ 4. Übergebenes Decoration-Objekt verwenden, sonst das Standard-Objekt
+
+    // 2. Übergebenes Decoration-Objekt verwenden ODER das Standard-Objekt.
+    // Wenn `decoration` übergeben wird (z.B. mit Colors.white in UserProfileScreen),
+    // überschreibt es die baseFillColor im defaultDecoration-Objekt.
     decoration: (decoration != null)
         ? decoration.copyWith(
             labelText: label, labelStyle: const TextStyle(fontSize: 12))
         : defaultDecoration,
+
     validator: validator,
   );
 }

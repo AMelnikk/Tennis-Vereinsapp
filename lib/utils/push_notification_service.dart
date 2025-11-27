@@ -256,10 +256,14 @@ class PushNotificationService {
 
   /// Verarbeitet DB-Events
   Future _processEvent(String type, String action, DatabaseEvent event) async {
+    // 1. Initialprüfung: Wenn keine Map, abbrechen.
     if (event.snapshot.value is! Map) return;
-    final data = Map<String, dynamic>.from(event.snapshot.value as Map);
-    late TeGNotification n;
 
+    final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+    TeGNotification?
+        n; // Deklaration als nullable, um den "final variable can't be read" Fehler zu beheben
+
+    // 2. Zuweisung über alle erkannten Pfade.
     if (type == "News") {
       n = TeGNotification(
         id: event.snapshot.key ?? "",
@@ -267,31 +271,79 @@ class PushNotificationService {
         title: data["title"] ?? "Keine Nachricht",
         body: data["body"] ?? "",
         year: "",
-        timestamp: data["lastUpdate"] ?? 0,
+        // Sicherstellung, dass der Zeitstempel ein int ist (wichtig!)
+        timestamp: (data["lastUpdate"] as int?) ?? 0,
       );
-    } else {
+    } else if (type == "Termine") {
       n = TeGNotification(
         id: data["id"].toString(),
         type: "Termin",
         title: data["title"] ?? "Kein Titel",
         body: data["details"] ?? "",
         year: event.snapshot.ref.parent?.key ?? "",
-        timestamp: data["lastUpdate"] ?? 0,
+        timestamp: (data["lastUpdate"] as int?) ?? 0,
       );
     }
 
+    // 3. Wichtiger Null-Check (behebt den Fehler "The final variable 'n' can't be read...")
+    if (n == null) {
+      if (kDebugMode) {
+        debugPrint(
+            'Unbekannter Event-Typ ($type) oder Datenfehler. Verarbeitung abgebrochen.');
+      }
+      return;
+    }
+
+    // AB HIER weiß der Compiler, dass n NICHT null ist.
+
+    // 4. Entfernung der unnötigen Typ-Prüfung (behebt "Unnecessary type check...")
+    // n.timestamp sollte gemäß dem Modell (final int) garantiert ein int sein.
+    final currentTimestamp = n.timestamp;
+    if (currentTimestamp == 0) return;
+
     final lastFetch = await _getLastFetchTime();
-    if (action == "added" && n.timestamp > lastFetch) {
+
+    // 1. Fall: App startet zum ersten Mal (lastFetch == 0)
+    // 1. Fall: App startet zum ersten Mal (lastFetch == 0)
+    if (lastFetch == 0) {
+      // Der erste von Vieren setzt den Wert. Alle nachfolgenden Aufrufe von _saveLastFetchTime
+      // werden ignoriert, wenn ihr timestamp niedriger ist.
+      await _saveLastFetchTime(timestamp: currentTimestamp);
+
+      if (kDebugMode) {
+        debugPrint(
+            '⚠️ Initialisierung abgeschlossen. Erster Event verarbeitet.');
+      }
+      return; // Verarbeitung abbrechen, da dies nur Initialisierung ist.
+    }
+
+    // 2. Fall: Reguläre Prüfung (lastFetch > 0)
+    else if (currentTimestamp > lastFetch) {
+      // Nur senden, wenn die Nachricht wirklich neuer ist als der letzte gespeicherte Wert.
       await sendPushNotification(n);
-      await _saveLastFetchTime();
-    } else if (action == "changed") {
-      await sendPushNotification(n);
+      await _saveLastFetchTime(timestamp: currentTimestamp);
+    } else {
+      if (kDebugMode) {
+        debugPrint('ℹ️ "added" Event ignoriert: Zeitstempel zu alt.');
+      }
     }
   }
 
-  Future _saveLastFetchTime() async {
+  Future<void> _saveLastFetchTime(
+      {required int timestamp, bool forceUpdate = false}) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setInt("lastFetchTime", DateTime.now().millisecondsSinceEpoch);
+    final oldTime = prefs.getInt("lastFetchTime") ?? 0;
+
+    if (timestamp > oldTime || forceUpdate) {
+      prefs.setInt("lastFetchTime", timestamp);
+      debugPrint('🕑 Neue lastFetchTime gespeichert: $timestamp');
+    } else {
+      // Bei asynchronen Aufrufen wird der ältere Zeitstempel ignoriert.
+      if (kDebugMode) {
+        debugPrint(
+            '🕑 Speicherung ignoriert: $timestamp ist nicht neuer als $oldTime');
+      }
+    }
   }
 
   Future _getLastFetchTime() async {
@@ -318,18 +370,18 @@ class PushNotificationService {
         }
         return; // Senden abbrechen
       }
-// Andere Firebase-Fehler
+      // Andere Firebase-Fehler
       if (kDebugMode) print('Fehler beim Abrufen des Tokens: ${e.code}');
       return;
     } catch (e) {
-// Unbekannte Fehler abfangen
+      // Unbekannte Fehler abfangen
       if (kDebugMode) print('Unbekannter Fehler beim Abrufen des Tokens: $e');
       return;
     }
 
-    if (token == null || token.isEmpty)
+    if (token == null || token.isEmpty) {
       return; // Weiter nur, wenn Token vorhanden
-
+    }
     // Access Token für FCM HTTP v1 holen
     final accessToken = await _getAccessToken();
 // FCM Endpoint

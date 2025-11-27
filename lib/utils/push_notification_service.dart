@@ -18,6 +18,7 @@ class PushNotificationService {
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   bool _listenersInitialized = false;
+  bool isDebug = false;
 
   // Statischer NavigatorKey
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -310,7 +311,7 @@ class PushNotificationService {
       // werden ignoriert, wenn ihr timestamp niedriger ist.
       await _saveLastFetchTime(timestamp: currentTimestamp);
 
-      if (kDebugMode) {
+      if (isDebug) {
         debugPrint(
             '⚠️ Initialisierung abgeschlossen. Erster Event verarbeitet.');
       }
@@ -323,7 +324,7 @@ class PushNotificationService {
       await sendPushNotification(n);
       await _saveLastFetchTime(timestamp: currentTimestamp);
     } else {
-      if (kDebugMode) {
+      if (isDebug) {
         debugPrint('ℹ️ "added" Event ignoriert: Zeitstempel zu alt.');
       }
     }
@@ -336,10 +337,12 @@ class PushNotificationService {
 
     if (timestamp > oldTime || forceUpdate) {
       prefs.setInt("lastFetchTime", timestamp);
-      debugPrint('🕑 Neue lastFetchTime gespeichert: $timestamp');
+      if (isDebug) {
+        debugPrint('🕑 Neue lastFetchTime gespeichert: $timestamp');
+      }
     } else {
       // Bei asynchronen Aufrufen wird der ältere Zeitstempel ignoriert.
-      if (kDebugMode) {
+      if (isDebug) {
         debugPrint(
             '🕑 Speicherung ignoriert: $timestamp ist nicht neuer als $oldTime');
       }

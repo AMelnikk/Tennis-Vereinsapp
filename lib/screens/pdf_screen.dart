@@ -54,12 +54,27 @@ class _PdfScreenState extends State<PdfScreen> {
     setState(() {
       _isLoading = true;
     });
+
+    // Hinzufügen der Plattformprüfung für Web
+    if (kIsWeb) {
+      // Im Web existieren lokale Dateien dieser Art nicht.
+      // Wir setzen exists auf false und beenden die Funktion.
+      exists = false;
+      downloadPath = '';
+      setState(() {
+        _isLoading = false;
+      });
+      return; // WICHTIG: Hier verlassen wir die Funktion.
+    }
+
+    // --- NATIVE PLATTFORM LOGIK (Android, iOS) ---
     if (io.Platform.isAndroid) {
       exists = await io.File("/storage/emulated/0/Download/${widget.name}.pdf")
           .exists();
       downloadPath = "/storage/emulated/0/Download/${widget.name}.pdf";
       // print('android pdf exist path: /storage/emulated/0/Download/${widget.name}.pdf');
     } else {
+      // Dies deckt iOS und andere Native OS ab
       var dir = await getApplicationDocumentsDirectory();
       exists = await io.File("${dir.path}/${widget.name}.pdf").exists();
       downloadPath = "${dir.path}/${widget.name}.pdf";

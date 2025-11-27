@@ -45,13 +45,6 @@ class AdminScreen extends StatelessWidget {
                           },
                           text: "Neuigkeiten hinzufügen",
                         ),
-                        AdminFunction(
-                          function: () {
-                            Navigator.of(context)
-                                .pushNamed(AddTeamResultScreen.routename);
-                          },
-                          text: "Ligaspiele verwalten",
-                        ),
                       ],
                     );
                   } else {
@@ -77,6 +70,13 @@ class AdminScreen extends StatelessWidget {
 //                          },
 //                          text: "Fotos hinzufügen",
 //                        ),
+                        AdminFunction(
+                          function: () {
+                            Navigator.of(context)
+                                .pushNamed(AddTeamResultScreen.routename);
+                          },
+                          text: "Ligaspiele verwalten",
+                        ),
                         AdminFunction(
                           function: () {
                             Navigator.of(context)

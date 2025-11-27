@@ -20,6 +20,7 @@ class NewsProvider with ChangeNotifier {
   String newsDate = '';
   final categoryController = TextEditingController();
   String author = '';
+  bool isDebug = false;
 
   String? lastId;
   bool hasMore = true;
@@ -203,7 +204,7 @@ class NewsProvider with ChangeNotifier {
           categoryController.text = dbData["category"];
           photoBlob = List<String>.from(dbData["photoBlob"] ?? []);
 
-          if (kDebugMode) {
+          if (isDebug) {
             double totalKb = 0;
 
             // Logging pro Bild
@@ -268,7 +269,7 @@ class NewsProvider with ChangeNotifier {
               lastUpdate: DateTime.now().millisecondsSinceEpoch,
             );
 
-            if (kDebugMode) {
+            if (isDebug) {
               double totalKb = 0;
 
               for (int i = 0; i < news.photoBlob.length; i++) {
@@ -324,7 +325,7 @@ class NewsProvider with ChangeNotifier {
                   : List<String>.from(
                       value["photoBlob"].map((item) => item.toString()));
           // Debug: Größe der Bilder in KB berechnen
-          if (kDebugMode) {
+          if (isDebug) {
             double totalKb = 0;
             for (int i = 0; i < blobs.length; i++) {
               final bytes = base64Decode(blobs[i]);
@@ -387,7 +388,7 @@ class NewsProvider with ChangeNotifier {
                 : List<String>.from(
                     value["photoBlob"].map((item) => item.toString()));
         // Debug: Größe der Bilder in KB berechnen
-        if (kDebugMode) {
+        if (isDebug) {
           double totalKb = 0;
           for (int i = 0; i < blobs.length; i++) {
             final bytes = base64Decode(blobs[i]);

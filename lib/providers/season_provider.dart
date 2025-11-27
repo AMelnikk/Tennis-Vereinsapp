@@ -13,6 +13,7 @@ class SaisonProvider with ChangeNotifier {
   final String? _token;
   bool isLoading = false;
   List<SaisonData> saisons = [];
+  bool isDebug = false;
 
   // Diese Methode gibt das SaisonData zurück, das mit dem Namen der Saison übereinstimmt
   SaisonData getSaisonDataForSaisonKey(String saisonKey) {
@@ -38,9 +39,11 @@ class SaisonProvider with ChangeNotifier {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
+
+        if (isDebug) {  
         debugPrint(
             "SaisonProvider Data Received: $data"); // Fügen Sie dies HINZU
-
+}
         if (data == null || data is! Map<String, dynamic>) {
           // <--- WICHTIGE PRÜFUNG auf NULL
           saisons = [];
@@ -49,8 +52,9 @@ class SaisonProvider with ChangeNotifier {
               .map((entry) => SaisonData.fromJson(entry.value))
               .toList();
 
-          // NEU: Debuggen, um zu sehen, wie viele Saisons geladen wurden
-          debugPrint("SaisonProvider Saisons Loaded: ${saisons.length}");
+          if (isDebug) {
+            // NEU: Debuggen, um zu sehen, wie viele Saisons geladen wurden
+            debugPrint("SaisonProvider Saisons Loaded: ${saisons.length}");
         }
       }
     } catch (error) {

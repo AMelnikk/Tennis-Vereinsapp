@@ -16,6 +16,7 @@ class GetraenkeBuchenProvider with ChangeNotifier {
   int _anzSoft = 0;
   int _anzBier = 0;
   double _summe = 0;
+  bool isDebug = false;
 
   // Getter für die Getränkeanzahl und Summe
   int get anzWasser => _anzWasser;

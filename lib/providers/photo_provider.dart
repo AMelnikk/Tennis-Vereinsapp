@@ -17,6 +17,7 @@ class PhotoProvider with ChangeNotifier {
   String? lastId;
   bool hasMore = true;
   var photoDateController = TextEditingController();
+  bool isDebug = false;
 
   List<Photo> loadedData = [];
 
@@ -56,12 +57,7 @@ class PhotoProvider with ChangeNotifier {
           format: CompressFormat.webp,
         );
         final base64Image = base64Encode(image.cast<int>().toList());
-        // final previousBase64Image = base64Encode(imageData.cast<int>().toList());
-        // print(previousBase64Image.length);
-        // print(base64Image.length);
 
-        // print("\n${imageData.length}");
-        // print(image.length);
         final response = await http.post(
           url,
           body: json.encode(
@@ -95,8 +91,10 @@ class PhotoProvider with ChangeNotifier {
         Uri.parse(
             "https://db-teg-default-rtdb.firebaseio.com/Fotogalerie.json?$queryParams"),
       );
+
       var photoData =
           await (json.decode(responce.body)) as Map<String, dynamic>;
+
       photoData.forEach(
         (photoId, photoData) => loadedNews.add(
           Photo(

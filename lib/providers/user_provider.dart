@@ -22,7 +22,7 @@ class UserProvider with ChangeNotifier {
         Provider.of<AuthorizationProvider>(context, listen: false);
 
     setToken(authProvider.writeToken.toString());
-    await getOwnUserData(authProvider.userId.toString());
+    await getUserData(authProvider.userId.toString());
 
     return roles.contains(user.role);
   }

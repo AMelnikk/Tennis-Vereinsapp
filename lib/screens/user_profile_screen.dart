@@ -69,7 +69,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       // 1. Benutzerdaten holen
-      await userProvider.getOwnUserData(authProvider.userId.toString());
+      await userProvider.getUserData(authProvider.userId.toString());
       final String? email = await userProvider.fetchOwnEmail();
 
       // 2. Getränke-Saldo holen

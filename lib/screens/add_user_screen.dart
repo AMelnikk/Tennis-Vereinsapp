@@ -39,7 +39,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final authProvider =
         Provider.of<AuthorizationProvider>(context, listen: false);
     userProvider.setToken(authProvider.writeToken.toString());
-    await userProvider.getOwnUserData(authProvider.userId.toString());
+    await userProvider.getUserData(authProvider.userId.toString());
     await userProvider.getAllUsers();
     setState(() {});
   }

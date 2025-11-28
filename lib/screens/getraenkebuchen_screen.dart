@@ -40,7 +40,7 @@ class _GetraenkeBuchenScreenState extends State<GetraenkeBuchenScreen> {
     }
 
     // Benutzerinformationen abrufen
-    await userProvider.getOwnUserData(uid);
+    await userProvider.getUserData(uid);
 
     getraenkeProvider.username =
         "${userProvider.user.nachname} ${userProvider.user.vorname}";

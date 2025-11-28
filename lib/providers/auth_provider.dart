@@ -106,9 +106,6 @@ class AuthorizationProvider with ChangeNotifier {
     final signUpUrl = Uri.parse(
         "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
 
-    final signInUrl = Uri.parse(
-        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
-
     try {
       var response = await http.post(
         signUpUrl,
@@ -123,6 +120,12 @@ class AuthorizationProvider with ChangeNotifier {
       var responseData = json.decode(response.body);
 
       if (response.statusCode >= 400 || responseData["error"] != null) {
+        throw HttpException(message: responseData["error"]["message"]);
+      }
+
+      if (response.statusCode >= 400 || responseData["error"] != null) {
+        final signInUrl = Uri.parse(
+            "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
         // Falls Benutzer schon existiert, Sign-In versuchen
         response = await http.post(
           signInUrl,

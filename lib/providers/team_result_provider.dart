@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/season.dart';
@@ -14,6 +14,7 @@ class LigaSpieleProvider with ChangeNotifier {
   final Map<int, Future<void>> _loadingFutures =
       {}; // Läuft bereits eine Anfrage?
 
+  bool isDebug = false;
   bool isLoading = false;
 
   List<TennisMatch> getLigaSpiele(int jahr) {
@@ -50,6 +51,12 @@ class LigaSpieleProvider with ChangeNotifier {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        if (isDebug) {
+          // Größe der geladenen Daten in KB
+          final kb = response.bodyBytes.lengthInBytes / 1024;
+          debugPrint(
+              "📦 Ligaspiele: Geladene Datenmenge für $jahr: ${kb.toStringAsFixed(2)} KB");
+        }
         final data = json.decode(response.body);
 
         if (data is Map<String, dynamic>) {
@@ -112,21 +119,34 @@ class LigaSpieleProvider with ChangeNotifier {
       return; // Kein gültiges Startjahr
     }
 
-    isLoading = true;
-    notifyListeners();
+    // --- KORREKTURPUNKT 1 ---
+    // Entfernen Sie hier den ersten notifyListeners()-Aufruf.
+    // if (isLoading == false) { // Fügen Sie eine Prüfung hinzu, um notifyListeners() nur einmal aufzurufen
+    //   isLoading = true;
+    //   notifyListeners(); // DIESER AUFRUF VERURSACHT DEN FEHLER!
+    // }
+
+    // Stattdessen nur das Flag setzen, das Update wird später im didChangeDependencies gehandhabt.
+    if (!isLoading) {
+      isLoading = true;
+      // KEIN notifyListeners() hier!
+    }
 
     try {
-      // Ligaspiele für das Startjahr laden (wird bereits von _loadLigaSpieleForYear überprüft und gecached)
-      await loadLigaSpieleForYear(jahr1);
+      // Ligaspiele für das Startjahr laden
+      await ensureLigaSpieleGeladen(jahr1); // Oder loadLigaSpieleForYear
 
       // Wenn ein Endjahr vorhanden ist, auch dieses Jahr laden
       if (jahr2 != -1) {
-        await loadLigaSpieleForYear(jahr2);
+        await ensureLigaSpieleGeladen(jahr2); // Oder loadLigaSpieleForYear
       }
     } catch (e) {
       debugPrint(
           "Fehler beim Laden der Ligaspiele für Saison ${saisonData.key}: $e");
     } finally {
+      // --- KORREKTURPUNKT 2 ---
+      // Der abschließende notifyListeners() ist notwendig, um das UI zu aktualisieren,
+      // sobald die Daten geladen sind und isLoading auf false gesetzt wird.
       isLoading = false;
       notifyListeners();
     }
@@ -281,4 +301,61 @@ class LigaSpieleProvider with ChangeNotifier {
       return 400;
     }
   }
+
+  Future<int> deleteLigaSpiel(TennisMatch spiel) async {
+    if (_token == null || _token.isEmpty) return 400;
+
+    try {
+      final jahr = spiel.datum.year;
+      final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/LigaSpiele/$jahr/${spiel.id}.json?auth=$_token",
+      );
+
+      final deleteResponse = await http.delete(url);
+
+      if (deleteResponse.statusCode == 200) {
+        _cachedLigaSpiele.remove(jahr); // Cache für das Jahr invalidieren
+        await loadLigaSpieleForYear(jahr);
+        notifyListeners();
+        return 200;
+      } else {
+        return deleteResponse.statusCode;
+      }
+    } catch (error) {
+      debugPrint("Fehler beim Löschen des Spiels: $error");
+      return 400;
+    }
+  }
+
+  bool isLigaSpieleLoaded(String saisonKey) {
+    List<String> jahre;
+
+    if (saisonKey.contains('/')) {
+      jahre = saisonKey.split('/');
+    } else if (saisonKey.contains('_')) {
+      jahre = saisonKey.split('_');
+    } else {
+      jahre = [saisonKey];
+    }
+
+    bool loaded = true;
+
+    for (var jahrStr in jahre) {
+      // Wandelt "25" zu 2025 um, "26" zu 2026
+      int? jahr = int.tryParse(jahrStr);
+      if (jahr != null && jahr < 100) {
+        jahr += 2000;
+      }
+
+      if (jahr == null || !_cachedLigaSpiele.containsKey(jahr)) {
+        loaded = false;
+      }
+    }
+
+    return loaded;
+  }
+
+  /// Prüft, ob Daten verfügbar sind UND ob der Provider aktuell lädt.
+  /// Dies ersetzt die Funktionalität eines expliziten "DataReady"-Flags in der Widget-Logik.
+  bool get isDataCurrentlyLoading => isLoading;
 }

@@ -21,4 +21,23 @@ class CalendarEvent {
     required this.description,
     required this.query,
   });
+
+  factory CalendarEvent.fromMap(Map<String, dynamic> data) {
+    // Robuste Datums-Konvertierung
+    DateTime parsedDate =
+        DateTime.tryParse(data['date'] ?? '') ?? DateTime.now();
+
+    return CalendarEvent(
+      id: data['id'],
+      date: parsedDate,
+      title: data['title'] ?? '',
+      category: data['category'] ?? '',
+      // Wichtig: 'details' aus der Map wird zu 'description' im Objekt
+      description: data['details'] ?? '',
+      von: data['von'] ?? '',
+      bis: data['bis'] ?? '',
+      ort: data['ort'] ?? '',
+      query: data['query'] ?? '',
+    );
+  }
 }

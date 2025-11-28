@@ -7,13 +7,13 @@ import 'package:http/http.dart' as http;
 class SaisonProvider with ChangeNotifier {
   SaisonProvider(this._token) {
     // Stelle sicher, dass die Saisons beim Start des Providers geladen werden
-    loadSaisons();
   }
 
   bool dataLoaded = false;
   final String? _token;
   bool isLoading = false;
   List<SaisonData> saisons = [];
+  bool isDebug = false;
 
   // Diese Methode gibt das SaisonData zurück, das mit dem Namen der Saison übereinstimmt
   SaisonData getSaisonDataForSaisonKey(String saisonKey) {
@@ -28,28 +28,35 @@ class SaisonProvider with ChangeNotifier {
     );
   }
 
-  Future<void> loadSaisons() async {
-    if (isLoading || dataLoaded) return; // Verhindere mehrfaches Laden
+  Future<void> loadSaisons({bool forceReload = false}) async {
+    if (isLoading || (dataLoaded && !forceReload)) return;
     isLoading = true;
-    if (_token == null || _token.isEmpty) {
-      if (kDebugMode) print("Token fehlt");
-    }
     notifyListeners();
+
     try {
       final url = Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/Saison.json?auth=$_token");
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
-        if (data is Map<String, dynamic>) {
+
+        if (isDebug) {
+          debugPrint(
+              "SaisonProvider Data Received: $data"); // Fügen Sie dies HINZU
+        }
+        if (data == null || data is! Map<String, dynamic>) {
+          // <--- WICHTIGE PRÜFUNG auf NULL
+          saisons = [];
+        } else {
           saisons = data.entries
               .map((entry) => SaisonData.fromJson(entry.value))
               .toList();
-        } else {
-          saisons = [];
+
+          if (isDebug) {
+            // NEU: Debuggen, um zu sehen, wie viele Saisons geladen wurden
+            debugPrint("SaisonProvider Saisons Loaded: ${saisons.length}");
+          }
         }
-      } else {
-        throw Exception("Fehler beim Laden der Saisons");
       }
     } catch (error) {
       debugPrint("Fehler beim Laden der Saisons: $error");
@@ -97,6 +104,23 @@ class SaisonProvider with ChangeNotifier {
     return saison; // Gibt die gefundenen oder leeren SaisonData zurück
   }
 
+  String getSaisonTextFromKey(String saisonKey) {
+    // Die Suche erfolgt über das 'key'-Feld des SaisonData-Objekts.
+    final saisonData = saisons.firstWhere(
+      (s) => s.key == saisonKey,
+
+      // Fallback: Wenn der Key nicht gefunden wird, gib ein leeres Objekt zurück.
+      orElse: () => SaisonData(
+          key: '',
+          saison: '', // Der Name der Saison (z.B. "Saison 2025/2026")
+          jahr: -1,
+          jahr2: -1),
+    );
+
+    // Gibt das gefundene (oder das leere) SaisonData-Objekt zurück.
+    return saisonData.saison;
+  }
+
   SaisonData getFirstSaison() {
     // Prüfen, ob `saisons` nicht leer ist
     if (saisons.isNotEmpty) {
@@ -120,9 +144,6 @@ class SaisonProvider with ChangeNotifier {
         body: json.encode(saisonData.toJson()),
         headers: {'Content-Type': 'application/json'},
       );
-      if (response.statusCode == 200) {
-        await loadSaisons(); // Aktualisiere die Liste nach dem Speichern
-      }
       return response.statusCode;
     } on SocketException {
       debugPrint("Netzwerkfehler beim Speichern der Saison");

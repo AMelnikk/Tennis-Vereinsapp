@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
@@ -37,7 +39,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final authProvider =
         Provider.of<AuthorizationProvider>(context, listen: false);
     userProvider.setToken(authProvider.writeToken.toString());
-    await userProvider.getUserData(authProvider.userId.toString());
+    await userProvider.getOwnUserData(authProvider.userId.toString());
     await userProvider.getAllUsers();
     setState(() {});
   }
@@ -70,8 +72,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
         newUser.uid = rData["localId"];
         _emailController.text =
             "${newUser.nachname}_${newUser.vorname}@example.com";
-        if (mounted)
-          await userProvider.postUser(context, newUser, rData["idToken"]);
+        if (!context.mounted) return;
+        await userProvider.postUser(context, newUser, rData["idToken"]);
       } else {
         await userProvider.postUser(
             context, newUser, authProvider.writeToken.toString());
@@ -215,14 +217,40 @@ class _AddUserScreenState extends State<AddUserScreen> {
   }
 
   Widget buildUserList(UserProvider userProvider) {
+    // Benutzer alphabetisch nach Nachname, dann Vorname sortieren
+    final users = userProvider.filteredUsers;
+
+    // Sortieren nach Nachname und Vorname
+    users.sort((a, b) {
+      final aNachname = a.nachname.toLowerCase();
+      final bNachname = b.nachname.toLowerCase();
+      final nachnameCompare = aNachname.compareTo(bNachname);
+
+      if (nachnameCompare != 0) {
+        return nachnameCompare;
+      } else {
+        final aVorname = a.vorname.toLowerCase();
+        final bVorname = b.vorname.toLowerCase();
+        return aVorname.compareTo(bVorname);
+      }
+    });
+
+    if (users.isEmpty) {
+      return const Expanded(
+        child: Center(child: Text("Keine Benutzer gefunden.")),
+      );
+    }
+
     return Expanded(
-      child: ListView.builder(
-        itemCount: userProvider.filteredUsers.length,
+      child: ListView.separated(
+        itemCount: users.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (ctx, index) {
-          final lineUser = userProvider.filteredUsers[index];
+          final user = users[index];
           return ListTile(
-            title: Text('${lineUser.vorname} ${lineUser.nachname}'),
-            subtitle: Text('Berechtigung: ${lineUser.role}'),
+            title:
+                Text('${user.nachname}, ${user.vorname}'), // Nachname, Vorname
+            subtitle: Text('Berechtigung: ${user.role}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -230,18 +258,18 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   icon: const Icon(Icons.edit),
                   onPressed: () {
                     setState(() {
-                      _uid.text = lineUser.uid;
-                      _vornameController.text = lineUser.vorname;
-                      _nachnameController.text = lineUser.nachname;
-                      _platzbuchungController.text = lineUser.platzbuchungLink;
-                      _emailController.text = lineUser.email;
+                      _uid.text = user.uid;
+                      _vornameController.text = user.vorname;
+                      _nachnameController.text = user.nachname;
+                      _platzbuchungController.text = user.platzbuchungLink;
+                      _emailController.text = user.email;
                       _selectedRole = [
                         "Mitglied",
                         "Admin",
                         "Abteilungsleitung",
                         "Mannschaftsführer"
-                      ].contains(lineUser.role)
-                          ? lineUser.role
+                      ].contains(user.role)
+                          ? user.role
                           : "Mitglied";
                     });
                   },
@@ -249,7 +277,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () async {
-                    bool confirm = await showDialog(
+                    final confirm = await showDialog<bool>(
                       context: ctx,
                       builder: (ctx) => AlertDialog(
                         title: const Text("Benutzer löschen"),
@@ -269,8 +297,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       ),
                     );
 
-                    if (confirm) {
-                      await userProvider.deleteUser(ctx, lineUser.uid);
+                    if (confirm == true) {
+                      await userProvider.deleteUser(ctx, user.uid);
                       await userProvider.getAllUsers();
                     }
                   },

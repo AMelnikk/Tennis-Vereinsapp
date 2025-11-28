@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +9,19 @@ void appError(ScaffoldMessengerState messenger, String errorText) {
   if (kDebugMode) {
     print(errorText);
   }
+}
+
+List<String> parsePhotoBlob(dynamic blobData) {
+  if (blobData == null) {
+    return [];
+  } else if (blobData is List) {
+    // Wenn es bereits eine Liste ist (neues Format), casten
+    return blobData.cast<String>();
+  } else if (blobData is String && blobData.isNotEmpty) {
+    // Wenn es ein einzelner String ist (altes Format), in Liste packen
+    return [blobData];
+  }
+  return [];
 }
 
 Widget buildButton(String text, VoidCallback onPressed) {
@@ -31,15 +45,42 @@ Widget buildTextFormField(
   String label, {
   required TextEditingController? controller,
   FormFieldValidator<String>? validator,
+  bool readOnly = false,
+  InputDecoration? decoration,
+  // 🎯 NEU: Der Padding-Parameter ist wieder da
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(vertical: 8.0),
 }) {
-  return TextFormField(
-    controller: controller,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle:
-          const TextStyle(fontSize: 14), // Kleinere Schrift für das Label
+  // 1. Hintergrundfarbe basierend auf readOnly-Status bestimmen
+  final Color baseFillColor = readOnly ? Colors.grey.shade400 : Colors.white;
+
+  // 2. Das Basis-Decoration-Objekt erstellen
+  final baseDecoration = InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(fontSize: 12),
+    filled: true,
+    fillColor: baseFillColor,
+    border: const OutlineInputBorder(),
+  );
+
+  // 3. Übergebenes Decoration-Objekt mit dem Basis-Objekt zusammenführen.
+  final finalDecoration = (decoration != null)
+      ? decoration.copyWith(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 12),
+          filled: true,
+          fillColor: baseFillColor,
+        )
+      : baseDecoration;
+
+  // 🎯 KORREKTUR: Das TextFormField in ein Padding-Widget einschließen
+  return Padding(
+    padding: padding, // Verwende den Übergabeparameter
+    child: TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      decoration: finalDecoration,
+      validator: validator,
     ),
-    validator: validator,
   );
 }
 
@@ -60,6 +101,37 @@ Widget buildTextFieldScrollable(
     ),
     validator: validator,
   );
+}
+
+// Konvertiert eine Liste von Base64-Strings in eine Liste von Uint8List
+List<Uint8List> decodePdfBlobs(dynamic jsonBlobs) {
+  if (jsonBlobs == null) return [];
+
+  // Annahme: Die Datenbank speichert eine Liste von Strings (Base64 kodiert)
+  if (jsonBlobs is List) {
+    return jsonBlobs
+        .map((base64String) {
+          if (base64String is String) {
+            try {
+              return base64Decode(base64String);
+            } catch (e) {
+              // Fehlerbehandlung falls der String nicht korrekt kodiert ist
+              debugPrintThrottled('Fehler beim Dekodieren eines PDF-Blobs: $e');
+              return Uint8List(0); // Leeren Byte-Array zurückgeben
+            }
+          }
+          return Uint8List(0);
+        })
+        .where((bytes) => bytes.isNotEmpty)
+        .toList();
+  }
+  return [];
+}
+
+// Konvertiert eine Liste von Uint8List in eine Liste von Base64-Strings
+List<String> encodePdfBlobs(List<Uint8List> blobs) {
+  // Wandelt jeden Uint8List-Eintrag in einen Base64-String um
+  return blobs.map((bytes) => base64Encode(bytes)).toList();
 }
 
 Widget buildDropdownField({
@@ -91,7 +163,7 @@ Widget buildDropdownField({
         child: Text(
           item,
           style: const TextStyle(
-            fontSize: 14, // Größere Schrift für mehr Raum
+            fontSize: 12, // Größere Schrift für mehr Raum
           ),
           overflow:
               TextOverflow.ellipsis, // Verhindert Overflow bei langen Texten

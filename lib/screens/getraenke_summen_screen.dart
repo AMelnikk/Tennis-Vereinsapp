@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/user_provider.dart';
 import '../providers/getraenkebuchen_provider.dart';
 
 class GetraenkeSummenScreen extends StatefulWidget {
@@ -28,21 +29,27 @@ class _GetraenkeSummenScreenState extends State<GetraenkeSummenScreen> {
 
     final provider =
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     try {
       final fetchedBuchungen = await provider.getAllBuchungen();
+      final usersMap = await userProvider.getAllUserNames(); // uid → name
+
       double gesamtSumme = 0;
       Map<String, double> userSummen = {};
 
       for (var buchung in fetchedBuchungen) {
-        final username = buchung['username'] ?? 'Unbekannt';
+        final uid = (buchung['uid'] ?? '').trim();
+        final usernameFromBuchung = (buchung['username'] ?? '').trim();
+        final name = usersMap[uid] ?? usernameFromBuchung;
         final summe = (buchung['summe'] ?? 0).toDouble();
 
         gesamtSumme += summe;
 
-        if (userSummen.containsKey(username)) {
-          userSummen[username] = userSummen[username]! + summe;
+        if (userSummen.containsKey(name)) {
+          userSummen[name] = userSummen[name]! + summe;
         } else {
-          userSummen[username] = summe;
+          userSummen[name] = summe;
         }
       }
 

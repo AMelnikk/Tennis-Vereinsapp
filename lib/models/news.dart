@@ -1,3 +1,5 @@
+import 'package:verein_app/utils/app_utils.dart';
+
 class News {
   String id;
   String title;
@@ -27,7 +29,7 @@ class News {
       date: json['date'] ?? '',
       category: json['category'] ?? 'Allgemein',
       author: json['author'] ?? '',
-      photoBlob: (json['photoBlob'] as List<dynamic>?)?.cast<String>() ?? [],
+      photoBlob: parsePhotoBlob(json['photoBlob']),
       lastUpdate: json['lastUpdate'] is int
           ? json['lastUpdate']
           : DateTime.now()

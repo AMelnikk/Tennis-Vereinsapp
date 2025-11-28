@@ -1,13 +1,12 @@
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
 import './screens/user_profile_screen.dart';
-import './utils/push_notification_service';
+import './utils/push_notification_service.dart';
 import './providers/season_provider.dart';
 import './providers/termine_provider.dart';
 import './screens/add_termine_screen.dart';
@@ -38,6 +37,7 @@ import './screens/documents_screen.dart';
 import './screens/functions_screen.dart';
 import './screens/team_screen.dart';
 import './screens/more_screen.dart';
+import './screens/news_admin_screen.dart';
 import './widgets/verein_appbar.dart';
 import "./screens/news_screen.dart";
 import "./screens/add_team_screen.dart";
@@ -48,39 +48,40 @@ import 'firebase_options.dart'; // Firebase-Optionen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Initialisiere mit den Optionen
-  );
-  await PushNotificationService().initialize(); // Initialisiere Push-Service
-  // try {
-  //   // final user = FirebaseAuth.instance.currentUser;
-  //   // if (kDebugMode) print("✅ Firebase Auth erfolgreich initialisiert!");
-  //   // if (kDebugMode) print("👤 Aktueller Nutzer: ${user?.email}");
-  // } catch (e) {
-  //   if (kDebugMode) print("❌ Fehler beim Firebase-Start: $e");
-  // }
 
-  //const FirebaseOptions firebaseOptions = FirebaseOptions(
-  //    apiKey: "AIzaSyCV6bEMtuX4q-s4YpHStlU3kNCMj11T4Dk",
-  //    authDomain: "db-teg.firebaseapp.com",
-  //    databaseURL: "https://db-teg-default-rtdb.firebaseio.com",
-  //    projectId: "db-teg",
-  //    storageBucket: "db-teg.firebasestorage.app",
-  //    messagingSenderId: "1050815457795",
-  //    appId: "1:1050815457795:web:2d0bc6f9b80793f6e37c36",
-  //    measurementId: "G-LNJY8VGKTG");
-  //try {
-  //  await Firebase.initializeApp();
-  //} catch (e) {
-  //  print("Firebase initialization failed: $e");
-  //}
-  await initializeDateFormatting('de_DE', null); // Lokalisierung vorbereiten
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
-    (_) {
-      runApp(const MyApp());
-    },
+  // Firebase initialisieren
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Background Handler registrieren (muss top-level sein)
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Locale vorbereiten
+  await initializeDateFormatting('de_DE', null);
+
+  // Portrait erzwingen
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // App starten
+  runApp(const MyApp());
+
+  // Push-Service nach App-Start initialisieren (nicht blockierend)
+  try {
+    await PushNotificationService().initialize();
+  } catch (e, stack) {
+    debugPrint("❌ Fehler in PushNotificationService: $e");
+    debugPrint(stack.toString());
+  }
+}
+
+// Top-level Background-Handler
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase muss hier initialisiert werden
+  await Firebase.initializeApp();
+  debugPrint("📩 Hintergrund-Nachricht empfangen: ${message.messageId}");
+  debugPrint("Daten: ${message.data}");
 }
 
 class MyApp extends StatelessWidget {
@@ -90,95 +91,121 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => AuthorizationProvider(),
-      builder: (context, _) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(
-            value: TeamProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: PhotoProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: NewsProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: TermineProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: LigaSpieleProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: UserProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: SaisonProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-          ChangeNotifierProvider.value(
-            value: GetraenkeBuchenProvider(
-                Provider.of<AuthorizationProvider>(context).writeToken),
-          ),
-        ],
-        child: Consumer<AuthorizationProvider>(
-          builder: (ctx, authProvider, _) => MaterialApp(
-            title: "TSV Weidenbach",
-            theme: ThemeData(
-              scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
-              appBarTheme: const AppBarTheme(
-                  backgroundColor: Color.fromRGBO(43, 43, 43, 1),
-                  foregroundColor: Colors.white),
+      builder: (context, child) {
+        // Holen Sie sich die Instanz A, die soeben erstellt wurde.
+        final authProviderInstanceA = context.read<AuthorizationProvider>();
+
+        return MultiProvider(
+          providers: [
+            // Auth Provider als Basis
+            ChangeNotifierProvider.value(
+              value: authProviderInstanceA, // <--- Nur DIESE Instanz verwenden
             ),
-            localizationsDelegates: [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: [
-              Locale('de', 'DE'), // Deutsch
-            ],
-            home: const MyHomePage(),
-            routes: {
-              TeamScreen.routename: (ctx) => const TeamScreen(),
-              TeamDetailScreen.routename: (ctx) => const TeamDetailScreen(),
-              DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
-              TrainersScreen.routename: (ctx) => const TrainersScreen(),
-              AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
-              PhotoGalleryScreen.routename: (ctx) => const PhotoGalleryScreen(),
-              PlaceBookingScreen.routename: (ctx) => const PlaceBookingScreen(),
-              AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
-              AdminScreen.routename: (ctx) => const AdminScreen(),
-              AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
-              NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
-              ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
-              AddUserScreen.routename: (ctx) => const AddUserScreen(),
-              UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
-              DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
-              GetraenkeBuchenScreen.routename: (ctx) =>
-                  Provider.of<AuthorizationProvider>(context).isSignedIn
-                      ? const GetraenkeBuchenScreen()
-                      : const AuthScreen(pop: false),
-              GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
-                  const GetraenkeBuchungenDetailsScreen(),
-              GetraenkeSummenScreen.routename: (ctx) =>
-                  const GetraenkeSummenScreen(),
-              AddMannschaftScreen.routename: (ctx) =>
-                  const AddMannschaftScreen(),
-              CalendarScreen.routename: (ctx) => const CalendarScreen(),
-              AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
-              AddLigaSpieleScreen.routename: (ctx) =>
-                  const AddLigaSpieleScreen(),
-              AddTeamResultScreen.routename: (ctx) =>
-                  const AddTeamResultScreen(),
-            },
+
+            // Ab hier alle Provider, die das Token benötigen → ProxyProvider
+            ChangeNotifierProxyProvider<AuthorizationProvider, TeamProvider>(
+              create: (_) => TeamProvider(null),
+              update: (_, auth, prev) => TeamProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, PhotoProvider>(
+              create: (_) => PhotoProvider(null),
+              update: (_, auth, prev) => PhotoProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
+              create: (_) => NewsProvider(null),
+              update: (_, auth, prev) => NewsProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
+              create: (_) => TermineProvider(null),
+              update: (_, auth, prev) => TermineProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider,
+                LigaSpieleProvider>(
+              create: (_) => LigaSpieleProvider(null),
+              update: (_, auth, prev) => LigaSpieleProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, UserProvider>(
+              create: (_) => UserProvider(null),
+              update: (_, auth, prev) => UserProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider, SaisonProvider>(
+              create: (_) => SaisonProvider(null),
+              update: (_, auth, prev) => SaisonProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider,
+                GetraenkeBuchenProvider>(
+              create: (_) => GetraenkeBuchenProvider(null),
+              update: (_, auth, prev) =>
+                  GetraenkeBuchenProvider(auth.writeToken),
+            ),
+          ],
+          child: Consumer<AuthorizationProvider>(
+            builder: (ctx, authProvider, _) => MaterialApp(
+              navigatorKey: PushNotificationService
+                  .navigatorKey, // <--- über Klasse, nicht Instanz
+              title: "TSV Weidenbach",
+              theme: ThemeData(
+                scaffoldBackgroundColor: const Color.fromRGBO(221, 221, 226, 1),
+                appBarTheme: const AppBarTheme(
+                    backgroundColor: Color.fromRGBO(43, 43, 43, 1),
+                    foregroundColor: Colors.white),
+              ),
+              localizationsDelegates: [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: [
+                Locale('de', 'DE'), // Deutsch
+              ],
+              home: const MyHomePage(),
+              routes: {
+                TeamScreen.routename: (ctx) => const TeamScreen(),
+                TeamDetailScreen.routename: (ctx) => const TeamDetailScreen(),
+                DocumentsScreen.routename: (ctx) => const DocumentsScreen(),
+                TrainersScreen.routename: (ctx) => const TrainersScreen(),
+                AuthScreen.routeName: (ctx) => const AuthScreen(pop: true),
+                PhotoGalleryScreen.routename: (ctx) =>
+                    const PhotoGalleryScreen(),
+                PlaceBookingScreen.routename: (ctx) =>
+                    const PlaceBookingScreen(),
+                AddNewsScreen.routename: (ctx) => const AddNewsScreen(),
+                AdminScreen.routename: (ctx) => const AdminScreen(),
+                AddPhotoScreen.routename: (ctx) => const AddPhotoScreen(),
+                NewsDetailScreen.routename: (ctx) => const NewsDetailScreen(),
+                ImpressumScreen.routename: (ctx) => const ImpressumScreen(),
+                AddUserScreen.routename: (ctx) => const AddUserScreen(),
+                UserProfileScreen.routename: (ctx) => const UserProfileScreen(),
+                DatenschutzScreen.routename: (ctx) => const DatenschutzScreen(),
+                NewsAdminScreen.routename: (ctx) => const NewsAdminScreen(),
+                GetraenkeBuchenScreen.routename: (ctx) =>
+                    Provider.of<AuthorizationProvider>(context).isSignedIn
+                        ? const GetraenkeBuchenScreen()
+                        : const AuthScreen(pop: false),
+                GetraenkeBuchungenDetailsScreen.routename: (ctx) =>
+                    const GetraenkeBuchungenDetailsScreen(),
+                GetraenkeSummenScreen.routename: (ctx) =>
+                    const GetraenkeSummenScreen(),
+                AddMannschaftScreen.routename: (ctx) =>
+                    const AddMannschaftScreen(),
+                CalendarScreen.routename: (ctx) => const CalendarScreen(),
+                AddTermineScreen.routename: (ctx) => const AddTermineScreen(),
+                AddLigaSpieleScreen.routename: (ctx) =>
+                    const AddLigaSpieleScreen(),
+                AddTeamResultScreen.routename: (ctx) =>
+                    const AddTeamResultScreen(),
+              },
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

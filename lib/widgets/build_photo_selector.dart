@@ -49,7 +49,7 @@ class _PhotoSelectorState extends State<PhotoSelector> {
           onPressed: () async {
             List<String> selectedImages = await pickImages(messenger);
             setState(() {
-              _photoBlobs = {..._photoBlobs, ...selectedImages}.toList();
+              _photoBlobs = [..._photoBlobs, ...selectedImages];
             });
             _updateImages();
           },
@@ -75,32 +75,45 @@ class _PhotoSelectorState extends State<PhotoSelector> {
             runSpacing: 8,
             children: List.generate(_photoBlobs.length, (index) {
               return Draggable<int>(
-                data: index,
-                dragAnchorStrategy: pointerDragAnchorStrategy,
-                onDragStarted: () {
-                  setState(() {
-                    _draggingIndex = index;
-                  });
-                },
-                onDraggableCanceled: (_, __) {
-                  setState(() {
-                    _draggingIndex = null;
-                  });
-                },
-                onDragCompleted: () {
-                  setState(() {
-                    _draggingIndex = null;
-                  });
-                },
-                feedback: _buildImage(index, dragging: true),
-                child: DragTarget<int>(
-                  onWillAccept: (fromIndex) => fromIndex != index,
-                  onAccept: (fromIndex) => _onReorder(fromIndex, index),
-                  builder: (context, candidateData, rejectedData) {
-                    return _buildImage(index);
+                  data: index,
+                  dragAnchorStrategy: pointerDragAnchorStrategy,
+                  onDragStarted: () {
+                    setState(() {
+                      _draggingIndex = index;
+                    });
                   },
-                ),
-              );
+                  onDraggableCanceled: (_, __) {
+                    setState(() {
+                      _draggingIndex = null;
+                    });
+                  },
+                  onDragCompleted: () {
+                    setState(() {
+                      _draggingIndex = null;
+                    });
+                  },
+                  feedback: _buildImage(index, dragging: true),
+                  child: DragTarget<int>(
+                    // NEU: Verwenden Sie onWillAcceptWithDetails
+                    onWillAcceptWithDetails: (details) {
+                      // Der Wert (fromIndex) wird jetzt über details.data abgerufen
+                      final fromIndex = details.data;
+                      return fromIndex !=
+                          index; // Akzeptiere nur, wenn nicht der eigene Index
+                    },
+
+                    // KORREKTUR: onAccept ist veraltet, verwenden Sie onAcceptWithDetails
+                    onAcceptWithDetails: (details) {
+                      // Den Index des gezogenen Elements aus details.data abrufen
+                      final fromIndex = details.data;
+                      // Führe die Neuanordnungs-Logik aus
+                      _onReorder(fromIndex, index);
+                    },
+
+                    builder: (context, candidateData, rejectedData) {
+                      return _buildImage(index);
+                    },
+                  ));
             }),
           ),
         ],

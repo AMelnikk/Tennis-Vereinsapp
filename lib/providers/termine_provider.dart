@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -13,7 +15,9 @@ class TermineProvider with ChangeNotifier {
   Map<int, List<CalendarEvent>> eventsCache = {}; // Termine und LigaSpiele
 
   bool isLoading = false;
+  bool isDebugMode = false;
 
+  // Die lokale Variable allData erwartet jetzt List<CalendarEvent>.
   Future<int> saveTermineToFirebase(List<CalendarEvent> termine) async {
     if (_token == null || _token.isEmpty) {
       return 400; // Fehler: Kein Token vorhanden
@@ -23,20 +27,38 @@ class TermineProvider with ChangeNotifier {
       // Finde alle Jahre aus den Terminen im Upload-File
       Set<int> jahre = termine.map((t) => t.date.year).toSet();
 
-      // Lade alle Termine für diese Jahre auf einmal
-      List<Map<String, dynamic>> allData = await loadAllTermineForYears(jahre);
+      // Lade alle Termine für diese Jahre auf einmal. NEU: allData ist jetzt typsicher.
+      List<CalendarEvent> allData = await loadAllTermineForYears(jahre);
 
-      // Gehe durch alle Termine und prüfe, ob sie existieren oder neu hinzugefügt werden müssen
       for (var termin in termine) {
-        // Überprüfe, ob der Termin schon existiert
-        bool terminGefunden = await updateExistingTermin(allData, termin);
-        if (terminGefunden) {
-          continue; // Termin wurde aktualisiert, fahre mit dem nächsten fort
+        bool found = false;
+
+        for (var existingEvent in allData) {
+          if (_isSameEventIdentity(existingEvent, termin)) {
+            found = true;
+            if (_areDetailsModified(existingEvent, termin)) {
+              if (isDebugMode) {
+                debugPrint(
+                    "✅ Änderungen gefunden. Aktualisiere über _updateTermin.");
+              }
+              await _updateTermin(existingEvent, termin);
+            } else {
+              if (isDebugMode) {
+                debugPrint(
+                    "☑️ Termin: '${termin.title}' - Keine Änderungen, übersprungen.");
+              }
+            }
+            break; // Termin gefunden, keine weiteren Vergleiche nötig
+          }
         }
 
-        // Wenn der Termin nicht gefunden wurde, lege ihn als neuen Termin an
-        await createNewTermin(termin);
+        if (!found) {
+          await createNewTermin(termin);
+        }
       }
+
+      // Nach dem Speichern die Events neu laden und Benachrichtigung auslösen
+      await loadEvents(DateTime.now().year);
 
       return 200;
     } on SocketException {
@@ -57,6 +79,10 @@ class TermineProvider with ChangeNotifier {
     if (response.statusCode == 200 &&
         response.body.isNotEmpty &&
         response.body != "null") {
+      if (isDebugMode) {
+        debugPrint(
+            "loadAllTermineForYears: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
+      }
       try {
         final Map<String, dynamic> responseJson = json.decode(response.body);
 
@@ -69,77 +95,189 @@ class TermineProvider with ChangeNotifier {
     return null; // Falls kein Termin gefunden wurde oder ein Fehler aufgetreten ist
   }
 
-  Future<List<Map<String, dynamic>>> loadAllTermineForYears(
-      Set<int> jahre) async {
-    List<Map<String, dynamic>> allTermine = [];
+  Future<List<CalendarEvent>> loadAllTermineForYears(Set<int> jahre) async {
+    if (isDebugMode) {
+      debugPrint("➡️ loadAllTermineForYears called with years: $jahre");
+    }
 
+    List<CalendarEvent> allTermine = [];
+
+    if (jahre.isEmpty) {
+      if (isDebugMode) {
+        debugPrint("⚠️ Jahresset ist leer - nichts zu laden.");
+      }
+      return allTermine;
+    }
     for (var jahr in jahre) {
       final url = Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr.json?auth=$_token");
+      debugPrint("-> Requesting $url");
 
-      final response = await http.get(url);
+      try {
+        final response = await http.get(url);
+        debugPrint("HTTP ${response.statusCode} for $url");
 
-      if (response.statusCode == 200) {
-        dynamic responseJson =
-            (response.body.isNotEmpty && response.body != "null")
-                ? json.decode(response.body)
-                : {};
-
-        if (responseJson is Map<String, dynamic>) {
-          allTermine
-              .addAll(responseJson.values.whereType<Map<String, dynamic>>());
-        } else if (responseJson is List) {
-          allTermine.addAll(responseJson.whereType<Map<String, dynamic>>());
+        if (response.statusCode != 200) {
+          if (isDebugMode) {
+            debugPrint(
+                "⚠️ Fehler beim Laden der Termine für $jahr: Status ${response.statusCode}");
+          }
+          continue;
         }
+
+        if (response.body.isEmpty || response.body == "null") {
+          if (isDebugMode) {
+            debugPrint("ℹ️ Leerer Body für Jahr $jahr");
+          }
+          continue;
+        }
+
+        // Kurzer Body-Snippet zum schnellen Check
+        final bodySnippet = response.body.length > 400
+            ? response.body.substring(0, 400) + "…(truncated)"
+            : response.body;
+
+        if (isDebugMode) {
+          debugPrint("Body snippet: $bodySnippet");
+        }
+        dynamic responseJson;
+        try {
+          responseJson = json.decode(response.body);
+        } catch (e) {
+          debugPrint("❌ JSON decode failed for year $jahr: $e");
+          continue;
+        }
+
+        // Falls Firebase eine Map zurückgibt (gewöhnlicher Fall)
+        if (responseJson is Map) {
+          responseJson.forEach((id, value) {
+            try {
+              if (value == null) return;
+
+              // Normalisiere zu Map<String, dynamic>
+              if (value is Map) {
+                final Map<String, dynamic> map = Map<String, dynamic>.from(
+                    value.map((k, v) => MapEntry(k.toString(), v)));
+                // optional: map['id'] = map['id'] ?? int.tryParse(id.toString()) ?? 0;
+                final CalendarEvent t = CalendarEvent.fromMap(map);
+                allTermine.add(t);
+              } else {
+                if (isDebugMode) {
+                  debugPrint(
+                      "⚠️ Ignoriere value für id $id: nicht Map (Typ: ${value.runtimeType})");
+                }
+              }
+            } catch (e, st) {
+              debugPrint(
+                  "⚠️ Fehler beim Parsen von Termin ID $id für Jahr $jahr: $e");
+              debugPrint("$st");
+            }
+          });
+        } else if (responseJson is List) {
+          // Falls DB als Liste geliefert wird (seltener), durchlaufen
+          for (var i = 0; i < responseJson.length; i++) {
+            final entry = responseJson[i];
+            try {
+              if (entry is Map) {
+                final map = Map<String, dynamic>.from(
+                    entry.map((k, v) => MapEntry(k.toString(), v)));
+                final CalendarEvent t = CalendarEvent.fromMap(map);
+                allTermine.add(t);
+              } else {
+                if (isDebugMode) {
+                  debugPrint(
+                      "⚠️ Ignoriere Listeneintrag $i vom Typ ${entry.runtimeType}");
+                }
+              }
+            } catch (e, st) {
+              debugPrint(
+                  "⚠️ Fehler beim Parsen Listeneintrag $i für Jahr $jahr: $e");
+              debugPrint("$st");
+            }
+          }
+        } else {
+          if (isDebugMode) {
+            debugPrint(
+                "⚠️ Unerwarteter JSON-Typ für Jahr $jahr: ${responseJson.runtimeType}");
+          }
+        }
+      } catch (error, st) {
+        debugPrint("❌ Netzwerk- oder Parsing-Fehler für Jahr $jahr: $error");
+        debugPrint("$st");
       }
     }
-
+    if (isDebugMode) {
+      debugPrint(
+          "⬅️ loadAllTermineForYears returning ${allTermine.length} events");
+    }
     return allTermine;
   }
 
-// Die Methode erwartet die Liste, also iteriere durch die Liste, um die Map zu übergeben
-  Future<bool> updateExistingTermin(
-      List<Map<String, dynamic>> allData, CalendarEvent termin) async {
-    for (var event in allData) {
-      final eventDate = DateTime.tryParse(event['date'] ?? '');
-      final eventTitle = event['title'] ?? '';
-      if (eventDate != null &&
-          eventDate.year == termin.date.year &&
-          eventDate.month == termin.date.month &&
-          eventDate.day == termin.date.day &&
-          eventTitle == termin.title) {
-        // Termin existiert, also aktualisiere ihn
-        final eventId = event['id'];
-        final updateUrl = Uri.parse(
-            "https://db-teg-default-rtdb.firebaseio.com/Termine/${termin.date.year}/$eventId.json?auth=$_token");
-
-        final responsePut = await http.put(
-          updateUrl,
-          body: json.encode({
-            'id': eventId,
-            'date': DateFormat('yyyy-MM-dd').format(termin.date),
-            'von': termin.von,
-            'bis': termin.bis,
-            'title': termin.title,
-            'category': termin.category,
-            'details': termin.description,
-            'query': termin.query,
-            'lastUpdate': DateTime.now()
-                .millisecondsSinceEpoch, // Stellt sicher, dass ein int verwendet wird
-          }),
-          headers: {'Content-Type': 'application/json'},
-        );
-
-        if (responsePut.statusCode == 200) {
-          debugPrint("✅ Termin mit ID $eventId erfolgreich aktualisiert.");
-          return true;
-        } else {
-          debugPrint("⚠️ Fehler beim Aktualisieren des Termins ID $eventId");
-          return false;
-        }
-      }
+  // HILFSMETHODE: Führt den PUT-Request zur Aktualisierung durch
+  Future<bool> _updateTermin(
+      CalendarEvent existingEvent, CalendarEvent newTermin) async {
+    // Stellen Sie sicher, dass die ID existiert und das Token gültig ist
+    if (_token == null || _token.isEmpty) {
+      return false;
     }
-    return false; // Termin wurde nicht gefunden
+    // Die ID des bereits existierenden Events verwenden
+    final eventId = existingEvent.id;
+    final jahr = newTermin.date.year;
+
+    final updateUrl = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr/$eventId.json?auth=$_token");
+
+    final responsePut = await http.put(
+      updateUrl,
+      body: json.encode({
+        'id': eventId,
+        'date': DateFormat('yyyy-MM-dd').format(newTermin.date),
+        'von': newTermin.von,
+        'bis': newTermin.bis,
+        'title': newTermin.title,
+        'category': newTermin.category,
+        'details':
+            newTermin.description, // description wird zu 'details' für die DB
+        'ort': newTermin.ort,
+        'query': newTermin.query,
+        'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (responsePut.statusCode == 200) {
+      debugPrint("✅ Termin mit ID $eventId erfolgreich aktualisiert.");
+      return true;
+    } else {
+      debugPrint("⚠️ Fehler beim Aktualisieren des Termins ID $eventId");
+      return false;
+    }
+  }
+
+  bool _isSameEventIdentity(
+      CalendarEvent existingEvent, CalendarEvent incomingTermin) {
+    // Konvertierung in einen String (yyyy-MM-dd) zur Vermeidung von Problemen mit der Uhrzeit-Komponente.
+    final existingDateString =
+        DateFormat('yyyy-MM-dd').format(existingEvent.date);
+    final incomingDateString =
+        DateFormat('yyyy-MM-dd').format(incomingTermin.date);
+
+    // Identität wird über Datum und Titel definiert
+    return existingDateString == incomingDateString &&
+        existingEvent.title == incomingTermin.title;
+  }
+
+  // === HILFSMETHODE: Prüft, ob sich Details eines Termins geändert haben ===
+  // Wird nur aufgerufen, wenn _isSameEventIdentity true ist.
+  bool _areDetailsModified(
+      CalendarEvent existingEvent, CalendarEvent newTermin) {
+    // Vergleich aller Detailfelder des typsicheren Objekts.
+    return existingEvent.category != newTermin.category ||
+        existingEvent.description != newTermin.description ||
+        existingEvent.von != newTermin.von ||
+        existingEvent.bis != newTermin.bis ||
+        existingEvent.ort != newTermin.ort ||
+        existingEvent.query != newTermin.query;
   }
 
 // Die Methode erwartet die Liste, also iteriere durch die Liste, um die Map zu übergeben
@@ -194,12 +332,13 @@ class TermineProvider with ChangeNotifier {
       headers: {'Content-Type': 'application/json'},
     );
 
-    if (responsePut.statusCode == 200) {
-      debugPrint("✅ Neuer Termin mit ID $newId gespeichert.");
-    } else {
-      debugPrint("⚠️ Fehler beim Speichern von Termin ID: $newId");
+    if (isDebugMode) {
+      if (responsePut.statusCode == 200) {
+        debugPrint("✅ Neuer Termin mit ID $newId gespeichert.");
+      } else {
+        debugPrint("⚠️ Fehler beim Speichern von Termin ID: $newId");
+      }
     }
-
     // 3️⃣ Zähler in Firebase hochzählen
     await http.put(
       counterUrl,
@@ -221,6 +360,8 @@ class TermineProvider with ChangeNotifier {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         // Prüfen, ob die Antwort nicht leer oder "null" ist
+        debugPrint(
+            "loadEvents: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
         dynamic responseJson =
             (response.body.isNotEmpty && response.body != "null")
                 ? json.decode(response.body)

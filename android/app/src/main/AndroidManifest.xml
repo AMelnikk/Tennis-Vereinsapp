@@ -1,33 +1,51 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.tennisverein.weidenbach">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <application
         android:label="TeG Altmühlgrund"
         android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <!-- Entferne die `android:name`-Zeile oder setze sie auf MainActivity -->
-        
-        <!-- Deine MainActivity bleibt hier -->
+
         <activity
-            android:name="io.flutter.embedding.android.FlutterActivity"
-            android:exported="true">
-            android:launchMode="singleTask"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|layoutDirection|fontScale|screenDensity"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-<intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-<meta-data
-  android:name="flutterEmbedding"
-  android:value="2" />
-<meta-data android:name="com.google.android.gms.ads.AD_MANAGER_APP" android:value="false"/>
+    android:name="io.flutter.embedding.android.FlutterActivity"
+    android:exported="true"
+    android:launchMode="singleTask"
+    android:theme="@style/LaunchTheme"
+    android:configChanges="orientation|screenSize|layoutDirection"
+    android:hardwareAccelerated="true"
+    android:windowSoftInputMode="adjustResize">
+    
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+    
+    <meta-data
+        android:name="flutterEmbedding"
+        android:value="2" />
 </activity>
-<meta-data
-    android:name="firebase_analytics_collection_enabled"
-    android:value="false" />
+
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="true"
+            tools:replace="android:exported">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="foreground_channel"/>
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
 
     </application>
 </manifest>

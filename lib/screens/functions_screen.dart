@@ -107,6 +107,7 @@ class FunctionsScreen extends StatelessWidget {
     await Future.delayed(
       const Duration(milliseconds: 50),
     );
+    if (!context.mounted) return;
     await showDialog(
       context: context,
       barrierDismissible: false,

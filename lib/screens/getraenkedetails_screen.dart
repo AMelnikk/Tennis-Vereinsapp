@@ -1,7 +1,11 @@
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/models/user.dart';
+import 'package:verein_app/utils/mail.dart';
 import '../providers/getraenkebuchen_provider.dart';
-import 'package:intl/intl.dart'; // Für Datumsformatierung
+import '../providers/user_provider.dart'; // <-- dein eigener Provider für Benutzerdaten
 
 class GetraenkeBuchungenDetailsScreen extends StatefulWidget {
   const GetraenkeBuchungenDetailsScreen({super.key});
@@ -18,12 +22,13 @@ class _GetraenkeBuchungenDetailsScreenState
   List<Map<String, dynamic>> _buchungen = [];
   List<Map<String, dynamic>> _filteredBuchungen = [];
 
-  // Filterwerte
   String _selectedUser = "Alle";
   String _selectedYear = "Alle";
-  bool _onlyUnpaid = false;
-  final List<String> _users = ['Alle'];
-  final List<String> _years = ['Alle'];
+
+  final Map<String, String> _users = {
+    'Alle': 'Alle'
+  }; // UID → Vollständiger Name
+  List<String> _years = [];
 
   @override
   void initState() {
@@ -32,75 +37,91 @@ class _GetraenkeBuchungenDetailsScreenState
   }
 
   Future<void> _loadBuchungen() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     final provider =
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     try {
       final fetchedBuchungen = await provider.getAllBuchungen();
-      setState(() {
-        _buchungen = fetchedBuchungen;
-        _filteredBuchungen = _buchungen; // Initially show all buchungen
-        _extractFilterValues();
-        _applyFilters();
-      });
+      final usersMap =
+          await userProvider.getAllUserNames(); // UID → "Nachname Vorname"
+
+      // UID ggf. aktualisieren
+      final updatedBuchungen =
+          await Future.wait(fetchedBuchungen.map((b) async {
+        final uid = (b['uid'] ?? '').trim();
+        final originalName = (b['username'] ?? '').trim();
+
+        // Nur wenn UID leer oder 'unbekannt'
+        if (uid.isEmpty || uid == 'unbekannt') {
+          // Suche UID anhand des Namens
+          final matchedEntry = usersMap.entries.firstWhere(
+            (entry) => entry.value == originalName,
+            orElse: () => const MapEntry('', ''),
+          );
+
+          if (matchedEntry.key.isNotEmpty) {
+            // UID in DB updaten
+            await provider.updateBuchungUid(b['id'], matchedEntry.key);
+
+            // Rückgabe mit aktualisierter UID
+            return {
+              ...b,
+              'uid': matchedEntry.key,
+            };
+          } else {
+            // Kein Treffer, (*) markieren
+            return {
+              ...b,
+              'uid': 'unbekannt',
+              'username': '$originalName (*)',
+            };
+          }
+        } else {
+          // UID bereits vorhanden, Buchung bleibt unverändert
+          return b;
+        }
+      }).toList());
+
+      // Jetzt setState
+      if (mounted) {
+        setState(() {
+          _users.clear();
+          _users['Alle'] = 'Alle';
+          _users.addAll(usersMap);
+          _buchungen = updatedBuchungen;
+          _extractYears();
+          _applyFilters();
+        });
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Fehler beim Laden der Buchungen: $error"),
-          ),
+          SnackBar(content: Text("Fehler beim Laden der Buchungen: $error")),
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Extrahiert die einzigartigen Werte für Benutzer und Jahr aus den Buchungen
-  void _extractFilterValues() {
-    Set<String> usersSet = {};
-    Set<String> yearsSet = {};
-
+  void _extractYears() {
+    final yearsSet = <String>{};
     for (var buchung in _buchungen) {
-      // Benutzername
-      if (buchung['username'] != null) {
-        usersSet.add(buchung['username']);
-      }
-      // Jahr aus dem Datum extrahieren
-      if (buchung['date'] != null) {
-        final date = DateTime.tryParse(buchung['date']);
-        if (date != null) {
-          yearsSet.add(date.year.toString());
-        }
-      }
+      final date = DateTime.tryParse(buchung['date'] ?? '');
+      if (date != null) yearsSet.add(date.year.toString());
     }
-
-    setState(() {
-      _users.addAll(usersSet);
-      _years.addAll(yearsSet);
-    });
+    _years = yearsSet.toList()..sort();
   }
 
-  // Filter anwenden
   void _applyFilters() {
     setState(() {
-      _filteredBuchungen = _buchungen.where((buchung) {
-        // Filter nach Benutzer
-        if (_selectedUser != "Alle" && buchung['username'] != _selectedUser) {
-          return false;
-        }
-        // Filter nach Jahr
+      _filteredBuchungen = _buchungen.where((b) {
+        if (_selectedUser != "Alle" && b['uid'] != _selectedUser) return false;
         if (_selectedYear != "Alle" &&
-            _formatDate(buchung['date']).startsWith(_selectedYear) == false) {
-          return false;
-        }
-        // Filter nach unbezahlte Buchungen
-        if (_onlyUnpaid && buchung['bezahlt'] == true) {
+            !_formatDate(b['date']).startsWith(_selectedYear)) {
           return false;
         }
         return true;
@@ -109,213 +130,298 @@ class _GetraenkeBuchungenDetailsScreenState
   }
 
   String _formatDate(String? isoDate) {
-    if (isoDate == null) return "Unbekannt";
-    final date = DateTime.tryParse(isoDate);
-    if (date == null) return "Unbekannt";
-    return DateFormat('dd.MM.yyyy').format(date);
+    final date = DateTime.tryParse(isoDate ?? '');
+    return date != null ? DateFormat('dd.MM.yyyy').format(date) : "Unbekannt";
   }
 
   String _formatTime(String? isoDate) {
-    if (isoDate == null) return "Unbekannt";
-    final date = DateTime.tryParse(isoDate);
-    if (date == null) return "Unbekannt";
-    return DateFormat('HH:mm:ss').format(date);
+    final date = DateTime.tryParse(isoDate ?? '');
+    return date != null ? DateFormat('HH:mm:ss').format(date) : "Unbekannt";
   }
 
-  // Funktion zum Umstellen des "bezahlt"-Status
-  void _toggleBezahlt(String buchungId, bool bezahlt) {
-    setState(() {
-      _isLoading = true;
-    });
+  void _deleteBuchung(String id) async {
+    setState(() => _isLoading = true);
     final provider =
         Provider.of<GetraenkeBuchenProvider>(context, listen: false);
-    provider.updateBezahlt(buchungId, !bezahlt).then((status) {
-      if (status == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Bezahlt-Status geändert.')),
-          );
-        }
-        _loadBuchungen(); // Buchungsliste aktualisieren
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fehler beim Ändern des Status.')),
-          );
-        }
-      }
-    }).catchError((e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
-      }
-    }).whenComplete(() {
-      setState(() {
-        _isLoading = false;
-      });
-    });
+    final status = await provider.deleteBuchung(id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(status == 200
+                ? 'Buchung gelöscht.'
+                : 'Fehler beim Löschen der Buchung.')),
+      );
+    }
+    await _loadBuchungen();
+    setState(() => _isLoading = false);
   }
 
-  // Funktion zum Löschen einer Buchung
-  void _deleteBuchung(String buchungId) {
-    setState(() {
-      _isLoading = true;
-    });
-    final provider =
-        Provider.of<GetraenkeBuchenProvider>(context, listen: false);
-    provider.deleteBuchung(buchungId).then((status) {
-      if (status == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Buchung gelöscht.')),
-          );
-        }
-        _loadBuchungen(); // Buchungsliste aktualisieren
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fehler beim Löschen der Buchung.')),
-          );
-        }
-      }
-    }).catchError((e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
-      }
-    }).whenComplete(() {
-      setState(() {
-        _isLoading = false;
-      });
-    });
+  Future<void> _sendUserBuchungenEmail() async {
+    final userBuchungen =
+        _buchungen.where((b) => b['uid'] == _selectedUser).toList();
+    final username = _users[_selectedUser] ?? 'Unbekannt';
+
+    if (userBuchungen.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Keine Buchungen für diesen Benutzer.")),
+      );
+      return;
+    }
+
+    final body = StringBuffer("<h2>Buchungen für $username</h2><ul>");
+    for (var b in userBuchungen) {
+      final date = _formatDate(b['date']);
+      final time = _formatTime(b['date']);
+      final summe = b['summe'].toStringAsFixed(2);
+      body.writeln("<li>$date $time – €$summe</li>");
+    }
+    body.writeln("</ul>");
+
+    final success = await MailService.sendEmail(
+      to: "oliver@stroebel-home.de",
+      subject: "Buchungen für $username",
+      htmlContent: body.toString(),
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                success ? "E-Mail versendet." : "Fehler beim E-Mail-Versand.")),
+      );
+    }
+  }
+
+  void _openEinzahlungDialog(String uid) {
+    double betrag = 0.0;
+    final name = _users[uid] ?? "Unbekannt";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Einzahlung für $name"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: const InputDecoration(
+                  labelText:
+                      "Betrag in € (negativ und mit Komma als Cent Trenner)"),
+              keyboardType: TextInputType.number,
+              onChanged: (v) {
+                final sanitized = v.replaceAll('.', '').replaceAll(',', '.');
+                betrag = double.tryParse(sanitized) ?? 0.0;
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text("Abbrechen"),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ElevatedButton(
+            child: const Text("Buchen"),
+            onPressed: () async {
+              if (betrag < 0) {
+                final provider = Provider.of<GetraenkeBuchenProvider>(context,
+                    listen: false);
+                final userProvider =
+                    Provider.of<UserProvider>(context, listen: false);
+
+                User selectedUser = await userProvider.getUserDataWithUid(uid);
+
+                await provider.bucheEinzahlung(
+                    '${selectedUser.nachname.trim()} ${selectedUser.vorname.trim()}',
+                    uid,
+                    userProvider.user.uid,
+                    betrag);
+                if (!context.mounted) return;
+                Navigator.pop(ctx);
+                _loadBuchungen();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text(
+                          "Bitte einen gültigen Betrag eingeben. Einzahlungen sind negativ!!!")),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Getränkebuchungen"),
-      ),
+      appBar: AppBar(title: const Text("Getränkebuchungen")),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Filter oben hinzufügen
+            _buildFilterSection(),
+            _buildBuchungenTable(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    // Benutzer alphabetisch nach Nachname, dann Vorname sortieren
+    final sortedUsers = Map.fromEntries(
+      _users.entries.toList()
+        ..sort((a, b) {
+          final aParts = a.value.trim().split(RegExp(r'\s+'));
+          final bParts = b.value.trim().split(RegExp(r'\s+'));
+
+          final aNachname = aParts.isNotEmpty ? aParts[0].toLowerCase() : '';
+          final bNachname = bParts.isNotEmpty ? bParts[0].toLowerCase() : '';
+
+          final cmpNachname = aNachname.compareTo(bNachname);
+          if (cmpNachname != 0) return cmpNachname;
+
+          final aVorname = aParts.length > 1 ? aParts[1].toLowerCase() : '';
+          final bVorname = bParts.length > 1 ? bParts[1].toLowerCase() : '';
+          return aVorname.compareTo(bVorname);
+        }),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Text("Benutzer: "),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownSearch<String>(
+                  items: sortedUsers.keys.toList(),
+                  selectedItem: _selectedUser,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedUser = value;
+                        _applyFilters();
+                      });
+                    }
+                  },
+                  // Diese Methode sagt, was in der Liste und für die Suche angezeigt wird
+                  itemAsString: (key) => sortedUsers[key] ?? '',
+                  dropdownBuilder: (context, selectedItem) {
+                    return Text(sortedUsers[selectedItem] ?? '');
+                  },
+                  popupProps: PopupProps.menu(
+                    showSearchBox: true,
+                    itemBuilder: (context, item, isSelected) {
+                      return ListTile(
+                        title: Text(sortedUsers[item] ?? ''),
+                      );
+                    },
+                    searchFieldProps: TextFieldProps(
+                      decoration: const InputDecoration(
+                        labelText: "Benutzer suchen",
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text("Jahr: "),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownSearch<String>(
+                  items: ["Alle", ..._years],
+                  selectedItem: _selectedYear,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedYear = value;
+                        _applyFilters();
+                      });
+                    }
+                  },
+                  popupProps: PopupProps.menu(
+                    showSearchBox: true,
+                    searchFieldProps: TextFieldProps(
+                      decoration: const InputDecoration(
+                        labelText: "Jahr suchen",
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedUser != "Alle")
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.only(top: 8.0),
               child: Row(
                 children: [
-                  Expanded(
-                    child: DropdownButton<String>(
-                      value: _selectedUser,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedUser = value ?? "Alle";
-                          _applyFilters();
-                        });
-                      },
-                      items:
-                          _users.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
+                  ElevatedButton.icon(
+                    onPressed: _sendUserBuchungenEmail,
+                    icon: const Icon(Icons.email),
+                    label: const Text("Getränkeliste senden"),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButton<String>(
-                      value: _selectedYear,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedYear = value ?? "Alle";
-                          _applyFilters();
-                        });
-                      },
-                      items:
-                          _years.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SwitchListTile(
-                      title: const Text("Nur unbezahlte"),
-                      value: _onlyUnpaid,
-                      onChanged: (value) {
-                        setState(() {
-                          _onlyUnpaid = value;
-                          _applyFilters();
-                        });
-                      },
-                    ),
+                  ElevatedButton.icon(
+                    onPressed: () => _openEinzahlungDialog(_selectedUser),
+                    icon: const Icon(Icons.add),
+                    label: const Text("Einzahlung buchen"),
                   ),
                 ],
               ),
             ),
-            // Ladeanzeige oder DataTable
-            _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : _filteredBuchungen.isEmpty
-                    ? const Center(
-                        child: Text("Keine Buchungen verfügbar"),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text("Datum")),
-                              DataColumn(label: Text("Uhrzeit")),
-                              DataColumn(label: Text("Benutzer")),
-                              DataColumn(label: Text("Wasser")),
-                              DataColumn(label: Text("Softdrinks")),
-                              DataColumn(label: Text("Bier")),
-                              DataColumn(label: Text("Summe (€)")),
-                              DataColumn(label: Text("Bezahlt")),
-                              DataColumn(label: Text("Aktionen")),
-                            ],
-                            rows: _filteredBuchungen.map((buchung) {
-                              final String buchungId = buchung['id'];
-                              final bool bezahlt = buchung['bezahlt'] ?? false;
-                              return DataRow(cells: [
-                                DataCell(Text(_formatDate(buchung['date']))),
-                                DataCell(Text(_formatTime(buchung['date']))),
-                                DataCell(
-                                    Text(buchung['username'] ?? 'Unbekannt')),
-                                DataCell(Text(buchung['anzWasser'].toString())),
-                                DataCell(Text(buchung['anzSoft'].toString())),
-                                DataCell(Text(buchung['anzBier'].toString())),
-                                DataCell(
-                                    Text(buchung['summe'].toStringAsFixed(2))),
-                                DataCell(Switch(
-                                  value: bezahlt,
-                                  onChanged: (bool value) {
-                                    _toggleBezahlt(buchungId, bezahlt);
-                                  },
-                                )),
-                                DataCell(IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () {
-                                    _deleteBuchung(buchungId);
-                                  },
-                                )),
-                              ]);
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-          ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBuchungenTable() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_filteredBuchungen.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text("Keine Buchungen verfügbar"),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text("Datum")),
+          DataColumn(label: Text("Uhrzeit")),
+          DataColumn(label: Text("Benutzer")),
+          DataColumn(label: Text("Wasser")),
+          DataColumn(label: Text("Softdrinks")),
+          DataColumn(label: Text("Bier")),
+          DataColumn(label: Text("Summe (€)")),
+          DataColumn(label: Text("Aktionen")),
+        ],
+        rows: _filteredBuchungen.map((b) {
+          final id = b['id'];
+          return DataRow(cells: [
+            DataCell(Text(_formatDate(b['date']))),
+            DataCell(Text(_formatTime(b['date']))),
+            DataCell(Text(b['username'] ?? 'Unbekannt')),
+            DataCell(Text(b['anzWasser'].toString())),
+            DataCell(Text(b['anzSoft'].toString())),
+            DataCell(Text(b['anzBier'].toString())),
+            DataCell(Text(b['summe'].toStringAsFixed(2))),
+            DataCell(IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _deleteBuchung(id),
+            )),
+          ]);
+        }).toList(),
       ),
     );
   }

@@ -1,13 +1,14 @@
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/providers/season_provider.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/widgets/mf_selection_dialog.dart';
 import '../models/season.dart';
 import '../models/team.dart';
 import '../providers/team_provider.dart';
 import '../utils/app_utils.dart';
-import '../utils/pdf_helper.dart';
 import '../widgets/build_photo_selector.dart';
 
 class MyTeamDialog extends StatefulWidget {
@@ -23,15 +24,19 @@ class MyTeamDialog extends StatefulWidget {
 class MyTeamDialogState extends State<MyTeamDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  String? _pdfPath;
-  Uint8List? _pdfBlob;
+  List<Uint8List> _pdfBlob = [];
+  final List<String> _pdfPaths = [];
   // ignore: unused_field
   String _editID = '';
   bool _isLoading = false;
   List<String> _photoBlob = [];
   String _selectedSaisonKey = '';
   // ignore: unused_field
-  String _selectedPdfPath = '';
+  final String _selectedPdfPath = '';
+  String _selectedMfUid = '';
+  Map<String, String> _allUsers = {};
+  bool _isUserLoading = true;
+  bool _isCurrentUserAdmin = false;
 
   final _controllers = <String, TextEditingController>{
     'url': TextEditingController(),
@@ -49,6 +54,8 @@ class MyTeamDialogState extends State<MyTeamDialog> {
   @override
   void initState() {
     super.initState();
+
+    super.initState();
     if (widget.teamData != null) {
       _editID = widget.teamData!.mannschaft;
       _selectedSaisonKey = widget.teamData!.saison;
@@ -62,8 +69,29 @@ class MyTeamDialogState extends State<MyTeamDialog> {
       _controllers['kommentar']?.text = widget.teamData!.kommentar;
       _controllers['mannschaftsführerName']?.text = widget.teamData!.mfName;
       _controllers['mannschaftsführerTel']?.text = widget.teamData!.mfTel;
-      _pdfBlob = widget.teamData!.pdfBlob;
+      _pdfBlob = widget.teamData!.pdfBlob ?? [];
       _photoBlob = widget.teamData!.photoBlob;
+    }
+
+    if (widget.teamData != null) {
+      // Laden der bestehenden UID, falls ein Team bearbeitet wird
+      _selectedMfUid = widget.teamData!.mfUID;
+    }
+
+    // ✅ HIER WIRD DIE DATENLADUNG GESTARTET
+    _loadUserNames();
+    _checkAdminStatus;
+  }
+
+  void _checkAdminStatus() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    final isAdmin = await userProvider.isAdmin(context); // Ruft die Methode auf
+
+    if (mounted) {
+      setState(() {
+        _isCurrentUserAdmin = isAdmin;
+      });
     }
   }
 
@@ -81,44 +109,107 @@ class MyTeamDialogState extends State<MyTeamDialog> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text("Mannschaft",
-                style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 10),
             Expanded(
               child: SingleChildScrollView(
                 child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildSaisonUndMannschaft(context, widget.seasons),
-                      const SizedBox(height: 5),
-                      _buildLigaUndGruppe(),
-                      const SizedBox(height: 5),
-                      _buildMatchbilanzUndPosition(),
-                      const SizedBox(height: 5),
-                      _buildMannschaftsfuehrer(),
-                      const SizedBox(height: 5),
-                      buildTextFormField('URL',
-                          controller: _controllers['url']),
-                      const SizedBox(height: 5),
-                      buildTextFormField('Kommentar',
-                          controller: _controllers['kommentar']),
-                      const SizedBox(height: 5),
-                      PhotoSelector(
-                        onImagesSelected: (List<String> photoBlob) {},
-                        initialPhotoList: _photoBlob,
-                      ),
-                      const SizedBox(height: 5),
-                      _buildPdfSelector(),
-                    ],
-                  ),
-                ),
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        _buildSaisonUndMannschaft(context, widget.seasons),
+
+                        const SizedBox(height: 5),
+                        _buildMannschaftsfuehrer(),
+
+                        // ✅ KORRIGIERTE SYNTAX: If-Anweisung ohne geschweifte Klammern in der Liste
+                        if (_isCurrentUserAdmin) const SizedBox(height: 5),
+                        if (_isCurrentUserAdmin)
+                          buildTextFormField('URL',
+                              controller: _controllers['url']),
+                        if (_isCurrentUserAdmin) const SizedBox(height: 5),
+
+                        buildTextFormField('Kommentar',
+                            controller: _controllers['kommentar']),
+                        const SizedBox(height: 5),
+                        _buildMatchbilanzUndPosition(),
+                        const SizedBox(height: 5),
+                        PhotoSelector(
+                          onImagesSelected: (List<String> photoBlob) {
+                            setState(() {
+                              _photoBlob = photoBlob;
+                            });
+                          },
+                          initialPhotoList: _photoBlob,
+                        ),
+                        const SizedBox(height: 5),
+                        _buildPdfSelector(),
+                      ],
+                    )),
               ),
             ),
             _buildActionButtons(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPdfSelector() {
+    // Wenn Sie den Button und die Liste in einer Column wollen,
+    // muss der gesamte Inhalt in eine äußere Column:
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Button zum Hinzufügen einer PDF
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: TextButton(
+            onPressed: () async {
+              _pickPdfFile();
+
+              setState(() {});
+            },
+            child: const Text('PDF(s) auswählen'),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // 2. Liste der ausgewählten PDFs (iterieren über _pdfPaths)
+        if (_pdfPaths.isNotEmpty)
+          ..._pdfPaths.asMap().entries.map((entry) {
+            final index = entry.key;
+            final fileName = entry.value;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 5.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Text zur Anzeige des Dateinamens
+                  Expanded(
+                    child: Text(
+                      'PDF ${index + 1}: $fileName',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ),
+
+                  // Löschen-Button für DIESE EINE Datei
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
+                    onPressed: () {
+                      // ✅ LÖSCHEN DER EINZELNEN DATEI ÜBER DEN INDEX
+                      setState(() {
+                        _pdfPaths.removeAt(index);
+                        _pdfBlob.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          })
+      ],
     );
   }
 
@@ -139,11 +230,12 @@ class MyTeamDialogState extends State<MyTeamDialog> {
         gruppe: _controllers['gruppe']?.text ?? '',
         mfName: _controllers['mannschaftsführerName']?.text ?? '',
         mfTel: _controllers['mannschaftsführerTel']?.text ?? '',
+        mfUID: _selectedMfUid,
         matchbilanz: _controllers['matchbilanz']?.text ?? '',
         satzbilanz: _controllers['satzbilanz']?.text ?? '',
         position: _controllers['position']?.text ?? '',
         kommentar: _controllers['kommentar']?.text ?? '',
-        pdfBlob: _pdfPath != null ? await readPdfFile() : null,
+        pdfBlob: _pdfBlob,
         photoBlob: _photoBlob,
       );
 
@@ -152,7 +244,7 @@ class MyTeamDialogState extends State<MyTeamDialog> {
 
       if (mounted) {
         Navigator.of(context)
-            .pop(); // Schließen nur, wenn Widget noch existiert
+            .pop(newEntry); // Schließen nur, wenn Widget noch existiert
       }
     } catch (error) {
       appError(messenger, "Fehler beim Speichern: ${error.toString()}");
@@ -165,66 +257,49 @@ class MyTeamDialogState extends State<MyTeamDialog> {
 
   Widget _buildSaisonUndMannschaft(
       BuildContext context, List<SaisonData> seasons) {
-    if (seasons.isEmpty) {
-      return const Text('Keine Saisons verfügbar');
+    final SaisonProvider saisonP =
+        Provider.of<SaisonProvider>(context, listen: false);
+
+    if (widget.teamData == null) {
+      return const Text('Keine Teamdaten verfügbar.',
+          style: TextStyle(fontSize: 16));
     }
 
-    return Row(
-      children: [
-        Expanded(
-          child: buildDropdownField(
-            label: 'Saison',
-            value: seasons.any((season) => season.key == _selectedSaisonKey)
-                ? _selectedSaisonKey
-                : seasons.first.key,
-            items: seasons.map((season) => season.key).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() => _selectedSaisonKey = value);
-              }
-            },
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: buildTextFormField(
-            'Mannschaft',
-            controller: _controllers['mannschaft'],
-          ),
-        ),
-      ],
-    );
-  }
+    final team = widget.teamData!;
 
-  Widget _buildLigaUndGruppe() {
-    return Row(
-      children: [
-        Expanded(
-          child: buildTextFormField(
-            'Liga',
-            controller: _controllers['liga'],
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Bitte die Liga eingeben';
-              }
-              return null;
-            },
+    final String saisonName = saisonP.getSaisonTextFromKey(team.saison);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        // ✅ KORREKTUR: Ausrichtung auf zentriert ändern
+        crossAxisAlignment: CrossAxisAlignment.center,
+
+        // ✅ ZUSÄTZLICH: Fügen wir die MainAxisSize hinzu,
+        // damit die Column nur so viel Breite einnimmt, wie ihre Kinder benötigen.
+        // Dies ist oft notwendig, damit CrossAxisAlignment.center funktioniert.
+        mainAxisSize: MainAxisSize.min,
+
+        children: [
+          // 1. Große Anzeige: Saison und Mannschaft
+          Text(
+            "Saison: $saisonName - ${team.mannschaft}",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign
+                .center, // Optional: Textausrichtung für sehr lange Zeilen
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: buildTextFormField(
-            'Gruppe',
-            controller: _controllers['gruppe'],
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Bitte die Gruppe eingeben';
-              }
-              return null;
-            },
+
+          const SizedBox(height: 4),
+
+          // 2. Kleine Anzeige: Liga und Gruppe
+          Text(
+            "${team.liga} - ${team.gruppe}",
+            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+            textAlign: TextAlign
+                .center, // Optional: Textausrichtung für sehr lange Zeilen
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -247,90 +322,131 @@ class MyTeamDialogState extends State<MyTeamDialog> {
   }
 
   Widget _buildMannschaftsfuehrer() {
-    return Row(
+    // Flag für die grüne Hinterlegung (UID ist ausgewählt)
+    final isUidSelected = _selectedMfUid.isNotEmpty;
+
+    // Bestimmt, ob das Feld schreibgeschützt sein soll
+    // Es ist readOnly, wenn:
+    // 1. Eine UID gewählt ist UND
+    // 2. Der aktuelle Benutzer KEIN Admin ist.
+    final bool isReadOnly = isUidSelected && !_isCurrentUserAdmin;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-            child: buildTextFormField('Mannschaftsführer Name',
-                controller: _controllers['mannschaftsführerName'])),
-        const SizedBox(width: 10),
-        Expanded(
-            child: buildTextFormField('Mannschaftsführer Telefonnummer',
-                controller: _controllers['mannschaftsführerTel'])),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. MF Name
+            Expanded(
+              flex: 3,
+              child: buildTextFormField(
+                'Mannschaftsführer Name',
+                controller: _controllers['mannschaftsführerName'],
+
+                // ✅ KORRIGIERTES readOnly-Flag
+                readOnly: isReadOnly,
+
+                decoration: InputDecoration(
+                  labelText: 'Mannschaftsführer Name',
+                  // Hintergrundfarbe bleibt hellgrün, wenn UID gesetzt ist
+                  fillColor: isUidSelected ? Colors.green.shade50 : null,
+                  filled: isUidSelected,
+                ),
+              ),
+            ),
+
+            // 2. Edit Button / Auswahl-Button
+            // ... (Rest des Widgets bleibt unverändert)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: IconButton(
+                icon: Icon(
+                  Icons.edit,
+                  size: 18.0, // <-- Größe reduziert (z.B. auf 18)
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary, // <-- Nur Primärfarbe (kein Grün)
+                  // ODER eine weniger auffällige Farbe verwenden:
+                  // color: Colors.black54,
+                ),
+                onPressed: _isUserLoading ? null : _openMfSelectionDialog,
+              ),
+            ),
+
+            // ... (Telefonnummer)
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: buildTextFormField(
+                'Telefonnummer',
+                controller: _controllers['mannschaftsführerTel'],
+                decoration: const InputDecoration(
+                  labelText: 'Telefonnummer',
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
       ],
     );
   }
 
-  Widget _buildPdfSelector() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 0.0),
-      child: Row(
-        children: [
-          TextButton(
-            onPressed: () async {
-              _pickPdfFile();
-              setState(() {});
-            },
-            child: const Text('PDF auswählen'),
+  void _openMfSelectionDialog() async {
+    // Wenn die Benutzerdaten noch geladen werden, warten wir oder brechen ab
+    if (_isUserLoading) return;
+
+    final selectedEntry = await showDialog<MapEntry<String, String>>(
+      context: context,
+      builder: (context) {
+        // ✅ Wrapper-Korrektur
+        return Dialog(
+          // Verwenden Sie Dialog als Wrapper
+          child: MfSelectionDialog(
+            // Platzieren Sie Ihr Widget im Child
+            userMap: _allUsers,
           ),
-          const SizedBox(width: 10),
-          if (_pdfBlob != null)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'PDF ausgewählt: ${_pdfPath!.split('/').last}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.cancel, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      _pdfBlob = null;
-                      _pdfPath = null;
-                    });
-                  },
-                ),
-              ],
-            ),
-        ],
-      ),
+        );
+      },
     );
+
+    if (selectedEntry != null) {
+      setState(() {
+        // Die UID speichern
+        _selectedMfUid = selectedEntry.key;
+
+        if (_selectedMfUid.isNotEmpty) {
+          // Wenn ein registrierter Benutzer gewählt wurde, Name übernehmen
+          _controllers['mannschaftsführerName']!.text = selectedEntry.value;
+          // Optional: Telefonnummer leeren, da diese oft separat gehandhabt wird
+          _controllers['mannschaftsführerTel']!.clear();
+        } else {
+          // Wenn 'Manuell eingeben' gewählt wurde, Felder leeren
+          _controllers['mannschaftsführerName']!.clear();
+          _controllers['mannschaftsführerTel']!.clear();
+        }
+      });
+    }
   }
 
   void _pickPdfFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
+      allowMultiple: true, // ✅ NEU: Mehrfachauswahl erlauben
     );
 
-    if (result != null && result.files.single.bytes != null) {
-      final fileBytes = result.files.single.bytes;
-
+    if (result != null) {
       setState(() {
-        _pdfBlob = fileBytes;
-        _pdfPath = result.files.single.path;
+        for (var file in result.files) {
+          if (file.bytes != null && file.name.isNotEmpty) {
+            _pdfBlob.add(file.bytes!);
+            _pdfPaths.add(file.name); // Speichere den Dateinamen
+          }
+        }
       });
     }
-  }
-
-  void _clearForm() {
-    _controllers['url']?.clear();
-    _controllers['gruppe']?.clear();
-    _controllers['matchbilanz']?.clear();
-    _controllers['mannschaftsführerName']?.clear();
-    _controllers['mannschaftsführerTel']?.clear();
-    _controllers['satzbilanz']?.clear();
-    _controllers['position']?.clear();
-    _controllers['kommentar']?.clear();
-
-    setState(() {
-      _selectedSaisonKey = '';
-      _photoBlob = [];
-      _selectedPdfPath = '';
-      _pdfBlob = null;
-      _isLoading = false;
-    });
   }
 
   @override
@@ -347,6 +463,7 @@ class MyTeamDialogState extends State<MyTeamDialog> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // 1. Speichern Button (unverändert)
           ElevatedButton(
             onPressed: _isLoading ? null : _saveEntry,
             child: _isLoading
@@ -357,12 +474,57 @@ class MyTeamDialogState extends State<MyTeamDialog> {
                 : const Text('Speichern'),
           ),
           const SizedBox(width: 10),
+
+          // 2. SCHLIESSEN Button (ersetzt Zurücksetzen)
           ElevatedButton(
-            onPressed: _clearForm,
-            child: const Text('Zurücksetzen'),
+            // 💡 NEU: Schließt das aktuelle Fenster oder den Dialog
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Schließen'), // 💡 NEU: Text geändert
           ),
         ],
       ),
     );
+  }
+
+  void _loadUserNames() async {
+    // Stellen Sie sicher, dass Sie den UserProvider hier korrekt instanziieren können.
+    // Das funktioniert nur, wenn ein Provider über dem MyTeamDialog im Baum liegt.
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    try {
+      // Annahme: getAllUserNames() gibt Future<Map<String, String>> (UID -> Name) zurück
+      final userMap = await userProvider.getAllMFandAdminUserNames();
+
+      // Optional: Fügen Sie einen 'Manuell eingeben'-Eintrag hinzu, der key='' speichert
+      userMap[''] = '--- Manuell eingeben (Keine Auswahl) ---';
+
+      if (mounted) {
+        setState(() {
+          _allUsers = userMap;
+
+          // ✅ HIER WIRD _isUserLoading auf FALSE gesetzt
+          _isUserLoading = false;
+
+          // Sicherstellen, dass _selectedMfUid einen gültigen Wert hat, falls noch nicht gesetzt
+          if (_selectedMfUid.isEmpty && userMap.isNotEmpty) {
+            // Setzt den Standardwert (den 'Manuell eingeben'-Eintrag oder den ersten Eintrag)
+            _selectedMfUid = userMap.keys.firstWhere((key) => key.isEmpty,
+                orElse: () => userMap.keys.first);
+          }
+        });
+      }
+    } catch (e) {
+      // Fehlerbehandlung, falls das Laden fehlschlägt
+      if (mounted) {
+        setState(() {
+          _allUsers = {'': 'Fehler beim Laden der Benutzer'};
+          _isUserLoading = false; // Lade-Status beenden, auch bei Fehler
+        });
+      }
+
+      // Beachten Sie, dass appError und ScaffoldMessenger möglicherweise nicht direkt hier verfügbar sind,
+      // je nachdem, wo _loadUserNames aufgerufen wird.
+      debugPrint("Fehler beim Laden der Benutzer: $e");
+    }
   }
 }

@@ -246,38 +246,56 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 // 1. Der gesamte scrollbare Inhalt (fängt den Platz)
                 Positioned.fill(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // --- Basisdaten ---
                         _buildHeader("Basisinformationen 👤"),
                         buildTextFormField(
-                          "UID",
-                          controller: TextEditingController(text: _uid),
-                          readOnly: true,
-                        ),
-                        buildTextFormField(
                           "E-Mail",
                           controller: _emailController,
                           readOnly: true,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0), // Padding reduziert
                         ),
 
-                        // --- Bearbeitbare Felder ---
-                        buildTextFormField(
-                          "Vorname",
-                          controller: _vornameController,
-                          readOnly: false,
+                        // --- Bearbeitbare Felder: Vorname und Nachname nebeneinander ---
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: buildTextFormField(
+                                "Vorname",
+                                controller: _vornameController,
+                                readOnly: false,
+                                padding: const EdgeInsets.only(
+                                    right: 4.0,
+                                    top: 4.0,
+                                    bottom: 4.0), // Padding reduziert
+                              ),
+                            ),
+                            Expanded(
+                              child: buildTextFormField(
+                                "Nachname",
+                                controller: _nachnameController,
+                                readOnly: false,
+                                padding: const EdgeInsets.only(
+                                    left: 4.0,
+                                    top: 4.0,
+                                    bottom: 4.0), // Padding reduziert
+                              ),
+                            ),
+                          ],
                         ),
+
+                        // --- Platzbuchungslink mit Info ---
                         buildTextFormField(
-                          "Nachname",
-                          controller: _nachnameController,
-                          readOnly: false,
-                        ),
-                        buildTextFormField(
-                          "Platzbuchungslink",
+                          "Platzbuchungslink - TeamUp Link wird vom Admin bereitgestellt",
                           controller: _platzbuchungController,
                           readOnly: false,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0), // Padding reduziert
                         ),
 
                         // --- Rollen-Anzeige ---
@@ -286,9 +304,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           controller:
                               TextEditingController(text: _selectedRole),
                           readOnly: true,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0), // Padding reduziert
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -300,7 +320,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 label: const Text("Speichern"),
                                 style: ElevatedButton.styleFrom(
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 15),
+                                      const EdgeInsets.symmetric(vertical: 8),
                                   backgroundColor:
                                       Theme.of(context).primaryColor,
                                   foregroundColor: Colors.white,
@@ -309,7 +329,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
 
                         // --- Getränkesumme Sektion ---
                         _buildHeader("Getränke-Saldo 🍺"),
@@ -328,7 +348,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 label: const Text("Abrechnung senden"),
                                 style: ElevatedButton.styleFrom(
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 15),
+                                      const EdgeInsets.symmetric(vertical: 8),
                                   backgroundColor: Colors.green,
                                   foregroundColor: Colors.white,
                                 ),
@@ -337,7 +357,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 10),
 
                         // Passwort-Reset-Button (nur anzeigen, wenn eine E-Mail verfügbar ist)
                         if (_emailController.text.isNotEmpty)
@@ -346,13 +366,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             icon: const Icon(Icons.lock_reset),
                             label: const Text("Passwort zurücksetzen"),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                             ),
                           ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
@@ -378,10 +398,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // -------------------------
   // 8. Hilfswidgets für die UI
   // -------------------------
-
   Widget _buildHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      padding: const EdgeInsets.fromLTRB(0, 15.0, 0, 8.0),
       child: Text(
         title,
         style: const TextStyle(

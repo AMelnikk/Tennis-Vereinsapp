@@ -218,7 +218,8 @@ class _AddLigaSpieleScreenState extends State<AddLigaSpieleScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: DropdownButtonFormField<String>(
-                        value: seasons.isNotEmpty ? selectedSeason : null,
+                        initialValue:
+                            seasons.isNotEmpty ? selectedSeason : null,
                         hint: const Text('Wählen Sie eine Saison'),
                         items: seasons.map<DropdownMenuItem<String>>((season) {
                           return DropdownMenuItem<String>(

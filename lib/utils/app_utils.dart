@@ -154,7 +154,7 @@ Widget buildDropdownField({
         borderRadius: BorderRadius.circular(5), // Abgerundete Ecken
       ),
     ),
-    value: value.isNotEmpty
+    initialValue: value.isNotEmpty
         ? value
         : null, // Sicherstellen, dass null nicht zu Fehlern führt
     items: items.map<DropdownMenuItem<String>>((item) {

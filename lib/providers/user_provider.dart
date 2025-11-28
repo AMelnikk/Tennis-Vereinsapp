@@ -22,8 +22,20 @@ class UserProvider with ChangeNotifier {
         Provider.of<AuthorizationProvider>(context, listen: false);
 
     setToken(authProvider.writeToken.toString());
-    await getUserData(authProvider.userId.toString());
 
+    // NEU: Speichern Sie den zurückgegebenen User in der Klassenvariable!
+    User? fetchedUser = await getUserData(authProvider.userId.toString());
+
+    // Wenn Daten abgerufen wurden, aktualisieren Sie die Klassenvariable 'user'
+    if (fetchedUser != null) {
+      user = fetchedUser;
+      // notifyListeners() ist hier nicht zwingend nötig, da 'user' nur intern verwendet wird.
+    } else {
+      // Falls das Abrufen fehlschlägt, ist die Rolle nicht vorhanden
+      return false;
+    }
+
+    // Jetzt enthält 'user' die korrekten Daten für die Prüfung
     return roles.contains(user.role);
   }
 
@@ -61,7 +73,9 @@ class UserProvider with ChangeNotifier {
 
   // Methode zum Abrufen der Benutzerdaten und Privilegien
   Future<User?> getUserData(String uid) async {
-    if (uid.isEmpty) return null; // Check if UID is empty
+    if (uid.isEmpty || uid == "null") {
+      return null; // Check if UID is null or empty
+    }
     User user1 = User.empty();
 
     final urlUser = Uri.parse(

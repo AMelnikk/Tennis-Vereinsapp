@@ -50,7 +50,7 @@ Future<SaisonData?> showAddSeasonPopup(BuildContext context) async {
                 children: [
                   /// SAISONART – erstes Feld
                   DropdownButtonFormField<String>(
-                    value: seasonType,
+                    initialValue: seasonType,
                     decoration: const InputDecoration(labelText: 'Saisonart'),
                     items: const [
                       DropdownMenuItem(value: 'Sommer', child: Text('Sommer')),

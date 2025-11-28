@@ -221,7 +221,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                       ),
-                      value: dialogState.selectedFilterKlasse,
+                      initialValue: dialogState.selectedFilterKlasse,
                       items: availableFilterKlassen.map((klasse) {
                         return DropdownMenuItem(
                           value: klasse,
@@ -256,7 +256,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 10, vertical: 12),
                         ),
-                        value: dialogState.selectedMatch,
+                        initialValue: dialogState.selectedMatch,
                         items: filteredMatches.map((m) {
                           final displayDate =
                               DateFormat('dd.MM.yyyy').format(m.datum);
@@ -412,7 +412,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
                                 contentPadding: EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 12),
                               ),
-                              value: _selectedCategory,
+                              initialValue: _selectedCategory,
                               items: _availableCategories.map((category) {
                                 return DropdownMenuItem(
                                   value: category,
@@ -441,7 +441,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
                                 contentPadding: EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 12),
                               ),
-                              value: _selectedAltersklasse,
+                              initialValue: _selectedAltersklasse,
                               // PASST HIER AN
                               items: _availableAltersklassen
                                   .map((altersklasse) {

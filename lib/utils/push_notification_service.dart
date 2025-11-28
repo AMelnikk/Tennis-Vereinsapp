@@ -134,10 +134,13 @@ class PushNotificationService {
       }
     });
 
-// App wurde aus Hintergrund durch Klick auf Notification geöffnet
+    // App wurde aus Hintergrund durch Klick auf Notification geöffnet
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint("📌 Notification angeklickt: ${message.messageId}");
-      _navigateToNewsDetail(message);
+      debugPrint("📌 Notification type: ${message.data['type']}");
+      if (message.data['type'] == 'News') {
+        _navigateToNewsDetail(message);
+      }
     });
 
 // Initial check, falls App durch Notification gestartet wurde
@@ -405,6 +408,7 @@ class PushNotificationService {
         },
         "android": {
           "priority": "high",
+          "collapse_key": "${notifi.type}-update-${notifi.id}",
           "notification": {
             "channel_id": "default_channel",
             "sound": "default",
@@ -413,6 +417,7 @@ class PushNotificationService {
         },
         "apns": {
           "headers": {"apns-priority": "10"},
+          "apns-collapse-id": "${notifi.type}-update-${notifi.id}",
           "payload": {
             "aps": {
               "alert": {"title": notifi.title, "body": notifi.body},

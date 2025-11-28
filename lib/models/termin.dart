@@ -7,6 +7,7 @@ class Termin {
   final String von;
   final String bis;
   final String title;
+  final String ort;
   final String category;
   final String description;
   final String query;
@@ -18,6 +19,7 @@ class Termin {
     required this.von,
     required this.bis,
     required this.title,
+    required this.ort,
     required this.category,
     required this.description,
     required this.query,
@@ -31,6 +33,7 @@ class Termin {
       'von': von,
       'bis': bis,
       'title': title,
+      'ort': ort,
       'category': category,
       'details': description,
       'query': query,
@@ -47,6 +50,7 @@ class Termin {
       von: map['von'],
       bis: map['bis'],
       title: map['title'],
+      ort: map['ort'],
       category: map['category'],
       description: map['details'],
       query: map['query'],

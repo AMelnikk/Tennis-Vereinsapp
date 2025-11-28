@@ -45,43 +45,42 @@ Widget buildTextFormField(
   String label, {
   required TextEditingController? controller,
   FormFieldValidator<String>? validator,
-  // Parameter readOnly ist bereits vorhanden
   bool readOnly = false,
-  // Parameter decoration ist bereits vorhanden
   InputDecoration? decoration,
+  // 🎯 NEU: Der Padding-Parameter ist wieder da
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(vertical: 8.0),
 }) {
-  // ✅ NEU: Farbe basierend auf dem readOnly-Status bestimmen
-  // Grau (Standard) für nicht-editierbar (readOnly: true)
-  // Transparent/Weiß (Standard in Flutter) für editierbar (readOnly: false)
-  final Color baseFillColor = readOnly
-      ? Colors.grey.shade400 // Leichtes Grau für readOnly Felder
-      : Colors
-          .white; // Oder einfach Colors.transparent, falls der Scaffold-Hintergrund nicht weiß ist
+  // 1. Hintergrundfarbe basierend auf readOnly-Status bestimmen
+  final Color baseFillColor = readOnly ? Colors.grey.shade400 : Colors.white;
 
-  // 1. Das Standard-Decoration-Objekt erstellen, das die Basis-Füllfarbe nutzt
-  final defaultDecoration = InputDecoration(
+  // 2. Das Basis-Decoration-Objekt erstellen
+  final baseDecoration = InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(fontSize: 10), // Kleinere Schrift für das Label
-
-    // ✅ Füllung und Farbe für den Standardfall (readOnly) festlegen
+    labelStyle: const TextStyle(fontSize: 12),
     filled: true,
     fillColor: baseFillColor,
+    border: const OutlineInputBorder(),
   );
 
-  return TextFormField(
-    controller: controller,
-    // readOnly an das TextFormField-Widget übergeben
-    readOnly: readOnly,
+  // 3. Übergebenes Decoration-Objekt mit dem Basis-Objekt zusammenführen.
+  final finalDecoration = (decoration != null)
+      ? decoration.copyWith(
+          labelText: label,
+          labelStyle: const TextStyle(fontSize: 12),
+          filled: true,
+          fillColor: baseFillColor,
+        )
+      : baseDecoration;
 
-    // 2. Übergebenes Decoration-Objekt verwenden ODER das Standard-Objekt.
-    // Wenn `decoration` übergeben wird (z.B. mit Colors.white in UserProfileScreen),
-    // überschreibt es die baseFillColor im defaultDecoration-Objekt.
-    decoration: (decoration != null)
-        ? decoration.copyWith(
-            labelText: label, labelStyle: const TextStyle(fontSize: 12))
-        : defaultDecoration,
-
-    validator: validator,
+  // 🎯 KORREKTUR: Das TextFormField in ein Padding-Widget einschließen
+  return Padding(
+    padding: padding, // Verwende den Übergabeparameter
+    child: TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      decoration: finalDecoration,
+      validator: validator,
+    ),
   );
 }
 

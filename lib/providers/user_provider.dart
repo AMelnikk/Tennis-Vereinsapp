@@ -60,8 +60,9 @@ class UserProvider with ChangeNotifier {
   }
 
   // Methode zum Abrufen der Benutzerdaten und Privilegien
-  Future<void> getOwnUserData(String uid) async {
-    if (uid.isEmpty) return; // Check if UID is empty
+  Future<User?> getUserData(String uid) async {
+    if (uid.isEmpty) return null; // Check if UID is empty
+    User user1 = User.empty();
 
     final urlUser = Uri.parse(
         "https://db-teg-default-rtdb.firebaseio.com/Users/$uid.json?auth=$_token");
@@ -74,16 +75,18 @@ class UserProvider with ChangeNotifier {
       Map<String, dynamic>? userData;
 
       if (userResponse.statusCode == 200) {
-        userData = json.decode(userResponse.body) as Map<String, dynamic>?;
+        userData =
+            await json.decode(userResponse.body) as Map<String, dynamic>?;
       }
 
       if (userData != null) {
-        user = User.fromJson(userData, uid); // User erstellen
+        user1 = User.fromJson(userData, uid); // User erstellen
       }
-      user.uid = uid;
-      notifyListeners(); // Notify listeners, wenn die Daten geändert wurden
+      user1.uid = uid;
+      return user1;
     } catch (error) {
       if (kDebugMode) print("Error: $error");
+      return null;
     }
   }
 

@@ -1,21 +1,24 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import "package:http/http.dart" as http;
-import 'package:verein_app/utils/app_utils.dart';
+// import 'package:provider/provider.dart';
+import '../utils/app_utils.dart';
 import '../models/http_exception.dart';
+// import './user_provider.dart';
 
 class AuthorizationProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   AuthorizationProvider() {
-    try {
-      //  print("⚡ AuthProvider wird initialisiert...");
-      //  print("Aktueller Nutzer: ${_auth.currentUser?.email}");
-    } catch (e) {
-      //  print("❌ Fehler in AuthProvider-Konstruktor: $e");
-    }
+    // try {
+    //   //  print("⚡ AuthProvider wird initialisiert...");
+    //   //  print("Aktueller Nutzer: ${_auth.currentUser?.email}");
+    // } catch (e) {
+    //   //  print("❌ Fehler in AuthProvider-Konstruktor: $e");
+    // }
   }
   late final Map<String, String?> credentials;
   final storage = const FlutterSecureStorage();
@@ -42,7 +45,7 @@ class AuthorizationProvider with ChangeNotifier {
     return _writeToken != null;
   }
 
-  Future<void> signIn(BuildContext context, email, String password) async {
+  Future<String> signIn(BuildContext context, email, String password) async {
     final dbUrl = Uri.parse(
         "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBO9pr1xgA7hwIoEti0Hf2pM_mvp2QlHG0");
     dynamic responseData;
@@ -73,7 +76,9 @@ class AuthorizationProvider with ChangeNotifier {
       await secureStorage.write(
           key: "password", value: password); // Sicherer als SharedPreferences
       notifyListeners();
+      return responseData["localId"];
     } catch (error) {
+      if (kDebugMode) print("Error: $error");
       throw HttpException(message: responseData["error"]["message"]);
     }
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/models/user.dart';
 import './screens/user_profile_screen.dart';
 import './utils/push_notification_service.dart';
 import './providers/season_provider.dart';
@@ -245,7 +246,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     if (mounted) {
-      email = await Provider.of<AuthorizationProvider>(context)
+      email = await Provider.of<AuthorizationProvider>(context, listen: false)
           .storage
           .read(key: "email");
     }
@@ -268,12 +269,37 @@ class _MyHomePageState extends State<MyHomePage> {
           Provider.of<AuthorizationProvider>(context, listen: false)
                   .credentials["password"] !=
               null) {
-        Provider.of<AuthorizationProvider>(context, listen: false).signIn(
-            context,
-            Provider.of<AuthorizationProvider>(context, listen: false)
-                .credentials["email"] as String,
-            Provider.of<AuthorizationProvider>(context, listen: false)
-                .credentials["password"] as String);
+        // SingIn
+        String localId =
+            await Provider.of<AuthorizationProvider>(context, listen: false)
+                .signIn(
+                    context,
+                    Provider.of<AuthorizationProvider>(context, listen: false)
+                        .credentials["email"] as String,
+                    Provider.of<AuthorizationProvider>(context, listen: false)
+                        .credentials["password"] as String);
+        //GetUserData
+        if (mounted) {
+          User? user = await Provider.of<UserProvider>(context, listen: false)
+              .getUserData(localId);
+          // !!! when running getUserData() inside of UserProvider the user variable appears
+          // to lose data when ending the function, so no the function returns a User and then
+          // it is assigning the returned value to the user variable in UserProvider the hard way
+          if (user != null) {
+            if (mounted) {
+              Provider.of<UserProvider>(context, listen: false).user = user;
+            }
+          }
+        }
+        // This was used for debugging
+        // if (kDebugMode) {
+        //   print(
+        //       """Data in UserProvider from main() at the end of getCredentialsAndLogin()
+        //   Vorname: ${Provider.of<UserProvider>(context, listen: false).user.vorname},
+        //   Email: ${Provider.of<UserProvider>(context, listen: false).user.email},
+        //   Uid: ${Provider.of<UserProvider>(context, listen: false).user.uid},
+        //   PlatzbuchungLink: ${Provider.of<UserProvider>(context, listen: false).user.platzbuchungLink}""");
+        // }
       }
     }
     if (mounted) {
@@ -282,6 +308,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
+
+  Future<void> loginAndGetUserData() async {}
 
   Map<int, Widget> sites = {
     0: const NewsScreen(),
@@ -294,9 +322,6 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_firstLoading) {
       getCredentialsAndLogin();
     }
-    /*if (Provider.of<NewsProvider>(context).loadedNews.isEmpty && _firstLoading) {
-      firstLoadNews();
-    }*/
     _firstLoading = false;
     super.didChangeDependencies();
   }
@@ -304,7 +329,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //extendBodyBehindAppBar: true,
       appBar: VereinAppbar(),
       body: _isLoading
           ? const Center(

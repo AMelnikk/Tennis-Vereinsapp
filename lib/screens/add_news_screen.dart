@@ -181,15 +181,15 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
 
                         setState(() => _isLoading = false);
 
-                        //print("Erhaltene News-ID vom Provider: $newsId");
+                        // print("Erhaltene News-ID vom Provider: $newsId");
 
                         if (!mounted) return;
 
                         if (newsId.isNotEmpty) {
-                          //print("Poppe mit ID zurück: $newsId");
+                          // print("Poppe mit ID zurück: $newsId");
                           Navigator.pop(context, newsId);
                         } else {
-                          //print("Keine News-ID erhalten – kein Rücksprung!");
+                          // print("Keine News-ID erhalten – kein Rücksprung!");
                         }
                       },
                       child: const Text("News Hochladen"),

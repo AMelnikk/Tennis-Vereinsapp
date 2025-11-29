@@ -1,2 +1,0 @@
-C:/Users/olive/StudioProjects/Tennis-Vereinsapp/android/app/.cxx/RelWithDebInfo/42i364l5/x86/CMakeFiles/edit_cache.dir
-C:/Users/olive/StudioProjects/Tennis-Vereinsapp/android/app/.cxx/RelWithDebInfo/42i364l5/x86/CMakeFiles/rebuild_cache.dir

@@ -22,7 +22,7 @@ android {
 
 
     defaultConfig {
-        applicationId = "com.example.teg_vereinsapp"
+        applicationId = "com.teg.vereinsapp"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

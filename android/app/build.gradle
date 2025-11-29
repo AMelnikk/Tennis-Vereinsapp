@@ -51,7 +51,7 @@ android {
     defaultConfig {
         targetSdkVersion 33 // Oder die neueste unterstützte Version
         applicationId = "com.tennisverein.weidenbach" // Hier wird die package id gesetzt
-        minSdk = 23
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode 11 // Erhöhe diesen Wert (z. B. auf 4)
     	versionName "1.0.5"

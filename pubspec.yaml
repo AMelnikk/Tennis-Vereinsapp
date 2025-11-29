@@ -64,9 +64,9 @@ dependencies:
   share_plus: ^12.0.1                     # (War 10.1.4, jetzt auf ^12.0.1)
   open_filex: ^4.7.0                      # (Bleibt)
   reorderables: ^0.6.0                    # (War 0.4.2, jetzt auf ^0.6.0)
-  dropdown_search: ^5.0.6                 # (War 5.0.6, jetzt auf ^6.0.2)
+  dropdown_search: ^6.0.2                 # (War 5.0.6, jetzt auf ^6.0.2)
   collection: ^1.18.0                     # (Bleibt)
-  intl: ^0.19.0                           # (War 0.19.0, jetzt auf ^0.19.0)
+  intl: 0.20.2                           # (War 0.19.0, jetzt auf ^0.19.0)
   cupertino_icons: ^1.0.6                 # (Bleibt)
   pdfrx: ^1.1.11                          # (Bleibt)
   flutter_image_converter: ^0.4.1         # (Bleibt)
@@ -78,7 +78,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.3         # (Bleibt)
-  flutter_lints: ^5.0.0                   # (Bleibt)
+  flutter_lints: ^6.0.0                   # (Bleibt)
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

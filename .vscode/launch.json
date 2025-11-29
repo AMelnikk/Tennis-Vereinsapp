@@ -1,15 +1,10 @@
 {
     "version": "0.2.0",
     "configurations": [
-      
-      
-      {
-        "name": "Flutter Web",
-        "request": "launch",
-        "type": "dart",
-        "program": "lib/main.dart",
-        flutter config --enable-web
-        "deviceId": "chrome"
-      }
+        {
+            "name": "Flutter",
+            "request": "launch",
+            "type": "dart"
+        }
     ]
-  }
+}

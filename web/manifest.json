@@ -1,6 +1,6 @@
 {
-    "name": "verein_app",
-    "short_name": "verein_app",
+    "name": "teg_vereinsapp",
+    "short_name": "teg_vereinsapp",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

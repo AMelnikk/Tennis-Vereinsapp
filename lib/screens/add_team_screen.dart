@@ -23,7 +23,7 @@ class _AddMannschaftScreenState extends State<AddMannschaftScreen> {
   List<SaisonData> filterSeasons = [];
   String _selectedSaisonFilterKey = '';
   String _selectedFilterMannschaft = '';
-  final List<String> _filterTeams = [];
+  //final List<String> _filterTeams = [];
 
   @override
   void initState() {

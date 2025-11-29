@@ -36,7 +36,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
-  loadTermine(int jahr) async {
+  void loadTermine(int jahr) async {
     try {
       final termineProvider =
           Provider.of<TermineProvider>(context, listen: false);

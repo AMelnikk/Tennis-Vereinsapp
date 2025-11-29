@@ -24,10 +24,10 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
   // Wird als aktuell gewählte Saison verwendet (String aus dem SaisonData.saison-Feld)
   SaisonData _selectedSeason = SaisonData.empty();
   String _selectedAgeGroup = "Alle";
-  final TextEditingController _ergebnisController = TextEditingController();
-  final TextEditingController _datumController = TextEditingController();
-  final TextEditingController _uhrzeitController = TextEditingController();
-  final TextEditingController _newsIdController = TextEditingController();
+  //final TextEditingController _ergebnisController = TextEditingController();
+  //final TextEditingController _datumController = TextEditingController();
+  //final TextEditingController _uhrzeitController = TextEditingController();
+  //final TextEditingController _newsIdController = TextEditingController();
   TennisMatch _selectedMatch = TennisMatch.empty();
 
   @override
@@ -56,10 +56,10 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
     await lsProvider.loadLigaSpieleForSeason(_selectedSeason);
   }
 
-  //Future<void> _saveErgebnis() async {
-  //   final messenger = ScaffoldMessenger.of(context);
-  //   final teamResultProvider =
-  //       Provider.of<LigaSpieleProvider>(context, listen: false);
+  // Future<void> _saveErgebnis() async {
+  //    final messenger = ScaffoldMessenger.of(context);
+  //    final teamResultProvider =
+  //        Provider.of<LigaSpieleProvider>(context, listen: false);
 
   // Überprüfe, ob das Ergebnis im richtigen Format ist (z.B. "1:1")
   //   final resultPattern = RegExp(r'^[0-9]:[0-9]$');

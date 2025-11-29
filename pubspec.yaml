@@ -64,7 +64,7 @@ dependencies:
   share_plus: ^12.0.1                     # (War 10.1.4, jetzt auf ^12.0.1)
   open_filex: ^4.7.0                      # (Bleibt)
   reorderables: ^0.6.0                    # (War 0.4.2, jetzt auf ^0.6.0)
-  dropdown_search: ^6.0.2                 # (War 5.0.6, jetzt auf ^6.0.2)
+  dropdown_search: ^5.0.6                 # (War 5.0.6, jetzt auf ^6.0.2)
   collection: ^1.18.0                     # (Bleibt)
   intl: 0.20.2                           # (War 0.19.0, jetzt auf ^0.19.0)
   cupertino_icons: ^1.0.6                 # (Bleibt)

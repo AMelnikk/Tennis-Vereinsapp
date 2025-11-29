@@ -18,7 +18,7 @@ class PhotoSelector extends StatefulWidget {
 
 class _PhotoSelectorState extends State<PhotoSelector> {
   late List<String> _photoBlobs;
-  int? _draggingIndex;
+  int draggingIndex = 0;
 
   @override
   void initState() {
@@ -79,17 +79,17 @@ class _PhotoSelectorState extends State<PhotoSelector> {
                   dragAnchorStrategy: pointerDragAnchorStrategy,
                   onDragStarted: () {
                     setState(() {
-                      _draggingIndex = index;
+                      draggingIndex = index;
                     });
                   },
                   onDraggableCanceled: (_, __) {
                     setState(() {
-                      _draggingIndex = null;
+                      draggingIndex = 0;
                     });
                   },
                   onDragCompleted: () {
                     setState(() {
-                      _draggingIndex = null;
+                      draggingIndex = 0;
                     });
                   },
                   feedback: _buildImage(index, dragging: true),

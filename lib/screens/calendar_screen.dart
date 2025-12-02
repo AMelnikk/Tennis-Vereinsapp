@@ -46,7 +46,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       // Zuerst prüfen, ob die Events für das Jahr bereits geladen sind
       if (!termineProvider.eventsCache.containsKey(jahr)) {
         List<CalendarEvent> terminEvents =
-            await termineProvider.loadEvents(jahr);
+            await termineProvider.loadEvents(jahr, false);
         // Liga-Spiele ebenfalls laden
         await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
         List<CalendarEvent> lsEvents =

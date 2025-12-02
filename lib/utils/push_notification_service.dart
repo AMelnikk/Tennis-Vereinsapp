@@ -416,8 +416,11 @@ class PushNotificationService {
           }
         },
         "apns": {
-          "headers": {"apns-priority": "10"},
-          "apns-collapse-id": "${notifi.type}-update-${notifi.id}",
+          "headers": {
+            "apns-priority": "10",
+            "apns-collapse-id":
+                "${notifi.type}-update-${notifi.id}" // ✅ KORREKT: In headers verschoben
+          },
           "payload": {
             "aps": {
               "alert": {"title": notifi.title, "body": notifi.body},

@@ -224,8 +224,7 @@ class LigaSpieleProvider with ChangeNotifier {
         bis:
             "${endDate.hour.toString().padLeft(2, '0')}:${endDate.minute.toString().padLeft(2, '0')}", // Endzeit formatieren
         category: "Ligaspiel",
-        description:
-            "Gruppe: ${spiel.gruppe}\n\n${spiel.heim} vs ${spiel.gast}\n\nSpielort: ${spiel.spielort}\nUhrzeit: ${spiel.uhrzeit}",
+        description: "Gruppe: ${spiel.gruppe}\n${spiel.heim} vs ${spiel.gast}",
         query: "",
       );
     }).toList();

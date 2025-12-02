@@ -76,7 +76,7 @@ void main() async {
 }
 
 // Top-level Background-Handler
-
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Firebase muss hier initialisiert werden
   await Firebase.initializeApp();

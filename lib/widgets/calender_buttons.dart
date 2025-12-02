@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_utils.dart';
+import '../utils/ui_dialog_utils.dart';
 
 class CalendarViewSwitcher extends StatelessWidget {
   final VoidCallback onMonthViewPressed;

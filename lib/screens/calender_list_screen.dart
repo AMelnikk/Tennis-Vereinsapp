@@ -41,23 +41,22 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
           Provider.of<LigaSpieleProvider>(context, listen: false);
 
       // Zuerst prüfen, ob die Events für das Jahr bereits geladen sind
-      if (!termineProvider.eventsCache.containsKey(jahr)) {
-        List<CalendarEvent> terminEvents =
-            await termineProvider.loadEvents(jahr);
-        // Liga-Spiele ebenfalls laden
-        await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
-        List<CalendarEvent> lsEvents =
-            ligaSpieleProvider.getLigaSpieleAsEvents(jahr);
-        // Alle Events zusammenführen
-        setState(() {
-          List<CalendarEvent> calendarEvents = [
-            ...terminEvents,
-            ...lsEvents,
-          ];
-          termineProvider.eventsCache[jahr] = calendarEvents;
-        });
-        // Events für das Jahr im Cache speichern
-      }
+
+      List<CalendarEvent> terminEvents =
+          await termineProvider.loadEvents(jahr, false);
+      // Liga-Spiele ebenfalls laden
+      await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
+      List<CalendarEvent> lsEvents =
+          ligaSpieleProvider.getLigaSpieleAsEvents(jahr);
+      // Alle Events zusammenführen
+      setState(() {
+        List<CalendarEvent> calendarEvents = [
+          ...terminEvents,
+          ...lsEvents,
+        ];
+        termineProvider.eventsCache[jahr] = calendarEvents;
+      });
+      // Events für das Jahr im Cache speichern
     } catch (e) {
       debugPrint("Fehler beim Laden der Events: $e");
     }

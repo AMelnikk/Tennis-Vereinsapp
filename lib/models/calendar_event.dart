@@ -1,3 +1,5 @@
+import 'package:verein_app/models/calendar_event_registration.dart';
+
 class CalendarEvent {
   final int id;
   final String title;
@@ -10,6 +12,9 @@ class CalendarEvent {
   final String
       description; // Hier könnte die Beschreibung des Ereignisses stehen
   final String query;
+  List<EventRegistration> allRegistrations;
+  int registrationCount;
+
   CalendarEvent({
     required this.id,
     required this.title,
@@ -20,6 +25,8 @@ class CalendarEvent {
     required this.category,
     required this.description,
     required this.query,
+    this.registrationCount = 0,
+    this.allRegistrations = const [],
   });
 
   factory CalendarEvent.fromMap(Map<String, dynamic> data) {

@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_brace_in_string_interps, unused_element
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,34 +26,22 @@ List<String> parsePhotoBlob(dynamic blobData) {
   return [];
 }
 
-Widget buildButton(String text, VoidCallback onPressed) {
-  return ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      backgroundColor: Colors.blue[900],
-      foregroundColor: Colors.white,
-    ),
-    onPressed: onPressed,
-    child: Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    ),
-  );
-}
-
 Widget buildTextFormField(
   String label, {
   required TextEditingController? controller,
   FormFieldValidator<String>? validator,
   bool readOnly = false,
   InputDecoration? decoration,
-  // 🎯 NEU: Der Padding-Parameter ist wieder da
+  // 🎯 Hinzugefügt für Kompatibilität mit Dialog-Aufrufen
+  Icon? icon,
+  TextInputType keyboardType = TextInputType.text,
+  // Padding-Parameter aus Ihrer Vorgabe
   EdgeInsetsGeometry padding = const EdgeInsets.symmetric(vertical: 8.0),
+  // Zusätzlich: Für Mehrzeiligkeit (z.B. Beschreibung)
+  int maxLines = 1,
 }) {
   // 1. Hintergrundfarbe basierend auf readOnly-Status bestimmen
-  final Color baseFillColor = readOnly ? Colors.grey.shade400 : Colors.white;
+  final Color baseFillColor = readOnly ? Colors.grey.shade200 : Colors.white;
 
   // 2. Das Basis-Decoration-Objekt erstellen
   final baseDecoration = InputDecoration(
@@ -59,7 +49,15 @@ Widget buildTextFormField(
     labelStyle: const TextStyle(fontSize: 12),
     filled: true,
     fillColor: baseFillColor,
-    border: const OutlineInputBorder(),
+    border: const OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.black26),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
+    ),
+    icon: icon, // Icon hinzugefügt
+    contentPadding:
+        const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
   );
 
   // 3. Übergebenes Decoration-Objekt mit dem Basis-Objekt zusammenführen.
@@ -69,10 +67,11 @@ Widget buildTextFormField(
           labelStyle: const TextStyle(fontSize: 12),
           filled: true,
           fillColor: baseFillColor,
+          icon: icon ?? decoration.icon, // Icon wird berücksichtigt
         )
       : baseDecoration;
 
-  // 🎯 KORREKTUR: Das TextFormField in ein Padding-Widget einschließen
+  // 🎯 Das TextFormField in ein Padding-Widget einschließen
   return Padding(
     padding: padding, // Verwende den Übergabeparameter
     child: TextFormField(
@@ -80,6 +79,11 @@ Widget buildTextFormField(
       readOnly: readOnly,
       decoration: finalDecoration,
       validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: TextStyle(
+          color: readOnly ? Colors.black87 : Colors.black,
+          fontWeight: readOnly ? FontWeight.w600 : FontWeight.normal),
     ),
   );
 }
@@ -180,4 +184,34 @@ Widget buildDropdownField({
     isExpanded:
         true, // Stellt sicher, dass das Dropdown die gesamte Breite einnimmt
   );
+}
+
+// Helfer, um ein ReadOnly-Feld für die Details zu erstellen
+Widget buildDetailField(String label, String value, {int maxLines = 1}) {
+  // Verwendet die oben definierte buildTextFormField
+  return buildTextFormField(
+    label,
+    controller: TextEditingController(text: value),
+    readOnly: true,
+    maxLines: maxLines,
+    padding: const EdgeInsets.only(bottom: 8.0),
+  );
+}
+
+// NEUE HILFSFUNKTION: Zeigt einen Ladehinweis, während die User-Daten geladen werden
+OverlayEntry _showLoadingOverlay(BuildContext context) {
+  final OverlayEntry entry = OverlayEntry(
+    builder: (context) => Container(
+      // Wir können Colors.black54 nicht verwenden, da es nicht im Kontext dieses Codes existiert
+      // Wir nehmen eine einfache semitransparente Farbe
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      ),
+    ),
+  );
+  Overlay.of(context).insert(entry);
+  return entry;
 }

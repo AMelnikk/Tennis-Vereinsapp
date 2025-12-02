@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_interpolation_to_compose_strings
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -7,15 +5,17 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:verein_app/models/termin.dart';
 import '../models/calendar_event.dart';
+import '../models/calendar_event_registration.dart';
 
 class TermineProvider with ChangeNotifier {
   TermineProvider(this._token);
 
   final String? _token;
+
   Map<int, List<CalendarEvent>> eventsCache = {}; // Termine und LigaSpiele
 
   bool isLoading = false;
-  bool isDebugMode = false;
+  bool isDebugMode = true;
 
   // Die lokale Variable allData erwartet jetzt List<CalendarEvent>.
   Future<int> saveTermineToFirebase(List<CalendarEvent> termine) async {
@@ -58,7 +58,7 @@ class TermineProvider with ChangeNotifier {
       }
 
       // Nach dem Speichern die Events neu laden und Benachrichtigung auslösen
-      await loadEvents(DateTime.now().year);
+      await loadEvents(DateTime.now().year, true);
 
       return 200;
     } on SocketException {
@@ -111,7 +111,6 @@ class TermineProvider with ChangeNotifier {
     for (var jahr in jahre) {
       final url = Uri.parse(
           "https://db-teg-default-rtdb.firebaseio.com/Termine/$jahr.json?auth=$_token");
-      debugPrint("-> Requesting $url");
 
       try {
         final response = await http.get(url);
@@ -132,14 +131,6 @@ class TermineProvider with ChangeNotifier {
           continue;
         }
 
-        // Kurzer Body-Snippet zum schnellen Check
-        final bodySnippet = response.body.length > 400
-            ? response.body.substring(0, 400) + "…(truncated)"
-            : response.body;
-
-        if (isDebugMode) {
-          debugPrint("Body snippet: $bodySnippet");
-        }
         dynamic responseJson;
         try {
           responseJson = json.decode(response.body);
@@ -213,6 +204,29 @@ class TermineProvider with ChangeNotifier {
     return allTermine;
   }
 
+  void updateEvent(CalendarEvent updatedEvent) {
+    final eventYear =
+        updatedEvent.date.year; // Annahme: Datum hat das Event-Datum
+
+    if (eventsCache.containsKey(eventYear)) {
+      // 1. Die spezifische Liste für dieses Jahr abrufen
+      final listToUpdate = eventsCache[eventYear]!;
+
+      // 2. Index in dieser Liste finden
+      final index = listToUpdate.indexWhere((e) => e.id == updatedEvent.id);
+
+      if (index != -1) {
+        // 3. Liste aktualisieren (immutable-freundlich)
+        final updatedList = List<CalendarEvent>.from(listToUpdate);
+        updatedList[index] = updatedEvent;
+
+        // 4. Cache aktualisieren und benachrichtigen
+        eventsCache[eventYear] = updatedList;
+        notifyListeners();
+      }
+    }
+  }
+
   // HILFSMETHODE: Führt den PUT-Request zur Aktualisierung durch
   Future<bool> _updateTermin(
       CalendarEvent existingEvent, CalendarEvent newTermin) async {
@@ -246,10 +260,14 @@ class TermineProvider with ChangeNotifier {
     );
 
     if (responsePut.statusCode == 200) {
-      debugPrint("✅ Termin mit ID $eventId erfolgreich aktualisiert.");
+      if (isDebugMode) {
+        debugPrint("✅ Termin mit ID $eventId erfolgreich aktualisiert.");
+      }
       return true;
     } else {
-      debugPrint("⚠️ Fehler beim Aktualisieren des Termins ID $eventId");
+      if (isDebugMode) {
+        debugPrint("⚠️ Fehler beim Aktualisieren des Termins ID $eventId");
+      }
       return false;
     }
   }
@@ -323,6 +341,7 @@ class TermineProvider with ChangeNotifier {
         'von': termin.von,
         'bis': termin.bis,
         'title': termin.title,
+        'ort': termin.ort,
         'category': termin.category,
         'details': termin.description,
         'query': termin.query,
@@ -348,9 +367,15 @@ class TermineProvider with ChangeNotifier {
   }
 
   /// Lädt die Termine vom Server (z. B. Firebase) und speichert sie in der Liste
-  Future<List<CalendarEvent>> loadEvents(int jahr) async {
+  Future<List<CalendarEvent>> loadEvents(int jahr, bool forceReload) async {
+    // 1. Cache-Prüfung: Wenn Daten vorhanden und kein Neuladen erzwungen wird.
+    if (eventsCache.containsKey(jahr) && !forceReload) {
+      debugPrint("✅ Termine $jahr aus dem Cache geladen.");
+      return eventsCache[jahr]!;
+    }
+
     isLoading = true;
-    List<CalendarEvent> termine = [];
+    List<CalendarEvent> loadedEvents = []; // Umbenennung zur Klarheit
     List<Map<String, dynamic>> data = [];
 
     try {
@@ -359,22 +384,18 @@ class TermineProvider with ChangeNotifier {
 
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        // Prüfen, ob die Antwort nicht leer oder "null" ist
-        debugPrint(
-            "loadEvents: ✅ Termine $jahr geladen, Größe: ${response.body.length} bytes");
+        // ... (Bestehender Code zum Laden der Termine aus Firebase in die 'data'-Liste) ...
         dynamic responseJson =
             (response.body.isNotEmpty && response.body != "null")
                 ? json.decode(response.body)
                 : {};
 
         if (responseJson is Map<String, dynamic>) {
-          // Falls eine Map zurückkommt, die Werte extrahieren
           data = responseJson.values
               .where((event) => event != null && event is Map<String, dynamic>)
               .cast<Map<String, dynamic>>()
               .toList();
         } else if (responseJson is List) {
-          // Falls eine Liste zurückkommt, direkt umwandeln
           data = responseJson
               .where((event) => event != null && event is Map<String, dynamic>)
               .cast<Map<String, dynamic>>()
@@ -384,12 +405,10 @@ class TermineProvider with ChangeNotifier {
         debugPrint("⚠️ Fehler beim Abrufen der Daten: ${response.statusCode}");
       }
 
-      // Events aus den validen Daten erstellen
-      termine = data.map((eventData) {
+      // 1. Events aus den validen Daten erstellen (Initialisierung)
+      loadedEvents = data.map((eventData) {
         return CalendarEvent(
-          id: eventData['id'] is int
-              ? eventData['id']
-              : 0, // Sicherstellen, dass die ID ein int ist
+          id: eventData['id'] is int ? eventData['id'] : 0,
           date: DateTime.tryParse(eventData['date'] ?? '') ?? DateTime.now(),
           von: eventData['von'] ?? '',
           bis: eventData['bis'] ?? '',
@@ -398,16 +417,133 @@ class TermineProvider with ChangeNotifier {
           description: eventData['details'] ?? '',
           category: eventData['category'] ?? '',
           query: eventData['query'] ?? '',
+          // WICHTIG: Hier müssen die neuen Felder mit Standardwerten befüllt werden
+          registrationCount: 0,
+          allRegistrations: [], // Leere Liste initialisieren
         );
       }).toList();
+
+// Durchlaufe die geladenen Termine und reicher sie mit Anmeldedaten an.
+      for (final event in loadedEvents) {
+        // 1. Registrierungen aus der Datenbank holen
+        final List<EventRegistration> allRegistrations =
+            await loadRegistrations(event.date.year, event.id);
+
+        // 2. Lokale Variablen für das Caching initialisieren
+        int jaCount = 0;
+
+        // 3. Registrierungen filtern und cachen
+        for (var reg in allRegistrations) {
+          // FIX 1: Verwende den Vergleichsoperator (==) statt des Zuweisungsoperators (=)
+          // FIX 2: Vergleiche mit dem String 'ja', nicht mit dem Booleschen Wert true
+          if (reg.status) {
+            jaCount += reg.peopleCount ?? 1;
+          }
+        }
+
+        // Setze die Cache-Daten
+        event.allRegistrations = allRegistrations;
+        event.registrationCount = jaCount;
+      }
     } catch (error) {
       debugPrint("❌ Fehler beim Laden der Termine: $error");
-      termine = [];
+      loadedEvents = []; // Im Fehlerfall leere Liste zurückgeben
     } finally {
       isLoading = false;
       notifyListeners();
     }
 
-    return termine; // Rückgabe der geladenen Termine
+    // 3. Cache-Aktualisierung: Speichere die angereicherten Events
+    eventsCache[jahr] = loadedEvents;
+    return loadedEvents;
+  }
+
+  /// Speichert die Anmeldung (JA oder NEIN) in Firebase.
+  Future<bool> saveRegistration(EventRegistration anmeldung) async {
+    if (_token == null || _token.isEmpty) {
+      return false;
+    }
+
+    // Wir verwenden die terminId (z.B. 2) und das Jahr (z.B. 2025) für den Pfad
+    // und nutzen die userId als Schlüssel, um nur eine Antwort pro Benutzer zu erlauben.
+    final jahr = anmeldung.timestamp.year;
+
+    // Struktur: /Anmeldungen/{jahr}/{terminId}/{userId}.json
+    final url = Uri.parse(
+      "https://db-teg-default-rtdb.firebaseio.com/EventRegistration/$jahr/${anmeldung.terminId}/${anmeldung.userId}.json?auth=$_token",
+    );
+
+    // Erstelle die Daten-Map aus dem Model, aber ohne die temporäre registrationId
+    final Map<String, dynamic> dataToSend = anmeldung.toMap();
+    dataToSend.remove('registrationId');
+
+    try {
+      final response = await http.put(
+        url,
+        body: json.encode(dataToSend),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        if (isDebugMode) {
+          debugPrint(
+              "✅ Anmeldung für Termin ${anmeldung.terminId} (${anmeldung.status}) erfolgreich gespeichert.");
+        }
+        // Optional: Nach der Anmeldung die Event-Details neu laden oder cache aktualisieren.
+        // notifyListeners();
+        return true;
+      } else {
+        if (isDebugMode) {
+          debugPrint(
+              "⚠️ Fehler beim Speichern der Anmeldung: ${response.statusCode}");
+        }
+        return false;
+      }
+    } catch (error) {
+      debugPrint("❌ Netzwerkfehler beim Speichern der Anmeldung: $error");
+      return false;
+    }
+  }
+
+  /// Lädt die Anmeldungen für einen bestimmten Termin.
+  Future<List<EventRegistration>> loadRegistrations(
+      int jahr, int terminId) async {
+    if (_token == null || _token.isEmpty) {
+      return [];
+    }
+
+    final url = Uri.parse(
+      "https://db-teg-default-rtdb.firebaseio.com/EventRegistration/$jahr/$terminId.json?auth=$_token",
+    );
+
+    final List<EventRegistration> anmeldungen = [];
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200 && response.body != "null") {
+        final Map<String, dynamic> responseJson = json.decode(response.body);
+
+        responseJson.forEach((userId, data) {
+          if (data is Map<String, dynamic>) {
+            try {
+              // Firebase-Schlüssel (userId) als registrationId nutzen,
+              // da wir keine separate ID speichern.
+              data['registrationId'] = userId;
+              // Füge die terminId hinzu, da sie nicht in den Kind-Daten gespeichert ist
+              data['terminId'] = terminId;
+
+              anmeldungen.add(EventRegistration.fromMap(data));
+            } catch (e) {
+              debugPrint("Fehler beim Parsen einer Anmeldung ($userId): $e");
+            }
+          }
+        });
+      }
+    } catch (error) {
+      debugPrint("❌ Fehler beim Laden der Anmeldungen: $error");
+    }
+
+    return anmeldungen;
   }
 }

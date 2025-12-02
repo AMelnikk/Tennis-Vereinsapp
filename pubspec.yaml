@@ -73,6 +73,8 @@ dependencies:
   photo_view: ^0.15.0                     # (Bleibt)
   flutter_image_compress: ^2.4.0          # (Bleibt)
   web: any                                # (Bleibt)
+  file_saver: ^0.2.14 # Aktuelle Version prüfen
+  csv: ^5.0.0 # Hilft bei der korrekten Erstellung des CSV-Strings
 
 dev_dependencies:
   flutter_test:

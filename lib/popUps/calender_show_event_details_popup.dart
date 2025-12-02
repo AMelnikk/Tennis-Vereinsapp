@@ -1,134 +1,93 @@
+// ignore_for_file: use_build_context_synchronously, unnecessary_brace_in_string_interps, unnecessary_type_check
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:verein_app/models/calendar_event_registration.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/utils/app_utils.dart';
+import 'package:verein_app/utils/ui_dialog_utils.dart';
 import '../models/calendar_event.dart';
-import '../utils/ics.dart';
+import 'package:collection/collection.dart';
+import '../widgets/registration_action_buttons.dart';
 
 /// Zeigt ein modales Dialogfenster mit allen Details eines Kalenderereignisses an.
 void showCalendarEventDetails(BuildContext context, CalendarEvent event) {
-  // Funktion zum Erstellen eines formatierten Textfeldes
-  Widget buildDetailRow(String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final int acceptedCount = event.allRegistrations
+      .where((reg) => reg.status == true)
+      .map((reg) =>
+          reg.peopleCount ??
+          1) // Nimm 1 als Standardwert, falls peopleCount null ist
+      .fold(0, (sum, count) => sum + count); // Summiere die Werte
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
-          ),
-        ],
-      ),
-    );
-  }
+  // final int declinedCount =
+  //    event.allRegistrations.where((reg) => reg.status == false).length;
+
+  // 1. REGISTRIERUNGSSTATUS DES AKTUELLEN USERS PRÜFEN
+  final EventRegistration? currentUserRegistration =
+      event.allRegistrations.firstWhereOrNull(
+    (reg) => reg.userId == userProvider.user.uid,
+  );
+
+  // Prüft, ob der User überhaupt registriert ist (unabhängig von status: true/false)
+  final bool isUserAccepted = currentUserRegistration?.status == true;
 
   showDialog(
     context: context,
-    barrierDismissible: true, // Ermöglicht das Schließen durch Tippen außerhalb
-    builder: (BuildContext context) {
+    barrierDismissible: true,
+    builder: (BuildContext dialogContext) {
       return Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Container(
-          width: 340,
-          constraints: const BoxConstraints(maxHeight: 500),
-          padding: const EdgeInsets.all(20.0),
+          width: 360,
+          constraints: const BoxConstraints(maxHeight: 650),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Titel und Schließen-Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      event.title, // Haupttitel des Events
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black54),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
+              // 💡 AUFRUF 1: Titel und Schließen-Button
+              buildDialogTitleBar(dialogContext, event.title),
+
+              // 💡 AUFRUF 2: Untertitel (Kategorie & Datum)
+              buildDialogSubtitleBar(
+                textLeft: event.category,
+                textRight: DateFormat('dd.MM.yyyy').format(event.date),
               ),
-
-              // Kategorie/Tag
-              if (event.category.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0, bottom: 12.0),
-                  child: Text(
-                    event.category,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-                ),
-
               const Divider(height: 1, thickness: 1, color: Colors.black12),
               const SizedBox(height: 12),
-
-              // 2. Scrollbarer Detailbereich (Zeit & Beschreibung)
+              // 2. Scrollbarer Detailbereich (mit _buildDetailField)
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Zeitangaben
-                      buildDetailRow("Zeitraum", "${event.von} - ${event.bis}"),
+                      // Anzeige des Zeitraums
+                      buildDetailField(
+                          "Zeitraum", "${event.von} - ${event.bis}"),
 
-                      // Beschreibung (als langen Textblock)
+                      // Anzeige der Beschreibung
                       if (event.description.isNotEmpty)
-                        buildDetailRow("Details", event.description),
+                        buildDetailField("Details", event.description,
+                            maxLines: 5),
 
-                      // Optional: Ort (Hier wird der Ort ausgegeben, wenn er nicht leer ist)
+                      // Anzeige des Ortes
                       if (event.ort.isNotEmpty)
-                        buildDetailRow("Ort", event.ort),
+                        buildDetailField("Ort", event.ort),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // 3. Export-Button
-              Align(
-                alignment: Alignment.center,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Schließt den Dialog und führt dann den Export durch
-                    Navigator.of(context).pop();
-                    exportEventAsIcs(ScaffoldMessenger.of(context), event);
-                  },
-                  icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                  label: const Text("Termin exportieren"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 4,
-                  ),
-                ),
+              // --- 3. Aktion (NEU: Nur Icons & Zähler wie auf der Karte) ---
+              RegistrationActionButtons(
+                dialogContext: dialogContext,
+                event: event,
+                isUserLoggedIn: userProvider.user.uid.isNotEmpty,
+                isUserAccepted: isUserAccepted,
+                acceptedCount: acceptedCount,
               ),
             ],
           ),

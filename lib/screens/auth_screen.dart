@@ -7,7 +7,7 @@ import 'package:verein_app/models/user.dart';
 import 'package:verein_app/providers/user_provider.dart';
 import 'package:verein_app/utils/app_utils.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/verein_appbar.dart';
+import '../widgets/verein_appbar.dart'; // 💡 Import des echten Appbar-Widgets
 import '../models/http_exception.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -21,13 +21,17 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool registrieren = false;
+  // 💡 Die Variablen zur Steuerung und Verwaltung des Zustands
+  bool registrieren =
+      false; // Steuert, was angezeigt wird (Login=false, SignUp=true)
   var _isLoading = false;
+
   final email = TextEditingController();
   final password = TextEditingController();
   final platzbuchungLink = TextEditingController();
   final nachname = TextEditingController();
   final vorname = TextEditingController();
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -43,6 +47,58 @@ class _AuthScreenState extends State<AuthScreen> {
           )
         ],
       ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // ⚠️ WICHTIG: Die Argumente der Route sind nicht sofort in initState verfügbar.
+    // Wir verwenden addPostFrameCallback, um auf den Context zugreifen zu können.
+
+    // Wir rufen die Logik auf, um zu prüfen, ob ein Argument übergeben wurde,
+    // das uns zwingt, direkt zum Registrieren-Modus zu springen.
+    _checkInitialRouteArguments();
+  }
+
+  void _checkInitialRouteArguments() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 1. Hole die Routen-Einstellungen.
+      final settings = ModalRoute.of(context)?.settings;
+
+      // 2. Extrahiere die übergebenen Argumente als Map.
+      final arguments = settings?.arguments;
+
+      // 3. Prüfe, ob das 'mode' Argument existiert und 'signup' ist.
+      if (arguments is Map<String, dynamic> && arguments['mode'] == 'signup') {
+        // Nur updaten, wenn es nötig ist.
+        if (registrieren == false) {
+          setState(() {
+            registrieren = true; // Setze den Status auf Registrieren (SignUp)
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      // 💡 Nutzung des importierten VereinAppbar-Widgets
+      appBar: VereinAppbar(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(color: Colors.white10),
+                ),
+                // Zeigt 'signUpWidget' (Registrierung), wenn registrieren=true ist.
+                // Dieser Zustand wird durch _checkInitialRouteArguments gesetzt.
+                registrieren ? signUpWidget() : logInWidget(),
+              ],
+            ),
     );
   }
 
@@ -421,24 +477,6 @@ class _AuthScreenState extends State<AuthScreen> {
           const Spacer(), // Füllt den restlichen Platz aus
         ],
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: VereinAppbar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                Container(
-                  decoration: const BoxDecoration(color: Colors.white10),
-                ),
-                registrieren ? signUpWidget() : logInWidget(),
-              ],
-            ),
     );
   }
 }

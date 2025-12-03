@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
+import 'package:verein_app/providers/team_chat_provider.dart';
+import 'package:verein_app/screens/team_chat_screen.dart';
 import './screens/user_profile_screen.dart';
 import './utils/push_notification_service.dart';
 import './providers/season_provider.dart';
@@ -95,6 +97,10 @@ class MyApp extends StatelessWidget {
         // Holen Sie sich die Instanz A, die soeben erstellt wurde.
         final authProviderInstanceA = context.read<AuthorizationProvider>();
 
+        // 1. HIER die App ID der aktuellen Plattform auslesen
+        final String currentAppId =
+            DefaultFirebaseOptions.currentPlatform.appId;
+
         return MultiProvider(
           providers: [
             // Auth Provider als Basis
@@ -116,6 +122,13 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
               create: (_) => NewsProvider(null),
               update: (_, auth, prev) => NewsProvider(auth.writeToken),
+            ),
+
+            ChangeNotifierProxyProvider<AuthorizationProvider,
+                TeamChatProvider>(
+              create: (_) => TeamChatProvider(null, currentAppId),
+              update: (_, auth, prev) =>
+                  TeamChatProvider(auth.writeToken, currentAppId),
             ),
 
             ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
@@ -201,6 +214,7 @@ class MyApp extends StatelessWidget {
                     const AddLigaSpieleScreen(),
                 AddTeamResultScreen.routename: (ctx) =>
                     const AddTeamResultScreen(),
+                TeamChatScreen.routename: (ctx) => const TeamChatScreen(),
               },
             ),
           ),

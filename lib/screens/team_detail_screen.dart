@@ -4,12 +4,15 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:verein_app/models/chat_member.dart';
 import 'package:verein_app/popUps/edit_team_result_dialog.dart';
 import 'package:verein_app/popUps/show_images_dialog.dart';
 import 'package:verein_app/popUps/show_team_popup.dart';
+import 'package:verein_app/providers/team_chat_provider.dart';
 import 'package:verein_app/providers/team_provider.dart';
 import 'package:verein_app/providers/user_provider.dart';
 import 'package:verein_app/utils/image_helper.dart';
+import 'package:verein_app/utils/ui_dialog_utils.dart';
 import '../models/season.dart';
 import '../models/team.dart';
 import '../models/tennismatch.dart';
@@ -35,6 +38,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   int _currentPage = 0;
   bool _canEdit = false;
   bool _isLoadingPermission = true; // Zeigt an, ob die Prüfung noch läuft
+  bool isUpdating = false;
 
   @override
   void initState() {
@@ -560,23 +564,248 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   }
 
   Widget getSpieler(int activeTab) {
-    if (activeTab == 0) {
-      return Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Column(
-          children: [
-            // Placeholder for players (will be filled later)
-            Text("Spieler/-innen - In Arbeit",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ],
-        ),
+    if (activeTab == 1) {
+      return Consumer<TeamChatProvider>(
+        builder: (context, tcProvider, child) {
+          // KORREKTUR 1: Filtere die aktiven Mitglieder und hole das TeamMemberDetail-Objekt.
+          final activeMembers = tcProvider.members.values
+              .where(
+                  (member) => member.active) // Korrekter Zugriff auf 'active'
+              .toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                child: Text(
+                  "Aktuelle Chat-Teilnehmer/-innen (UIDs)",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              if (!_isLoadingPermission && _canEdit)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _addPlayer(context),
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Mitglied hinzufügen'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 40),
+                    ),
+                  ),
+                ),
+              if (activeMembers.isEmpty) // KORREKTUR: Nutze die neue Liste
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("Es sind noch keine Mitglieder in diesem Chat."),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount:
+                      activeMembers.length, // KORREKTUR: Nutze die neue Liste
+                  itemBuilder: (context, index) {
+                    final memberDetail =
+                        activeMembers[index]; // NEU: TeamMemberDetail Objekt
+                    final uid = memberDetail.userId;
+
+                    // KORREKTUR: Verwende den tatsächlichen Anzeigenamen oder die UID als Fallback
+                    final displayName = memberDetail.displayName.isNotEmpty
+                        ? memberDetail.displayName
+                        : uid;
+
+                    final isTeamLeader = (uid ==
+                        team.mfUID); // Korrekte Prüfung gegen das Team-Feld
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: Icon(
+                          isTeamLeader ? Icons.star : Icons.person_pin,
+                          color: isTeamLeader ? Colors.amber : Colors.indigo,
+                        ),
+                        title: Text(displayName),
+                        subtitle: Text(''),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.message,
+                                  color: Colors.blueAccent),
+                              onPressed: () => _startChat(memberDetail),
+                              tooltip: 'Chat starten (1:1)',
+                            ),
+
+                            // Lösch-Button (darf sich nicht selbst löschen)
+                            if (!_isLoadingPermission &&
+                                _canEdit &&
+                                memberDetail.userId !=
+                                    Provider.of<UserProvider>(context,
+                                            listen: false)
+                                        .user
+                                        .uid)
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () =>
+                                    _confirmDeletePlayer(memberDetail),
+                                tooltip: 'Teilnehmer entfernen',
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              const SizedBox(height: 16),
+            ],
+          );
+        },
       );
     }
-    return Container(); // Empty container if activeTab is not 1
+    return Container();
+  }
+
+// NEUE METHODE: Simuliert den Start eines 1:1 Chats mit dem Spieler
+  void _startChat(TeamMemberDetail player) {
+    // ℹ️ HIER KÄME DIE EIGENTLICHE CHAT-LOGIK:
+    // Z.B. Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => ChatScreen(userId: player.id)));
+
+    // Im Moment: Einfache visuelle Bestätigung und Log-Ausgabe
+    debugPrint(
+        'Chat gestartet mit: ${player.displayName} (ID: ${player.userId})');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Chat mit ${player.displayName} wird gestartet...'),
+        duration: const Duration(milliseconds: 1500),
+      ),
+    );
+  }
+
+  // NEUE METHODE: Bestätigungsdialog zum Entfernen eines Spielers aus der Chat-Gruppe
+  void _confirmDeletePlayer(TeamMemberDetail player) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Teilnehmer entfernen?'),
+        content: Text(
+            'Sind Sie sicher, dass Sie ${player.displayName} aus der Chat-Gruppe entfernen möchten?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // *** HIER WIRD DER PROVIDER GENUTZT ***
+              Provider.of<TeamChatProvider>(context, listen: false)
+                  .updateGroupMember(player, false);
+              // *************************************
+
+              Navigator.of(ctx).pop(); // Dialog schließen
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('${player.displayName} wurde entfernt!')),
+                );
+              }
+            },
+            child: const Text('Entfernen', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addPlayer(BuildContext context) {
+    final TextEditingController uidController = TextEditingController();
+    final TeamChatProvider tcProvider =
+        Provider.of<TeamChatProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Neues Mitglied hinzufügen (Admin)'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Geben Sie die eindeutige Benutzer-ID (UID) des neuen Chat-Teilnehmers ein:',
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: uidController,
+                decoration: const InputDecoration(
+                  labelText: 'Benutzer-ID (UID)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newUid = uidController.text.trim();
+              if (newUid.isNotEmpty) {
+                Navigator.of(ctx).pop(); // Dialog schließen
+                try {
+                  // KORREKTUR 3: Erstelle ein TeamMemberDetail-Objekt für die Provider-API
+                  // (Annahme: TeamMemberDetail ist importiert/verfügbar)
+                  final newMemberDetail = TeamMemberDetail(
+                    userId: newUid,
+                    displayName: newUid, // UID als Platzhalter-Name verwenden
+                    active: true,
+                  );
+
+                  setState(() {
+                    isUpdating = true;
+                  });
+                  try {
+                    await tcProvider.updateGroupMember(newMemberDetail, true);
+                  } catch (e) {
+                    debugPrint('Fehler beim Hinzufügen des Mitglieds: $e');
+                    showError(context, "FEhler ${e.toString()}");
+                  } finally {
+                    setState(() {
+                      isUpdating = false;
+                    });
+                  }
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('UID $newUid zur Gruppe hinzugefügt.')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Fehler beim Hinzufügen: $e'),
+                          backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Hinzufügen'),
+          ),
+        ],
+      ),
+    );
   }
 }

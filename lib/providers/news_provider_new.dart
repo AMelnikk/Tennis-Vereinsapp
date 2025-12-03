@@ -19,7 +19,7 @@ class NewsProviderNew with ChangeNotifier {
   final int pageSize = 5;
   final Map<String, Uint8List> imageCache = {};
 
-  //variables for admin (e.g. add_news_screen.dart)
+  // variables for admin (e.g. add_news_screen.dart and so on)
   bool isDebug = false;
   final title = TextEditingController();
   final body = TextEditingController();
@@ -66,7 +66,6 @@ class NewsProviderNew with ChangeNotifier {
                 ?.map((e) => e.toString())
                 .toList() ??
             [];
-        if (kDebugMode) print("photoBlob from getData: $photoBlob");
 
         return News(
           id: doc.id,

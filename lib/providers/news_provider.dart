@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/news.dart';
 
+// !!! Jetzt nicht im Einsatz, trotzdem bleibt der Provider für eine gewisse Zeit 
+// existieren, damit, falls es Felher entstehen man den Code hier schauen kann !!!
+
 class NewsProvider with ChangeNotifier {
   NewsProvider(this._token);
 

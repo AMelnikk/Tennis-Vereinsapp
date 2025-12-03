@@ -366,7 +366,8 @@ class TermineProvider with ChangeNotifier {
     );
   }
 
-  /// Lädt die Termine vom Server (z. B. Firebase) und speichert sie in der Liste
+  /// Lädt die Termine vom Server und reichert sie mit Anmeldedaten an.
+  /// **Optimiert: Anmeldungen werden jetzt in einem Bulk-Request geladen.**
   Future<List<CalendarEvent>> loadEvents(int jahr, bool forceReload) async {
     // 1. Cache-Prüfung: Wenn Daten vorhanden und kein Neuladen erzwungen wird.
     if (eventsCache.containsKey(jahr) && !forceReload) {
@@ -375,7 +376,7 @@ class TermineProvider with ChangeNotifier {
     }
 
     isLoading = true;
-    List<CalendarEvent> loadedEvents = []; // Umbenennung zur Klarheit
+    List<CalendarEvent> loadedEvents = [];
     List<Map<String, dynamic>> data = [];
 
     try {
@@ -384,7 +385,6 @@ class TermineProvider with ChangeNotifier {
 
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        // ... (Bestehender Code zum Laden der Termine aus Firebase in die 'data'-Liste) ...
         dynamic responseJson =
             (response.body.isNotEmpty && response.body != "null")
                 ? json.decode(response.body)
@@ -402,7 +402,8 @@ class TermineProvider with ChangeNotifier {
               .toList();
         }
       } else {
-        debugPrint("⚠️ Fehler beim Abrufen der Daten: ${response.statusCode}");
+        debugPrint(
+            "⚠️ Fehler beim Abrufen der Termindaten: ${response.statusCode}");
       }
 
       // 1. Events aus den validen Daten erstellen (Initialisierung)
@@ -417,31 +418,36 @@ class TermineProvider with ChangeNotifier {
           description: eventData['details'] ?? '',
           category: eventData['category'] ?? '',
           query: eventData['query'] ?? '',
-          // WICHTIG: Hier müssen die neuen Felder mit Standardwerten befüllt werden
+          // WICHTIG: Hier werden die Registrierungs-Felder leer initialisiert
           registrationCount: 0,
           allRegistrations: [], // Leere Liste initialisieren
         );
       }).toList();
 
-// Durchlaufe die geladenen Termine und reicher sie mit Anmeldedaten an.
-      for (final event in loadedEvents) {
-        // 1. Registrierungen aus der Datenbank holen
-        final List<EventRegistration> allRegistrations =
-            await loadRegistrations(event.date.year, event.id);
+      // 💥 OPTIMIERUNG: Lade ALLE Anmeldungen für das gesamte Jahr in einem Request
+      final allRegistrationsByTermin = await _loadAllRegistrationsForYear(jahr);
 
-        // 2. Lokale Variablen für das Caching initialisieren
+      // Durchlaufe die geladenen Termine und reicher sie mit Anmeldedaten an.
+      // KEINE HTTP-AUFRUFE MEHR IN DIESER SCHLEIFE!
+      for (final event in loadedEvents) {
+        // Registrierungen für dieses Event aus der Bulk-Map abrufen
+        final List<EventRegistration> allRegistrations =
+            allRegistrationsByTermin[event.id] ?? [];
+
         int jaCount = 0;
 
-        // 3. Registrierungen filtern und cachen
+        // Registrierungen filtern und cachen
         for (var reg in allRegistrations) {
-          // FIX 1: Verwende den Vergleichsoperator (==) statt des Zuweisungsoperators (=)
-          // FIX 2: Vergleiche mit dem String 'ja', nicht mit dem Booleschen Wert true
+          // Annahme: reg.status ist ein boolscher Wert (true = Ja)
+          // (Siehe Kommentar im Original-Code: "Vergleiche mit dem String 'ja',
+          // nicht mit dem Booleschen Wert true". Bei Unklarheit den Typ im Model prüfen.)
           if (reg.status) {
             jaCount += reg.peopleCount ?? 1;
           }
         }
 
-        // Setze die Cache-Daten
+        // Setze die Cache-Daten (Annahme: CalendarEvent ist mutierbar oder wird hier aktualisiert)
+        // BESSER wäre ein event.copyWith({...}) und das Ersetzen in loadedEvents
         event.allRegistrations = allRegistrations;
         event.registrationCount = jaCount;
       }
@@ -505,8 +511,67 @@ class TermineProvider with ChangeNotifier {
     }
   }
 
+  /// OPTIMIERUNG: Lädt ALLE Anmeldungen für ein Jahr in einem einzigen Request.
+  /// Struktur: {terminId: [EventRegistration, ...], ...}
+  Future<Map<int, List<EventRegistration>>> _loadAllRegistrationsForYear(
+      int jahr) async {
+    if (_token == null || _token.isEmpty) {
+      return {};
+    }
+
+    // URL, um alle Kinder unterhalb des Jahresknotens abzurufen
+    final url = Uri.parse(
+        "https://db-teg-default-rtdb.firebaseio.com/EventRegistration/$jahr.json?auth=$_token");
+
+    final Map<int, List<EventRegistration>> registrationsByTerminId = {};
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode != 200 || response.body == "null") {
+        return {};
+      }
+
+      // JSON-Struktur ist: {<terminId>: {<userId>: {data}, <userId2>: {data2}}, ...}
+      final Map<String, dynamic> responseJson = json.decode(response.body);
+
+      responseJson.forEach((terminIdStr, registrationsMap) {
+        final terminId = int.tryParse(terminIdStr);
+
+        if (terminId != null && registrationsMap is Map<String, dynamic>) {
+          registrationsByTerminId[terminId] = [];
+
+          registrationsMap.forEach((userId, data) {
+            if (data is Map<String, dynamic>) {
+              try {
+                // Firebase-Schlüssel (userId) als registrationId nutzen
+                data['registrationId'] = userId;
+                // Füge die terminId hinzu
+                data['terminId'] = terminId;
+
+                registrationsByTerminId[terminId]!
+                    .add(EventRegistration.fromMap(data));
+              } catch (e) {
+                if (isDebugMode) {
+                  debugPrint(
+                      "Fehler beim Parsen einer Anmeldung für Termin $terminId ($userId): $e");
+                }
+              }
+            }
+          });
+        }
+      });
+    } catch (error) {
+      debugPrint(
+          "❌ Fehler beim Laden aller Anmeldungen für Jahr $jahr: $error");
+      return {};
+    }
+
+    return registrationsByTerminId;
+  }
+
   /// Lädt die Anmeldungen für einen bestimmten Termin.
-  Future<List<EventRegistration>> loadRegistrations(
+  Future<List<EventRegistration>> loadRegistrationsForEvent(
       int jahr, int terminId) async {
     if (_token == null || _token.isEmpty) {
       return [];

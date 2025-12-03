@@ -13,6 +13,10 @@ const TextStyle _subtitleStyle = TextStyle(
   color: Colors.blueAccent, // Konsistente Farbe
 );
 
+const TextStyle _buttonTextStyle = TextStyle(
+  fontSize: 14,
+  color: Colors.white, // Konsistente Farbe
+);
 const TextStyle _textStyle = TextStyle(
   fontSize: 14,
   color: Colors.black87, // Konsistente Farbe
@@ -20,17 +24,18 @@ const TextStyle _textStyle = TextStyle(
 
 final buttonStyle = ElevatedButton.styleFrom(
   shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(8),
+    borderRadius: BorderRadius.circular(2),
   ),
   backgroundColor: Colors.blue[900],
   foregroundColor: Colors.white,
+  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
 );
 
 /// Erzeugt konsistent formatierten Text für den Hauptinhalt des Dialogs.
 Widget buildDialogBodyText(String text) {
   return Padding(
-    // Konsistentes Padding für den Dialog-Text
-    padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+    // Reduziertes unteres Padding, um Platz im Dialog zu sparen
+    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
     child: Text(
       text,
       style: _textStyle,
@@ -45,11 +50,14 @@ Widget buildDialogTitleBar(BuildContext dialogContext, String title) {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       Expanded(
-        child: Text(
-          title,
-          style: _titleStyle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8.0), // Puffer zum rechten Text
+          child: Text(
+            title,
+            style: _titleStyle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
       // Schließen-Button
@@ -70,20 +78,33 @@ Widget buildDialogSubtitleBar({
   return Padding(
     padding: const EdgeInsets.only(top: 4.0, bottom: 12.0),
     child: Row(
+      // mainAxisAlignment: spaceBetween trennt die beiden Widgets.
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Kategorie/Tag (nur anzeigen, wenn nicht leer)
+        // KORREKTUR: Expanded sorgt dafür, dass der linke Text nicht überläuft
+        // und das Umbrechen des Textes (softWrap: true) erlaubt.
         if (textLeft.isNotEmpty)
-          Text(
-            textLeft,
-            style: _subtitleStyle,
+          Expanded(
+            // Flex 2 gibt dem linken Text mehr Platz als dem rechten (standardmäßig 1),
+            // falls beide in Expanded wären. Hier reicht 1, da textRight nicht Expanded ist.
+            child: Padding(
+              padding:
+                  const EdgeInsets.only(right: 8.0), // Puffer zum rechten Text
+              child: Text(
+                textLeft,
+                style: _subtitleStyle,
+                // softWrap: true ist Standard, stellt aber sicher, dass Zeilenumbrüche erfolgen.
+                // Wir entfernen overflow: TextOverflow.ellipsis, damit der Text komplett angezeigt wird.
+              ),
+            ),
           ),
 
-        // Datum
+        // Datum (behält seine natürliche, nicht-flexible Größe)
         if (textRight.isNotEmpty)
           Text(
             textRight,
             style: _subtitleStyle,
+            textAlign: TextAlign.right,
           ),
       ],
     ),
@@ -98,7 +119,7 @@ Widget buildButton(String text, VoidCallback onPressed, {Icon? icon}) {
       icon: icon,
       label: Text(
         text,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: _buttonTextStyle,
       ),
       onPressed: onPressed,
     );
@@ -109,7 +130,7 @@ Widget buildButton(String text, VoidCallback onPressed, {Icon? icon}) {
       onPressed: onPressed,
       child: Text(
         text,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: _buttonTextStyle,
       ),
     );
   }
@@ -129,7 +150,7 @@ OverlayEntry showLoadingOverlay(BuildContext context) {
               padding: EdgeInsets.only(top: 16.0),
               child: Text(
                 'Lade Anmeldungen...',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),
           ],

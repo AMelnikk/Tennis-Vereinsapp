@@ -1,7 +1,6 @@
 // ignore_for_file: unnecessary_type_check, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/calendar_event_registration.dart';
 import 'package:verein_app/models/user.dart'; // Benötigt für User-Objekt in der Registrierungsliste
@@ -10,7 +9,6 @@ import 'package:verein_app/providers/user_provider.dart';
 import 'package:verein_app/utils/app_utils.dart'; // Angenommen: showConfirmationSnackbar, showErrorSnackbar
 import 'package:verein_app/utils/ui_dialog_utils.dart';
 import '../models/calendar_event.dart';
-import 'package:collection/collection.dart';
 import 'dart:typed_data';
 import 'package:file_saver/file_saver.dart';
 import 'package:csv/csv.dart';
@@ -22,6 +20,7 @@ class RegistrationActionButtons extends StatelessWidget {
   final bool isUserLoggedIn;
   final bool isUserAccepted;
   final int acceptedCount;
+  final VoidCallback onActionCompleted;
 
   const RegistrationActionButtons({
     super.key,
@@ -30,6 +29,7 @@ class RegistrationActionButtons extends StatelessWidget {
     required this.isUserLoggedIn,
     required this.isUserAccepted,
     required this.acceptedCount,
+    required this.onActionCompleted,
   });
 
   // Funktion: Zeigt einen Dialog an, wenn der Benutzer nicht eingeloggt ist
@@ -108,7 +108,7 @@ class RegistrationActionButtons extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15.0),
+      padding: const EdgeInsets.only(bottom: 2.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -118,13 +118,13 @@ class RegistrationActionButtons extends StatelessWidget {
               () => _showRegistrationDialog(dialogContext, event),
             ),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(2),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     isUserAccepted ? Icons.edit : Icons.check_circle,
-                    color: isUserAccepted ? Colors.blue.shade700 : Colors.green,
+                    color: isUserAccepted ? Colors.black : Colors.green,
                     size: 30,
                   ),
                   Text(
@@ -167,19 +167,19 @@ class RegistrationActionButtons extends StatelessWidget {
                   acceptedCount.toString(),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: Colors.green,
                     fontSize: 20,
                   ),
                 ),
                 const SizedBox(width: 4),
                 const Icon(
                   Icons.people_alt,
-                  color: Colors.red,
+                  color: Colors.grey,
                   size: 24,
                 ),
                 const Icon(
                   Icons.check,
-                  color: Colors.red,
+                  color: Colors.green,
                   size: 14,
                 ),
               ],
@@ -234,61 +234,71 @@ void _showRegistrationDialog(BuildContext context, CalendarEvent event) {
           ),
         ),
         actions: <Widget>[
-          // Sekundäre Aktion: Abbrechen (als TextButton beibehalten für UX)
-          TextButton(
-            child: const Text('Abbrechen'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-          // Primäre Aktion: Anmelden (Nutzung der Hilfsklasse buildButton)
-          buildButton(
-            'Anmelden',
-            () async {
-              final peopleCount = int.tryParse(personController.text) ?? 1;
-              final whatToBring = bringController.text;
+          // KORREKTUR: Alle Aktionen in eine Row mit MainAxisAlignment.center verpacken
+          Row(
+            mainAxisAlignment: MainAxisAlignment
+                .center, // 💡 KORREKTUR für mittige Ausrichtung
+            children: [
+              // Sekundäre Aktion: Abbrechen
+              TextButton(
+                child: const Text('Abbrechen'),
+                onPressed: () {
+                  // Hier verwenden wir 'context', da es der BuildContext des Dialogs ist,
+                  // der für Navigator.pop() nötig ist.
+                  Navigator.of(context).pop();
+                },
+              ),
+              const SizedBox(width: 8), // Abstand zwischen den Buttons
 
-              final newRegistration = EventRegistration(
-                registrationId: "${event.id}_$currentUserId",
-                terminId: event.id,
-                userId: currentUserId,
-                status: true, // Zusage
-                peopleCount: peopleCount,
-                itemsBrought: whatToBring.trim().isEmpty ? null : whatToBring,
-                timestamp: DateTime.now(),
-              );
+              // Primäre Aktion: Anmelden (Nutzung der Hilfsklasse buildButton)
+              buildButton(
+                'Anmelden',
+                () async {
+                  final peopleCount = int.tryParse(personController.text) ?? 1;
+                  final whatToBring = bringController.text;
 
-              final success =
-                  await terminProvider.saveRegistration(newRegistration);
+                  final newRegistration = EventRegistration(
+                    registrationId: "${event.id}_$currentUserId",
+                    terminId: event.id,
+                    userId: currentUserId,
+                    status: true, // Zusage
+                    peopleCount: peopleCount,
+                    itemsBrought:
+                        whatToBring.trim().isEmpty ? null : whatToBring,
+                    timestamp: DateTime.now(),
+                  );
 
-              if (!context.mounted) return;
+                  // Der Rest Ihrer Anmelde-Logik
+                  final success =
+                      await terminProvider.saveRegistration(newRegistration);
 
-              if (success) {
-                // Lokales Event-Objekt für UI-Update aktualisieren
-                final updatedRegistrations =
-                    List<EventRegistration>.from(event.allRegistrations);
+                  if (!context.mounted) return;
 
-                updatedRegistrations
-                    .removeWhere((reg) => reg.userId == currentUserId);
-                updatedRegistrations.add(newRegistration);
-                event.allRegistrations = updatedRegistrations;
-                terminProvider.updateEvent(event);
+                  if (success) {
+                    final updatedRegistrations =
+                        List<EventRegistration>.from(event.allRegistrations);
 
-                // Dialoge schließen (innerer Dialog, dann äußerer Detail-Dialog)
-                Navigator.of(context).pop(); // Schließt Anmelde-Dialog
-                Navigator.of(context)
-                    .pop(); // Schließt den äußeren Dialog (der dieses Widget enthielt)
+                    updatedRegistrations
+                        .removeWhere((reg) => reg.userId == currentUserId);
+                    updatedRegistrations.add(newRegistration);
+                    event.allRegistrations = updatedRegistrations;
+                    terminProvider.updateEvent(event);
 
-                // Haupt-Detail-Dialog neu öffnen, um den aktualisierten Status anzuzeigen
-                showCalendarEventDetails(dialogContext, event);
+                    Navigator.of(context).pop(); // Schließt Anmelde-Dialog
 
-                showConfirmation(dialogContext,
-                    'Sie sind erfolgreich für ${event.title} angemeldet!');
-              } else {
-                Navigator.of(context).pop(); // Schließt den inneren Dialog
-                showError(dialogContext, event.title);
-              }
-            },
+                    // Hier habe ich den Context-Namen zu dialogContext geändert,
+                    // um die Lesbarkeit zu verbessern, falls Sie den äußeren Dialog
+                    // (z.B. Event-Details) meinen. Bitte prüfen Sie, welchen Context
+                    // Sie für showConfirmation verwenden müssen.
+                    showConfirmation(dialogContext,
+                        'Sie sind erfolgreich für ${event.title} angemeldet!');
+                  } else {
+                    Navigator.of(context).pop();
+                    showError(dialogContext, event.title);
+                  }
+                },
+              ),
+            ],
           ),
         ],
       );
@@ -343,20 +353,6 @@ void _handleDecline(
         backgroundColor: Colors.orange,
       ),
     );
-
-    // Den Haupt-Detail-Dialog schließen
-    Navigator.of(dialogContext).pop();
-
-    final mainContext =
-        dialogContext; // Dies ist der Kontext des Widgets, das den Dialog gestartet hat.
-
-    if (mainContext.mounted) {
-      showCalendarEventDetails(
-          mainContext, event); // Nutzt den Kontext der Hauptseite
-    }
-
-    // Den Haupt-Detail-Dialog neu öffnen, um die aktualisierten Zähler/Status zu zeigen
-    showCalendarEventDetails(dialogContext, event);
   } else {
     // Fehlerbehandlung
     showError(dialogContext, event.title);
@@ -421,36 +417,48 @@ void _showDeclineDialog(BuildContext context, CalendarEvent event) {
           ),
         ),
         actions: <Widget>[
-          // KORREKTUR: buildButton für Abbrechen verwenden (mit neutraler Farbe)
-          buildButton(
-            'Abbrechen',
-            () {
-              Navigator.of(dialogContext).pop(); // Schließt den inneren Dialog
-            },
-          ),
-          // KORREKTUR: buildButton verwenden (mit roter Farbe)
-          buildButton(
-            'Abmelden',
-            () {
-              // Validierung
-              final peopleCount = int.tryParse(peopleController.text) ?? 0;
-              final comment = commentController.text.trim().isEmpty
-                  ? null
-                  : commentController.text.trim();
+          // 💡 KORREKTUR: MainAxisAlignment.center verwenden, um die Buttons mittig zu platzieren.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Abbrechen Button (links)
+              buildButton(
+                'Abbrechen',
+                () {
+                  // Sicherstellen, dass der richtige Context für Pop verwendet wird (context des Dialogs)
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(
+                    Icons.cancel_outlined), // Optional, aber gut für UX
+              ),
+              // WICHTIG: Erhöhen Sie den Abstand für eine bessere Optik
+              const SizedBox(width: 8),
 
-              if (peopleCount < 1) {
-                // KORREKTUR: Snackbar für Fehlermeldung
-                showWarning(
-                    context, 'Die Anzahl der Personen muss mindestens 1 sein.');
-                return;
-              }
+              // Abmelden Button (rechts)
+              buildButton(
+                'Abmelden',
+                () {
+                  // Validierung
+                  final peopleCount = int.tryParse(peopleController.text) ?? 0;
+                  final comment = commentController.text.trim().isEmpty
+                      ? null
+                      : commentController.text.trim();
 
-              // Den inneren Dialog schließen, bevor die asynchrone Speicherung beginnt
-              Navigator.of(context).pop();
+                  if (peopleCount < 1) {
+                    showWarning(context,
+                        'Die Anzahl der Personen muss mindestens 1 sein.');
+                    return;
+                  }
 
-              // Die asynchrone Logik ausführen
-              _handleDecline(dialogContext, event, peopleCount, comment);
-            },
+                  // Den inneren Dialog schließen
+                  Navigator.of(context).pop();
+
+                  // Die asynchrone Logik ausführen
+                  _handleDecline(dialogContext, event, peopleCount, comment);
+                },
+                icon: const Icon(Icons.logout), // Optional, aber gut für UX
+              ),
+            ],
           ),
         ],
       );
@@ -509,43 +517,52 @@ void _showRegistrationsList(
         title: buildDialogTitleBar(
             listDialogContext, 'Anmeldungen für: ${event.title}'),
         content: SizedBox(
-          width: 300,
+          width: 400,
           height: 400,
-          child: sortedRegistrations.isEmpty
-              ? buildDialogSubtitleBar(
-                  textLeft: 'Keine Anmeldungen vorhanden.', textRight: '')
-              : ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    // Header mit Zusammenfassung
-                    buildDialogSubtitleBar(
-                        textLeft: 'Angemeldete Personen:',
-                        textRight: '$acceptedPeopleCount'),
-                    const Divider(height: 1),
-                    // Liste der Anmeldungen
-                    ..._buildRegistrationContent(sortedRegistrations, userMap),
-                  ],
-                ),
+          child: Column(
+            children: [
+              Expanded(
+                child: sortedRegistrations.isEmpty
+                    ? buildDialogSubtitleBar(
+                        textLeft: 'Keine Anmeldungen vorhanden.', textRight: '')
+                    : ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          buildDialogSubtitleBar(
+                              textLeft: 'Angemeldete Personen:',
+                              textRight: '$acceptedPeopleCount'),
+                          const Divider(height: 1),
+                          ..._buildRegistrationContent(
+                              sortedRegistrations, userMap),
+                        ],
+                      ),
+              ),
+              const SizedBox(height: 12),
+              // Buttons am Ende, mittig
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  buildButton(
+                    'CSV Export',
+                    () {
+                      Navigator.of(listDialogContext).pop();
+                      _exportRegistrationsToCsv(
+                          context, event, sortedRegistrations, userMap);
+                    },
+                    icon: const Icon(Icons.download),
+                  ),
+                  const SizedBox(width: 8),
+                  buildButton(
+                    'Schließen',
+                    () => Navigator.of(listDialogContext).pop(),
+                    // 💡 KORREKTUR: Muss ein `const Icon(Icons.close)` Widget sein
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: <Widget>[
-          // Export Button (Syntax korrigiert)
-          buildButton(
-            'CSV Export',
-            () {
-              // Den aktuellen Anmeldungs-Dialog schließen
-              Navigator.of(listDialogContext).pop();
-
-              _exportRegistrationsToCsv(
-                  context, event, sortedRegistrations, userMap);
-            },
-            icon: const Icon(Icons.download), // Icon übergeben
-          ),
-          // Schließen Button
-          buildButton(
-            'Schließen',
-            () => Navigator.of(listDialogContext).pop(),
-          ),
-        ],
       );
     },
   );
@@ -592,7 +609,7 @@ Widget _buildSectionHeader(String title) {
     child: Text(
       title,
       style: const TextStyle(
-          fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+          fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
     ),
   );
 }
@@ -600,20 +617,21 @@ Widget _buildSectionHeader(String title) {
 /// Generiert die Kopfzeile der Tabelle ("Name", "Anzahl Personen", "Bemerkung")
 Widget _buildTableHeader() {
   return const Padding(
-    padding: EdgeInsets.only(top: 8.0, bottom: 4.0, left: 16.0, right: 16.0),
+    padding: EdgeInsets.only(top: 8.0, bottom: 4.0, left: 8.0, right: 8.0),
     child: Row(
       children: [
         Expanded(
             flex: 4,
-            child: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
+            child: Text('Name',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
         Expanded(
             flex: 2,
-            child: Text('Anzahl Personen',
-                style: TextStyle(fontWeight: FontWeight.bold))),
+            child: Text('Anzahl',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
         Expanded(
             flex: 3,
             child: Text('Bemerkung',
-                style: TextStyle(fontWeight: FontWeight.bold))),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
       ],
     ),
   );
@@ -626,7 +644,7 @@ Widget _buildTableRow(String name, EventRegistration reg) {
       reg.itemsBrought?.isNotEmpty == true ? reg.itemsBrought! : '-';
 
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
     child: DecoratedBox(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
@@ -705,108 +723,4 @@ Future<void> _exportRegistrationsToCsv(
       );
     }
   }
-}
-
-// =========================================================================
-// 3. HAUPTFUNKTION: showCalendarEventDetails
-// =========================================================================
-
-/// Zeigt ein modales Dialogfenster mit allen Details eines Kalenderereignisses an.
-void showCalendarEventDetails(BuildContext context, CalendarEvent event) {
-  // Helfer, um ein ReadOnly-Feld für die Details zu erstellen
-  Widget buildDetailField(String label, String value, {int maxLines = 1}) {
-    // Verwendet die definierte buildTextFormField
-    return buildTextFormField(
-      label,
-      controller: TextEditingController(text: value),
-      readOnly: true,
-      maxLines: maxLines,
-      padding: const EdgeInsets.only(bottom: 8.0),
-    );
-  }
-
-  final String formattedDate = DateFormat('dd.MM.yyyy').format(event.date);
-
-  final userProvider = Provider.of<UserProvider>(context, listen: false);
-  final isUserLoggedIn = userProvider.user.uid.isNotEmpty;
-  final int acceptedCount = event.allRegistrations
-      .where((reg) => reg.status == true)
-      .map((reg) =>
-          reg.peopleCount ??
-          1) // Nimm 1 als Standardwert, falls peopleCount null ist
-      .fold(0, (sum, count) => sum + count); // Summiere die Werte
-
-  // 1. REGISTRIERUNGSSTATUS DES AKTUELLEN USERS PRÜFEN
-  final EventRegistration? currentUserRegistration =
-      event.allRegistrations.firstWhereOrNull(
-    (reg) => reg.userId == userProvider.user.uid,
-  );
-
-  // Prüft, ob der User registriert ist und zugesagt hat
-  final bool isUserAccepted = currentUserRegistration?.status == true;
-
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (BuildContext dialogContext) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Container(
-          width: 360,
-          constraints: const BoxConstraints(maxHeight: 650),
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. TITEL: Nutzung der vereinbarten HELFERFUNKTION
-              buildDialogTitleBar(dialogContext, event.title),
-
-              // 2. UNTERTITEL: Nutzung der vereinbarten HELFERFUNKTION
-              buildDialogSubtitleBar(
-                textLeft: event.category,
-                textRight: formattedDate,
-              ),
-
-              const Divider(height: 1, thickness: 1, color: Colors.black12),
-              const SizedBox(height: 12),
-
-              // 3. Scrollbarer Detailbereich
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Anzeige des Zeitraums
-                      buildDetailField(
-                          "Zeitraum", "${event.von} - ${event.bis}"),
-
-                      // Anzeige der Beschreibung
-                      if (event.description.isNotEmpty)
-                        buildDetailField("Details", event.description,
-                            maxLines: 5),
-
-                      // Anzeige des Ortes
-                      if (event.ort.isNotEmpty)
-                        buildDetailField("Ort", event.ort),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // --- 4. Aktion (RegistrationActionButtons) ---
-              RegistrationActionButtons(
-                dialogContext: dialogContext,
-                event: event,
-                isUserLoggedIn: isUserLoggedIn,
-                isUserAccepted: isUserAccepted,
-                acceptedCount: acceptedCount,
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:verein_app/models/calendar_event_registration.dart';
+import 'package:verein_app/providers/user_provider.dart';
+import 'package:verein_app/widgets/registration_action_buttons.dart';
 import 'package:verein_app/widgets/team_result_spielort_icon.dart';
 import '../providers/team_result_provider.dart';
 import '../models/calendar_event.dart';
@@ -8,6 +11,7 @@ import '../popUps/calender_show_event_details_popup.dart';
 import '../providers/termine_provider.dart';
 import '../screens/calendar_screen.dart';
 import '../widgets/calender_buttons.dart';
+import 'package:collection/collection.dart';
 
 class CalenderListScreen extends StatefulWidget {
   const CalenderListScreen({super.key});
@@ -42,21 +46,23 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
 
       // Zuerst prüfen, ob die Events für das Jahr bereits geladen sind
 
-      List<CalendarEvent> terminEvents =
-          await termineProvider.loadEvents(jahr, false);
-      // Liga-Spiele ebenfalls laden
-      await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
-      List<CalendarEvent> lsEvents =
-          ligaSpieleProvider.getLigaSpieleAsEvents(jahr);
-      // Alle Events zusammenführen
-      setState(() {
-        List<CalendarEvent> calendarEvents = [
-          ...terminEvents,
-          ...lsEvents,
-        ];
-        termineProvider.eventsCache[jahr] = calendarEvents;
-      });
-      // Events für das Jahr im Cache speichern
+      if (!termineProvider.eventsCache.containsKey(jahr)) {
+        List<CalendarEvent> terminEvents =
+            await termineProvider.loadEvents(jahr, false);
+        // Liga-Spiele ebenfalls laden
+        await ligaSpieleProvider.loadLigaSpieleForYear(jahr);
+        List<CalendarEvent> lsEvents =
+            ligaSpieleProvider.getLigaSpieleAsEvents(jahr);
+        // Alle Events zusammenführen
+        setState(() {
+          List<CalendarEvent> calendarEvents = [
+            ...terminEvents,
+            ...lsEvents,
+          ];
+          termineProvider.eventsCache[jahr] = calendarEvents;
+        });
+        // Events für das Jahr im Cache speichern
+      }
     } catch (e) {
       debugPrint("Fehler beim Laden der Events: $e");
     }
@@ -238,45 +244,97 @@ class _CalenderListScreenState extends State<CalenderListScreen> {
   }
 
   // Methode zur Anzeige der Event-Tage
+  // Methode zur Anzeige der Event-Tage
   Widget _buildDayEvents(CalendarEvent event) {
     String time = event.von;
 
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isUserLoggedIn = userProvider.user.uid.isNotEmpty;
+    final EventRegistration? currentUserRegistration =
+        event.allRegistrations.firstWhereOrNull(
+      (reg) => reg.userId == userProvider.user.uid,
+    );
+
+    // Prüft, ob der User registriert ist und zugesagt hat
+    final bool isUserAccepted = currentUserRegistration?.status == true;
+
+    // Gesamtzahl der Zusagen
+    final int acceptedCount = event.allRegistrations
+        .where((reg) => reg.status == true)
+        .fold(0, (sum, r) => sum + (r.peopleCount ?? 1));
+
     return InkWell(
-        onTap: () =>
-            showCalendarEventDetails(context, event), // Hier Popup aufrufen
-        child: Row(
-          children: [
-            // Uhrzeit, falls vorhanden
-            if (time != "00:00")
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  time,
-                  style: TextStyle(fontSize: 14),
+      onTap: () =>
+          showCalendarEventDetails(context, event), // Hier Popup aufrufen
+      // *** WICHTIGE ÄNDERUNG: Column statt Row als Haupt-Child ***
+      child: Column(
+        mainAxisSize:
+            MainAxisSize.min, // Nimmt nur den benötigten Platz in der Höhe ein
+        crossAxisAlignment: CrossAxisAlignment
+            .start, // Stellt sicher, dass der Text linksbündig bleibt
+        children: [
+          // 1. Zeile: Event-Details (Zeit, Icon, Titel)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment
+                .start, // Stellt sicher, dass alles oben ausgerichtet ist
+            children: [
+              // Uhrzeit, falls vorhanden
+              if (time != "00:00")
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    time,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+
+              const SizedBox(width: 4),
+
+              // Spielort-Icon nur bei Ligaspielen
+              if (event.category == 'Ligaspiel') ...[
+                getSpielortIcon(event.ort),
+                const SizedBox(width: 4),
+              ],
+
+              // Event-Titel
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    event.title,
+                    style: TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-
-            const SizedBox(width: 4),
-
-            // Spielort-Icon nur bei Ligaspielen
-            if (event.category == 'Ligaspiel') ...[
-              getSpielortIcon(event.ort),
-              const SizedBox(width: 4),
             ],
+          ),
 
-            // Event-Titel
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  event.title,
-                  style: TextStyle(fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
-                ),
+          // 2. Zeile (Optional): Buttons für die Registrierung
+          // --- Buttons nur anzeigen, wenn query == 'Ja' ---
+          if (event.query == 'Ja') ...[
+            // Vertikaler Abstand zwischen Text und Buttons
+            const SizedBox(height: 8),
+
+            // *** Platzierung der Buttons in der Mitte einer neuen Zeile ***
+            Center(
+              child: RegistrationActionButtons(
+                dialogContext: context,
+                event: event,
+                isUserLoggedIn: isUserLoggedIn,
+                isUserAccepted: isUserAccepted,
+                acceptedCount: acceptedCount,
+                onActionCompleted: () {
+                  // Da die Registrierungs-Aktion das Event im Provider aktualisiert,
+                  // muss dieses Widget (wenn es auf den Provider hört) hier nichts Besonderes tun.
+                  // Die Hauptaktualisierung findet automatisch statt.
+                },
               ),
             ),
-          ],
-        ));
+          ]
+        ],
+      ),
+    );
   }
 
   Widget _buildNavigationButtons(BuildContext context) {

@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/providers/news_provider.dart';
-import 'package:verein_app/utils/image_helper.dart';
+import 'package:verein_app/providers/news_provider_new.dart';
+import '../utils/image_helper.dart';
 import '../screens/news_detail_screen.dart';
 
 class NewsTile extends StatelessWidget {
@@ -24,18 +24,13 @@ class NewsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    NewsProvider newsProvider =
-        Provider.of<NewsProvider>(context, listen: false);
+    NewsProviderNew newsProvider =
+        Provider.of<NewsProviderNew>(context, listen: false);
     final double tileSize = (MediaQuery.of(context).size.width - 80) / 2;
     final imageCache = newsProvider.imageCache;
 
     return InkWell(
       onTap: () {
-        newsProvider.newsId = id;
-        newsProvider.newsDateController.text = date;
-        newsProvider.title.text = title;
-        newsProvider.body.text = body;
-        newsProvider.photoBlob = photoBlob;
         Navigator.of(context).pushNamed(
           NewsDetailScreen.routename,
           arguments: id,

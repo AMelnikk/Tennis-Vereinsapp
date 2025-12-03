@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/popUps/edit_team_result_dialog.dart';
 import 'package:verein_app/screens/news_detail_screen.dart';
-import '../providers/news_provider.dart';
+import '../providers/news_provider_new.dart';
 import '../providers/team_result_provider.dart';
 import '../providers/season_provider.dart';
 import '../models/news.dart';
@@ -49,7 +49,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
   Future<void> _loadInitialData() async {
     final saisonProv = Provider.of<SaisonProvider>(context, listen: false);
     final ligaProv = Provider.of<LigaSpieleProvider>(context, listen: false);
-    final newsProv = Provider.of<NewsProvider>(context, listen: false);
+    final newsProv = Provider.of<NewsProviderNew>(context, listen: false);
 
     // 1. Saisons laden
     await saisonProv.loadSaisons();
@@ -325,7 +325,7 @@ class _NewsAdminScreenState extends State<NewsAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final newsProv = Provider.of<NewsProvider>(context);
+    final newsProv = Provider.of<NewsProviderNew>(context);
 
     // **Erweiterte Filterlogik anwenden**
     List<News> filtered = _allNews.where((n) {

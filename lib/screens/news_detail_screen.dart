@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:verein_app/models/news.dart';
+import '../models/news.dart';
 import '../popUps/show_images_dialog.dart';
 import '../providers/user_provider.dart';
 import '../screens/add_news_screen.dart';
 import '../utils/image_helper.dart';
-import '../providers/news_provider.dart';
+import '../providers/news_provider_new.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/verein_appbar.dart';
 
@@ -31,9 +31,8 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
 
     final newsID = ModalRoute.of(context)?.settings.arguments as String?;
     if (newsID != null && newsID.isNotEmpty) {
-      // Calling the loadNews method from NewsProvider (not from the widget itself)
-      Provider.of<NewsProvider>(context, listen: false)
-          .loadNews(newsID)
+      Provider.of<NewsProviderNew>(context, listen: false)
+          .getNewsById(newsID)
           .then((news) {
         if (mounted) {
           setState(() {
@@ -67,8 +66,8 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    NewsProvider newsProvider =
-        Provider.of<NewsProvider>(context, listen: false);
+    NewsProviderNew newsProvider =
+        Provider.of<NewsProviderNew>(context, listen: false);
     AuthorizationProvider authProvider =
         Provider.of<AuthorizationProvider>(context, listen: false);
 
@@ -127,7 +126,7 @@ class NewsDetailScreenState extends State<NewsDetailScreen> {
                                 if (_isAdmin == true)
                                   IconButton(
                                     onPressed: () {
-                                      Provider.of<NewsProvider>(context,
+                                      Provider.of<NewsProviderNew>(context,
                                               listen: false)
                                           .deleteNews(detailNews!.id);
                                       Navigator.of(context).pop();

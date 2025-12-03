@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_utils.dart';
 import '../widgets/build_photo_selector.dart';
-import '../providers/news_provider.dart';
+import '../providers/news_provider_new.dart';
 import '../widgets/verein_appbar.dart';
 import 'package:intl/intl.dart'; // Für das Formatieren des Datums
 
@@ -25,7 +25,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
       false; // Falls der Nutzer eine eigene Kategorie eingibt
 
   // Methode zum Öffnen des DatePickers
-  Future<void> _selectDate(NewsProvider np, BuildContext context) async {
+  Future<void> _selectDate(NewsProviderNew np, BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -60,10 +60,10 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
       if (!mounted) {
         return; // Verhindert Fehler, falls das Widget entfernt wurde
       }
-      final newsProvider = Provider.of<NewsProvider>(context, listen: false);
+      final newsProvider = Provider.of<NewsProviderNew>(context, listen: false);
 
       if (newsProvider.newsId.isNotEmpty) {
-        newsProvider.loadNews(newsProvider.newsId);
+        newsProvider.getNewsById(newsProvider.newsId);
       } else {
         final today = DateFormat('dd.MM.yyyy').format(DateTime.now());
         newsProvider
@@ -78,7 +78,7 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final newsProvider = Provider.of<NewsProvider>(context);
+    final newsProvider = Provider.of<NewsProviderNew>(context);
     final authProvider =
         Provider.of<AuthorizationProvider>(context, listen: false);
 
@@ -175,9 +175,11 @@ class _AddNewsScreenState extends State<AddNewsScreen> {
                         setState(() => _isLoading = true);
 
                         String newsId = await newsProvider.postNews(
-                          newsProvider.newsId,
-                          authProvider.userId.toString(),
-                        );
+                            docId: newsProvider.newsId,
+                            author: authProvider.userId.toString(),
+                            title: newsProvider.title.text,
+                            body: newsProvider.body.text,
+                            category: newsProvider.selectedCategory);
 
                         setState(() => _isLoading = false);
 

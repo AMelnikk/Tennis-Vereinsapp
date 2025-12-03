@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/models/user.dart';
+import 'package:verein_app/providers/news_provider_new.dart';
 import './screens/user_profile_screen.dart';
 import './utils/push_notification_service.dart';
 import './providers/season_provider.dart';
@@ -20,7 +21,6 @@ import './providers/team_result_provider.dart';
 import './screens/add_user_screen.dart';
 import './screens/impressum_screen.dart';
 import './screens/news_detail_screen.dart';
-import './providers/news_provider.dart';
 import './screens/add_photo_screen.dart';
 import './screens/add_news_screen.dart';
 import './screens/admin_screen.dart';
@@ -113,9 +113,9 @@ class MyApp extends StatelessWidget {
               update: (_, auth, prev) => PhotoProvider(auth.writeToken),
             ),
 
-            ChangeNotifierProxyProvider<AuthorizationProvider, NewsProvider>(
-              create: (_) => NewsProvider(null),
-              update: (_, auth, prev) => NewsProvider(auth.writeToken),
+            ChangeNotifierProxyProvider<AuthorizationProvider, NewsProviderNew>(
+              create: (_) => NewsProviderNew(null),
+              update: (_, auth, prev) => NewsProviderNew(auth.writeToken),
             ),
 
             ChangeNotifierProxyProvider<AuthorizationProvider, TermineProvider>(
@@ -225,13 +225,15 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> firstLoadNews() async {
     if (mounted) {
       setState(() {
-        Provider.of<NewsProvider>(context, listen: false).isNewsLoading = true;
+        Provider.of<NewsProviderNew>(context, listen: false).isNewsLoading =
+            true;
       });
     }
-    await Provider.of<NewsProvider>(context).getData();
+    await Provider.of<NewsProviderNew>(context).getData();
     if (mounted) {
       setState(() {
-        Provider.of<NewsProvider>(context, listen: false).isNewsLoading = false;
+        Provider.of<NewsProviderNew>(context, listen: false).isNewsLoading =
+            false;
       });
     }
   }

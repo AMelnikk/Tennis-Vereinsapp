@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:verein_app/popUps/edit_team_result_dialog.dart';
 import '../models/season.dart';
-import '../providers/news_provider.dart';
+import '../providers/news_provider_new.dart';
 import '../screens/add_news_screen.dart';
 import '../utils/app_colors.dart';
 import '../widgets/build_filter_season_team.dart';
@@ -251,7 +251,7 @@ class _AddTeamResultScreenState extends State<AddTeamResultScreen> {
                           icon: const Icon(Icons.article),
                           tooltip: "Spielbericht bearbeiten / erstellen",
                           onPressed: () async {
-                            final newsProvider = Provider.of<NewsProvider>(
+                            final newsProvider = Provider.of<NewsProviderNew>(
                                 context,
                                 listen: false);
                             final lsProvider = Provider.of<LigaSpieleProvider>(

@@ -75,6 +75,7 @@ dependencies:
   web: any                                # (Bleibt)
   file_saver: ^0.2.14 # Aktuelle Version prüfen
   csv: ^5.0.0 # Hilft bei der korrekten Erstellung des CSV-Strings
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

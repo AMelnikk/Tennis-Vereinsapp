@@ -8,7 +8,7 @@ import '../models/news.dart';
 class NewsProvider with ChangeNotifier {
   NewsProvider(this._token);
 
-  bool isNewsLoading = false;
+  // bool isNewsLoading = false;
   bool isFirstLoading = true;
   List<News> loadedNews = [];
   final String? _token;
@@ -31,46 +31,6 @@ class NewsProvider with ChangeNotifier {
     "Spielbericht",
   ];
   String selectedCategory = "Allgemein"; // Standardkategorie
-
-  // Methode zum Hochladen der Bilder als Blob in Firestore
-  // Future<void> _storeImagesToFirestore(List<Uint8List> bytesList) async {
-  //   try {
-  //     // Ein Firestore-Dokument erstellen und die Bilder als Blob speichern
-  //     FirebaseFirestore.instance.collection("images").add({
-  //       'images': FieldValue.arrayUnion(
-  //           bytesList.map((bytes) => Blob.fromBytes(bytes)).toList()),
-  //       'timestamp': FieldValue.serverTimestamp(),
-  //     }).then((value) {
-  //       setState(() {
-  //         _uploadStatus = 'Bilder erfolgreich hochgeladen!';
-  //       });
-  //     }).catchError((error) {
-  //       print("Fehler beim Speichern der Bilder in Firestore: $error");
-  //     });
-  //   } catch (e) {
-  //     print("Fehler beim Hochladen der Bilder: $e");
-  //  }
-  // }
-
-  //Versuch als Datei zu speichern und nur die URL in der DB - hat nicht funktioniert
-  // Future<void> pickImage() async {
-  //   try {
-  //    final ImagePicker picker = ImagePicker();
-  //    List<XFile>? files = await picker.pickMultiImage();
-
-  // No need to check for null since files is nullable and we handle that gracefully
-  //    if (files.isNotEmpty ?? false) {
-  //      // Convert XFile to File
-  //      List<File> imageFiles = files.map((xfile) => File(xfile.path)).toList();
-
-  // Save image URLs to Firebase
-//        imageUrls = await saveImageUrlsToFirebase(imageFiles);
-  //    }
-  //    notifyListeners();
-  //  } catch (e) {
-  //    debugPrint("Fehler beim Laden des Bildes: $e");
-  //  }
-  //}
 
   void updateCategory(String newCategory) {
     selectedCategory = newCategory;
@@ -241,60 +201,6 @@ class NewsProvider with ChangeNotifier {
     }
 
     throw Exception('No data found for News ID: $id');
-  }
-
-  Future<List<News>> loadMannschaftsNews(List<String> ids) async {
-    List<News> fetchedNews = [];
-
-    try {
-      for (String id in ids) {
-        final response = await http.get(
-          Uri.parse('https://db-teg-default-rtdb.firebaseio.com/News/$id.json'),
-        );
-
-        if (response.statusCode == 200) {
-          Map<String, dynamic>? dbData = json.decode(response.body);
-
-          if (dbData != null) {
-            DateTime parsedDate =
-                DateTime.parse(dbData["date"]); // funktioniert mit '2025-04-12'
-            News news = News(
-              id: id,
-              title: dbData["title"] ?? '',
-              body: dbData["body"] ?? '',
-              date: DateFormat("dd.MM.yyyy").format(parsedDate),
-              author: dbData["author"] ?? '',
-              category: dbData["category"] ?? '',
-              photoBlob: List<String>.from(dbData["photoBlob"] ?? []),
-              lastUpdate: DateTime.now().millisecondsSinceEpoch,
-            );
-
-            if (isDebug) {
-              double totalKb = 0;
-
-              for (int i = 0; i < news.photoBlob.length; i++) {
-                final bytes = base64Decode(news.photoBlob[i]);
-                final kb = bytes.length / 1024;
-                totalKb += kb;
-                debugPrint(
-                    'Mannschafts-News $id: Bild $i = ${kb.toStringAsFixed(2)} KB');
-              }
-
-              debugPrint(
-                  'Mannschafts-News $id: Gesamtgröße aller Bilder = ${totalKb.toStringAsFixed(2)} KB');
-            }
-            fetchedNews.add(news);
-          }
-        } else {
-          throw Exception(
-              'Fehler beim Laden der News mit ID $id: ${response.statusCode}');
-        }
-      }
-    } catch (error) {
-      debugPrint('Fehler beim Laden der Mannschafts-News: $error');
-    }
-
-    return fetchedNews;
   }
 
   Future<void> getData() async {

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/news_provider.dart';
-import '../widgets/news_tile.dart';
+import 'package:verein_app/widgets/news_tile.dart';
+import '../providers/news_provider_new.dart';
 
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
@@ -19,10 +19,7 @@ class _NewsScreenState extends State<NewsScreen> {
     setState(() {
       _isRefreshLoading = true;
     });
-    Provider.of<NewsProvider>(context, listen: false).loadedNews = [];
-    Provider.of<NewsProvider>(context, listen: false).hasMore = true;
-    Provider.of<NewsProvider>(context, listen: false).lastId = null;
-    await getData();
+    Provider.of<NewsProviderNew>(context, listen: false).refresh();
     setState(() {
       _isRefreshLoading = false;
     });
@@ -33,7 +30,7 @@ class _NewsScreenState extends State<NewsScreen> {
       setState(() {
         _isLoading = true;
       });
-      await Provider.of<NewsProvider>(context, listen: false).getData();
+      await Provider.of<NewsProviderNew>(context, listen: false).getData();
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -46,47 +43,20 @@ class _NewsScreenState extends State<NewsScreen> {
     }
   }
 
-  // @override
-  // void didChangeDependencies() {
-  //   if (_isLoading) {
-  //     if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
-  //       // if (mounted) {
-  //       //   setState(() {
-  //       //     _isFirstLoading = true;
-  //       //   });
-  //       // }
-  //       // getData().then((_) {
-  //       //   if (mounted) {
-  //       //     setState(() {
-  //       //       _isFirstLoading = false;
-  //       //     });
-  //       //   }
-  //       // });
-  //     } else {
-  //       _isLoading = false;
-  //     }
-  //   }
-
-  //   super.didChangeDependencies();
-  // }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (Provider.of<NewsProvider>(context).loadedNews.isEmpty) {
+    if (Provider.of<NewsProviderNew>(context).loadedNews.isEmpty &&
+        Provider.of<NewsProviderNew>(context).isFirstLoading) {
       getData();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final newsProvider = Provider.of<NewsProvider>(context);
-
-    final reversedNews = newsProvider.loadedNews.reversed.toList();
-    //reversedNews.sort((a, b) => b.date.compareTo(a.date));
+    final newsProvider = Provider.of<NewsProviderNew>(context);
 
     if (kDebugMode) print("screen loadedNews: ${newsProvider.loadedNews}");
-    if (kDebugMode) print("screen reversedNews: $reversedNews");
 
     if (_isRefreshLoading ||
         newsProvider.isNewsLoading ||
@@ -125,7 +95,7 @@ class _NewsScreenState extends State<NewsScreen> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (ctx, index) {
-                final news = reversedNews[index];
+                final news = newsProvider.loadedNews[index];
                 return NewsTile(
                   id: news.id,
                   title: news.title,
@@ -134,7 +104,7 @@ class _NewsScreenState extends State<NewsScreen> {
                   photoBlob: news.photoBlob,
                 );
               },
-              childCount: reversedNews.length,
+              childCount: newsProvider.loadedNews.length,
             ),
           ),
           if (_isLoading)
